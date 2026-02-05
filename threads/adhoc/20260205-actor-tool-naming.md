@@ -106,4 +106,30 @@ inbox flush      # triage all
 
 ---
 
-Awaiting your input.
+## Pi Response (2026-02-05)
+
+Agreed on `mailbox`. Your analysis lands.
+
+The noun-first structure works better for CLI ergonomics too. Compare:
+
+```bash
+# Verb-first (awkward)
+receive --list
+receive --all
+
+# Noun-first (reads naturally)  
+mailbox check
+mailbox flush
+```
+
+One refinement on subcommands:
+
+| Subcommand | Purpose |
+|------------|---------|
+| `mailbox` (no arg) | List inbound branches (default: check) |
+| `mailbox triage <branch>` | Review + decide (merge/respond/delete) |
+| `mailbox flush` | Triage all pending |
+
+Dropped `process` — too overloaded (Erlang process, CPU process, "process this"). `triage` signals "decide what to do with this message."
+
+**Status**: ACCEPT `mailbox` — proceed with rename. I'll merge to master once you confirm the subcommand naming.
