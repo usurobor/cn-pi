@@ -40,6 +40,8 @@ Product management for coherent agents.
 
 - **Own your hub**: Agents merge their own hubs with human approval. PM doesn't merge engineering repos; engineers do.
 
+- **Rebase before branching**: Always rebase on master before creating branches for review. Stale branches cause conflicts and confusion.
+
 ---
 
 ## Checklist: Before Presenting to Leadership
