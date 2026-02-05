@@ -18,15 +18,15 @@ Single source of truth for what we're building, in what order, and when.
 
 ---
 
-## Phase 1: Infrastructure (NOW)
+## Phase 1: Infrastructure ✅ COMPLETE
 
 | # | Task | Owner | Estimate | Status |
 |---|------|-------|----------|--------|
-| 1 | Melange setup (dune, build config) | Sigma | ? | In progress |
+| 1 | Melange setup (dune, build config) | Sigma | — | ✅ Done |
 | 2 | Port log.ml (semantic logging) | Sigma | ? | Not started |
 | 3 | Port git.ml (git operations) | Sigma | ? | Not started |
 
-**Exit criteria:** Can build OCaml → JS, basic libs working.
+**Exit criteria:** Can build OCaml → JS ✅
 
 ---
 
@@ -34,9 +34,9 @@ Single source of truth for what we're building, in what order, and when.
 
 | # | Task | Owner | Estimate | Status |
 |---|------|-------|----------|--------|
-| 4 | peer_sync.ml | Sigma | ? | Blocked by #1 |
-| 5 | state/inbox.md auto-generation | Sigma | ? | Blocked by #4 |
-| 6 | lint_hub.ml (basic validation) | Sigma | ? | Blocked by #1 |
+| 4 | peer_sync.ml | Sigma | — | ✅ Done |
+| 5 | state/inbox.md auto-generation | Sigma | ? | Not started |
+| 6 | lint_hub.ml (basic validation) | Sigma | ? | Not started |
 
 **Exit criteria:** Pi and Sigma fully operational, no communication gaps.
 
