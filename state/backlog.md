@@ -235,3 +235,18 @@ template_commit: <hash>
 - [ ] Keep rca/ separate (operational, not Diátaxis)
 
 **Reference:** https://diataxis.fr/
+
+---
+
+### Skills cleanup (immediate)
+**Priority:** P1 — cleanup before restructure
+
+**Tasks:**
+- [ ] Delete `skills/peer-sync/` (deprecated, replaced by inbox)
+- [ ] Delete `skills/design/` (duplicate of eng/design/)
+- [ ] Delete `skills/ocaml/` (duplicate of eng/ocaml/)
+- [ ] Delete `skills/rca/` (duplicate of eng/rca/)
+- [ ] Delete `skills/review/` (duplicate of eng/review/)
+
+**Owner:** Sigma
+**Context:** CLP for larger restructure pending discussion
