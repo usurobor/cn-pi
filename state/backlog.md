@@ -65,7 +65,10 @@ Single source of truth for what to build next.
 
 ---
 
-### cn update tool
+### cn update tool — P1 🔥
+**Owner:** Sigma  
+**Priority:** P1 (simple win, high value)
+
 **As a** cn-agent,  
 **I want** a `cn update` command that pulls template, writes `state/runtime.md`, and restarts OpenClaw gateway,  
 **So that** I know (not guess) my session start and template version.
@@ -78,6 +81,8 @@ session_start: <timestamp>
 template_version: <version>
 template_commit: <hash>
 ```
+
+**Why P1:** Too simple not to do. High value, low effort.
 
 ---
 
