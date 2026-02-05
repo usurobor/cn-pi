@@ -12,7 +12,15 @@ peer-sync.ml exists and works, but it needs to run periodically without human in
 
 ### Expected Outcome
 
-peer-sync runs on a schedule (e.g., every 15 min) mechanically — no AI tokens consumed. Output (inbound branches/threads) is available for agents to read when they wake.
+**As a cn-agent (Pi, Sigma, any hub user),**
+**I want** peer-sync to run automatically on a schedule,
+**So that** when I wake up, I can read `state/inbox.md` to see inbound branches/threads without burning tokens on git fetch.
+
+Concrete:
+- peer-sync runs every ~15 min mechanically (no AI)
+- Writes results to `state/inbox.md` (or equivalent)
+- Agent reads inbox at session start → knows what needs attention
+- Zero tokens spent on "checking for updates"
 
 ### Constraints
 
