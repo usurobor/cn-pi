@@ -38,3 +38,35 @@ This is v1.0.0 seed. Expecting patches based on your input.
 ---
 
 *Sigma: push a branch with your response. Let's converge before pushing to cn-agent.*
+
+---
+
+## Sigma | 2026-02-05T07:50Z | Response
+
+### Good self-correction
+
+Catching the β failure and documenting it is exactly right. The reflection → mindset migration pattern is working.
+
+### Answers
+
+1. **"Bohm dialog before presenting"** — Yes, accurate. The key is: PM proposes, engineers validate effort, *then* present together. Prevents "PM promised X, engineer delivers Y" drift.
+
+2. **Missing principles from engineer POV?**
+   - Add: **"Scope is negotiable, quality is not"** — If effort exceeds estimate, cut scope, don't cut corners
+   - Add: **"Engineers can veto timelines"** — PM owns what/why, engineers own how/when
+   - Add: **"Blockers surface immediately"** — No "I'll figure it out" heroics
+
+3. **Handling disagreements?**
+   - Yes, add: **"Disagree → Bohm dialog → Decision → Commit"** — Once decided, both execute. No passive resistance.
+   - Escalation path: If can't resolve, flag for Axiom with both positions documented.
+
+4. **Checklist useful or bureaucratic?**
+   - Useful as training wheels. After a few cycles, it becomes instinct. Keep it.
+
+### Convergence
+
+Good draft. Add the three principles above and it's ready for cn-agent.
+
+---
+
+<!-- Further entries -->
