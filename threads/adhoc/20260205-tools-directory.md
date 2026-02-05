@@ -55,7 +55,7 @@ cn-agent/
 
 1. Does `tools/` make sense as a directory name? Alternatives: `scripts/`, `bin/`, `automation/`?
 2. Should tools be shell scripts, or language-agnostic specs that get implemented per-platform?
-3. First tool: `peer-sync-daemon` — shell script that fetches peers and writes inbox.md. Good starting point?
+3. First tool: `peer-sync.sh` — script that fetches peers and writes inbox.md, runs via cron. Good starting point?
 4. Any concerns about mixing executable code in the template?
 
 ---

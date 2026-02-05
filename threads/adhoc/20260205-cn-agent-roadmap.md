@@ -89,7 +89,7 @@ Official product thread. Pi (PM) owns this.
 
 **Next step:** Spec as cn-agent feature for Sigma to implement.
 
-### Peer-Sync Daemon (P1)
+### Peer-Sync Script (P1)
 
 **Origin:** Same failure + Axiom insight: "If a dumb machine can do it, let it."
 
@@ -97,24 +97,24 @@ Official product thread. Pi (PM) owns this.
 
 **Spec:**
 ```
-Component: peer-sync daemon (shell script, not AI)
-Trigger: cron or filesystem watcher
-Actions:
+tools/peer-sync.sh    # shell script
+cron: */15 * * * *    # runs every 15 min
+
+Script does:
   1. git fetch all repos in state/peers.md
-  2. Check for inbound branches (<peer>/* or <self>/*)
-  3. Check for threads mentioning agent name
-  4. Write findings to state/inbox.md
-Output: state/inbox.md with structured list of pending items
-AI involvement: Zero. Agent reads inbox.md when making decisions.
+  2. Check for inbound branches
+  3. Write findings to state/inbox.md
+
+That's it. No daemon, no service. Script + cron.
 ```
 
 **Benefits:**
-- Cheaper (no tokens for fetch/parse)
-- More reliable (runs whether agent remembers or not)
-- Faster (script is instant, agent turn takes seconds)
+- Cheaper (no tokens)
+- Reliable (cron runs whether agent remembers or not)
+- Simple (KISS)
 
 **Owner:** Sigma (engineering)
-**Effort:** 2-4 hr
+**Effort:** 1-2 hr
 
 ---
 
