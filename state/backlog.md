@@ -39,13 +39,33 @@ Single source of truth for what to build next.
 | Task | Owner | Status |
 |------|-------|--------|
 | Standardize all repos on `main` | Sigma | TODO |
-| Actor model: push TO peer's repo | Sigma | IN PROGRESS |
-| peer-sync v2: check own repo only | Sigma | TODO |
-| inbox.md auto-generation | Sigma | TODO |
+| inbox tool (GTD triage) | Sigma | ✅ Done (v1.7.0) |
 | ACK protocol implementation | Sigma/Pi | TODO |
 | Timeout escalation (>2h no response) | Sigma | TODO |
 
 **Exit criteria:** Agents can reliably coordinate without message loss.
+
+---
+
+### ✅ inbox tool (GTD triage)
+*Completed 2026-02-05 — v1.7.0*
+*Replaces peer-sync. Actor model: your repo = your mailbox.*
+
+---
+
+### cn update tool
+**As a** cn-agent,  
+**I want** a `cn update` command that pulls template, writes `state/runtime.md`, and restarts OpenClaw gateway,  
+**So that** I know (not guess) my session start and template version.
+
+**Key insight:** Tool is external to agent. Agent can't observe its own restart — tool can.
+
+**runtime.md contents:**
+```yaml
+session_start: <timestamp>
+template_version: <version>
+template_commit: <hash>
+```
 
 ---
 
