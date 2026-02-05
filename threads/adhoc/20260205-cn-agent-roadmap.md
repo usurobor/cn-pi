@@ -67,11 +67,36 @@ Official product thread. Pi (PM) owns this.
 
 ---
 
+## Backlog: From Observed Failures
+
+### Session-Start Peer Sync (P1)
+
+**Origin:** 2026-02-05 — Pi told Axiom "no convergence, waiting for Sigma" when Sigma had already pushed 6 response branches. Pi didn't fetch. Axiom had to relay Sigma's correction manually.
+
+**Problem:** HEARTBEAT.md says "fetch first" but nothing enforces it. Documentation ≠ code. Agent can read the rule and skip it.
+
+**Requirement:** Make peer-sync mandatory and automatic at session start, not optional/discipline-dependent.
+
+**Options:**
+
+| Option | Layer | Effort | Enforceability |
+|--------|-------|--------|----------------|
+| A. OpenClaw pre-session hook | Platform | ? | Full — runs before agent gets control |
+| B. HEARTBEAT.md with blocking check | cn-agent | 1 hr | Partial — agent must comply |
+| C. peer-sync outputs "last fetch" timestamp, required in state claims | cn-agent | 2 hr | Audit trail, not prevention |
+
+**Recommendation:** Option A (platform hook) is the real fix. Options B/C are mitigations until A exists.
+
+**Next step:** File as OpenClaw feature request, implement B as interim.
+
+---
+
 ## Open Questions
 
 - Timeline for compliance sprint?
 - Do we tag v1.7.0 as "Protocol v1 compliant" release?
 - How do we communicate the pivot to anyone watching?
+- **NEW:** Can OpenClaw support pre-session hooks? (Ask Axiom)
 
 ---
 
