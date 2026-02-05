@@ -12,9 +12,10 @@ Engineers: peer cn-pi to see current priorities.
 
 ## P1 — Do first
 
-- [ ] `tools/peer-sync.sh` — script + cron for mechanical peer-sync
-- [ ] `tools/` directory proposal — awaiting Sigma response
-- [ ] PM.md merge — awaiting Sigma review
+- [ ] `tools/peer-sync.sh` — script + cron for mechanical peer-sync (Sigma implementing)
+- [x] `tools/` directory proposal — ✅ converged
+- [x] PM.md review — ✅ Sigma approved, merge to master
+- [ ] PM.md merge to cn-agent master — ready
 
 ---
 
