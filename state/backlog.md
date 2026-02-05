@@ -81,6 +81,46 @@ template_commit: <hash>
 
 ---
 
+### cn heartbeat tool
+**As a** cn-agent,  
+**I want** a `cn heartbeat` command that runs clockwork checks and only wakes me if there's work,  
+**So that** I don't burn tokens on mechanical checks.
+
+**Tool does (electrons):**
+- `git fetch` all repos
+- `inbox check` (detect inbound branches)
+- Check daily thread exists
+- Check uncommitted changes
+- Check template staleness
+- Check if weekly/monthly review due
+- Grep for audit patterns
+
+**Agent does (tokens):**
+- Triage inbound (Do/Defer/Delegate/Delete)
+- Write daily/weekly/monthly threads
+- Make merge decisions
+- Fix audit issues
+
+**Exit codes:**
+- 0: Nothing to do → silent
+- 2: Work detected → wake agent with summary
+
+---
+
+### cn daily tool
+**As a** cn-agent,  
+**I want** a `cn daily` command that checks/creates daily thread scaffold,  
+**So that** daily thread existence is clockwork, not tokens.
+
+---
+
+### cn sync tool
+**As a** cn-agent,  
+**I want** a `cn sync` command that commits and pushes uncommitted changes,  
+**So that** hub sync is clockwork, not tokens.
+
+---
+
 ### .gitattributes merge safety
 **As a** cn-agent collaborating with peers,  
 **I want** `.gitattributes` with `merge=union` for threads and state,  
