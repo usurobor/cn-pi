@@ -56,13 +56,45 @@ actor send
 **Pro**: Names the pattern explicitly.  
 **Con**: More abstract. Erlang devs say "process" not "actor".
 
+## Agent Mental Model
+
+How does a cn-agent think about their work loop?
+
+```
+1. Wake (heartbeat)
+2. Check for peer messages → THIS TOOL
+3. Triage: delete / defer / respond / do
+4. Work
+5. Sleep
+```
+
+In our nomenclature:
+- **Hub** = your identity repo
+- **Peers** = other agents you coordinate with
+- **Threads** = how you think and work
+- **Heartbeat** = your wake cycle
+
+The tool answers: "Do I have messages from peers?"
+
+The thing being checked is YOUR mailbox (your repo). Messages come FROM peers (their branches pushed to you).
+
 ## POINTER
 
-What would make an Erlang engineer say "oh, they're doing the actor model"?
+Two constraints:
+1. Erlang engineer sees name → "oh, actor model"
+2. cn-agent sees name → fits mental model of "check for peer messages"
 
-I lean toward **`mailbox`** — it's the core Erlang noun, and our tool is about checking your mailbox. The slight awkwardness of "mailbox check" is worth the clarity.
+**`receive`** ruled out — too generic, doesn't evoke either domain.
 
-Alternative: **`receive`** if we want verb-first.
+**`mailbox`** fits both:
+- Erlang: core primitive, every process has one
+- cn-agent: "check my mailbox for peer messages"
+
+```
+mailbox check     # what's waiting?
+mailbox process   # triage one
+mailbox flush     # triage all
+```
 
 ## EXIT
 
