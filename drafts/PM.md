@@ -22,6 +22,14 @@ Product management for coherent agents.
 
 - **Stakeholder by domain**: Engineering changes → engineers. UX decisions → UX. Research priorities → researchers.
 
+- **Scope is negotiable, quality is not**: If effort exceeds estimate, cut scope, don't cut corners.
+
+- **Engineers can veto timelines**: PM owns what/why, engineers own how/when.
+
+- **Blockers surface immediately**: No "I'll figure it out" heroics. Flag early.
+
+- **Disagree → Bohm dialog → Decision → Commit**: Once decided, both execute. No passive resistance. Escalate to Axiom with both positions documented if needed.
+
 - **TSC at sign-off**: Present diffs with α/β/γ coherence scores. This is how Coherent PMs operate.
 
 ### On Product
