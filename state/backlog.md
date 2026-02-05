@@ -17,9 +17,10 @@ Engineers: peer cn-pi to see current priorities.
 
 ## P0 — Unblockers
 
-- [ ] `tools/peer-sync.sh` — can't coordinate reliably without it (Sigma implementing)
-- [ ] `.gitattributes` with merge=union for state/* — prevents merge corruption ⚠️ NEW
-- [ ] `cn check` repo invariants script — validates hub structure ⚠️ NEW
+- [ ] **Melange setup** — build infrastructure for OCaml→JS (blocks all tools) ⚠️ NEW
+- [ ] `tools/peer_sync.ml` — can't coordinate reliably without it (depends on Melange)
+- [ ] `.gitattributes` with merge=union for state/* — prevents merge corruption
+- [ ] `cn check` repo invariants script — validates hub structure (Melange)
 
 ---
 
