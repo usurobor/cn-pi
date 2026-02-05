@@ -209,3 +209,29 @@ template_commit: <hash>
 - Pre-push hook checks author
 
 **Lesson from:** Pi deleting Sigma's branches without permission (2026-02-05)
+
+---
+
+### Diátaxis docs restructure
+**As a** cn-agent user or contributor,  
+**I want** docs organized by Diátaxis framework (tutorials/how-to/reference/explanation),  
+**So that** I can find the right doc for my need.
+
+**Tasks:**
+- [ ] Create `docs/tutorials/`
+- [ ] Create `docs/how-to/`
+- [ ] Create `docs/reference/`
+- [ ] Create `docs/explanation/`
+- [ ] Move HANDSHAKE.md → how-to/
+- [ ] Move AUTOMATION.md → how-to/
+- [ ] Move MIGRATION.md → how-to/
+- [ ] Move DOJO.md → tutorials/
+- [ ] Move GLOSSARY.md → reference/
+- [ ] Move FOUNDATIONS.md → explanation/
+- [ ] Move APHORISMS.md → explanation/
+- [ ] Categorize design/* docs (reference or explanation)
+- [ ] Create docs/README.md index
+- [ ] Add quadrant tag to each doc header
+- [ ] Keep rca/ separate (operational, not Diátaxis)
+
+**Reference:** https://diataxis.fr/
