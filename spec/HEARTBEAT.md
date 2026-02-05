@@ -1,11 +1,22 @@
 # HEARTBEAT.md
 
+# Session Start (MANDATORY - before any other work)
+
+Fetch all repos before making ANY claim about state:
+```bash
+cd cn-pi && git fetch origin
+cd cn-sigma-clone && git fetch origin
+cd cn-agent && git fetch origin
+```
+
+See `state/PM-DISCIPLINE.md` for why this exists.
+
 # Coherent Agent (CA) loops - run on each heartbeat
 
+- **Peer sync FIRST**: fetch all peer repos, check for inbound branches/mentions. No state claims without fresh fetch.
 - Daily thread: check if `threads/daily/YYYYMMDD.md` exists for today. If missing, create it.
 - Hub sync: if uncommitted changes, commit and push.
 - Template sync: pull cn-agent/ if stale (>24h since last pull).
-- Peer sync: run peer-sync skill — check peers for inbound branches/mentions.
 
 # Periodic reviews - check if due and not yet completed
 
