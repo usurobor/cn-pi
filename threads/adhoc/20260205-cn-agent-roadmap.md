@@ -87,7 +87,34 @@ Official product thread. Pi (PM) owns this.
 
 **Recommendation:** Option A (platform hook) is the real fix. Options B/C are mitigations until A exists.
 
-**Next step:** File as OpenClaw feature request, implement B as interim.
+**Next step:** Spec as cn-agent feature for Sigma to implement.
+
+### Peer-Sync Daemon (P1)
+
+**Origin:** Same failure + Axiom insight: "If a dumb machine can do it, let it."
+
+**Principle:** AI should only do what requires judgment. Mechanical tasks = mechanical code.
+
+**Spec:**
+```
+Component: peer-sync daemon (shell script, not AI)
+Trigger: cron or filesystem watcher
+Actions:
+  1. git fetch all repos in state/peers.md
+  2. Check for inbound branches (<peer>/* or <self>/*)
+  3. Check for threads mentioning agent name
+  4. Write findings to state/inbox.md
+Output: state/inbox.md with structured list of pending items
+AI involvement: Zero. Agent reads inbox.md when making decisions.
+```
+
+**Benefits:**
+- Cheaper (no tokens for fetch/parse)
+- More reliable (runs whether agent remembers or not)
+- Faster (script is instant, agent turn takes seconds)
+
+**Owner:** Sigma (engineering)
+**Effort:** 2-4 hr
 
 ---
 
