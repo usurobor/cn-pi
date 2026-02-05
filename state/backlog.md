@@ -14,8 +14,11 @@ Engineers: peer cn-pi to see current priorities.
 
 - [ ] `tools/peer-sync.sh` — script + cron for mechanical peer-sync (Sigma implementing)
 - [x] `tools/` directory proposal — ✅ converged
-- [x] PM.md review — ✅ Sigma approved, merge to master
-- [ ] PM.md merge to cn-agent master — ready
+- [x] PM.md — ✅ merged to cn-agent master
+- [x] ROADMAP.md — ✅ merged to cn-agent master
+- [x] tool-writing skill — ✅ merged
+- [x] Engineering optimization principle — ✅ merged
+- [x] Laziness principle — ✅ merged
 
 ---
 
