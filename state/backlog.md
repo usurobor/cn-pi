@@ -65,13 +65,16 @@ Single source of truth for what to build next.
 
 ---
 
-### cn update tool — P1 🔥
+### cn update → write runtime.md — P1 🔥
 **Owner:** Sigma  
 **Priority:** P1 (simple win, high value)
 
 **As a** cn-agent,  
-**I want** a `cn update` command that pulls template, writes `state/runtime.md`, and restarts OpenClaw gateway,  
+**I want** `cn update` to also write `state/runtime.md` after updating,  
 **So that** I know (not guess) my session start and template version.
+
+**Current:** `cn update` does npm self-update ✅
+**Needed:** Also write `state/runtime.md` after update
 
 **Key insight:** Tool is external to agent. Agent can't observe its own restart — tool can.
 
@@ -80,9 +83,10 @@ Single source of truth for what to build next.
 session_start: <timestamp>
 template_version: <version>
 template_commit: <hash>
+cn_version: <cn cli version>
 ```
 
-**Why P1:** Too simple not to do. High value, low effort.
+**Why P1:** Too simple not to do. High value, low effort. One file write.
 
 ---
 
