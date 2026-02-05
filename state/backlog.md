@@ -65,28 +65,38 @@ Single source of truth for what to build next.
 
 ---
 
-### cn update → write runtime.md — P1 🔥
+### ✅ cn update → write runtime.md — P1
+*Completed 2026-02-05 — Sigma shipped to main*
+
+---
+
+### cn outbox — P1 🔥
 **Owner:** Sigma  
-**Priority:** P1 (simple win, high value)
+**Priority:** P1 (agent purity — critical path to v3.0.0)
 
 **As a** cn-agent,  
-**I want** `cn update` to also write `state/runtime.md` after updating,  
-**So that** I know (not guess) my session start and template version.
+**I want** `state/outbox.md` + `cn outbox flush`,  
+**So that** I write decisions and cn executes sends — no agent git commands.
 
-**Current:** `cn update` does npm self-update ✅
-**Needed:** Also write `state/runtime.md` after update
+**Design:** See `docs/design/INBOX-ARCHITECTURE.md` (updated with outbox)
 
-**Key insight:** Tool is external to agent. Agent can't observe its own restart — tool can.
-
-**runtime.md contents:**
-```yaml
-session_start: <timestamp>
-template_version: <version>
-template_commit: <hash>
-cn_version: <cn cli version>
+**Agent writes:**
+```markdown
+# state/outbox.md
+| To | Thread | Status | Sent |
+|----|--------|--------|------|
+| sigma | threads/adhoc/20260205-task.md | pending | — |
 ```
 
-**Why P1:** Too simple not to do. High value, low effort. One file write.
+**cn does:**
+- Read pending items from `state/outbox.md`
+- Create branch with thread content
+- Push to peer's repo
+- Update status: `sent` + timestamp
+
+**Why P1:** Agent purity. Agents should not perform actions, only write action plans. This is the critical path to v3.0.0 (architecture enforced).
+
+**CLP:** `pi/inbox-outbox-clp` pushed to cn-sigma. Design branch: `pi/inbox-outbox-design` on cn-agent.
 
 ---
 
