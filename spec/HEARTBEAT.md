@@ -32,6 +32,15 @@ See `state/PM-DISCIPLINE.md` for why this exists.
 - Branch review: check cn-agent for pending branches needing review.
 - Team threads: check for Bohm dialog threads awaiting response.
 
+# Periodic audit (weekly or after major releases)
+
+- **Stale references**: grep for deprecated tool names, old patterns
+- **Doc drift**: do docs match current code? (e.g., peer-sync → inbox)
+- **Backlog hygiene**: completed items marked done? Stale items pruned?
+- **Branch cleanup**: merged branches deleted?
+
+If issues found, add to backlog immediately. Don't ask — just do.
+
 # Customization
 
 Add your own periodic checks below. Keep it small to limit token burn.
