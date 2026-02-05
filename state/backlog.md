@@ -195,3 +195,17 @@ template_commit: <hash>
 ---
 
 *Last updated: 2026-02-05T17:01Z*
+
+---
+
+### Branch deletion enforcement (Protocol v1)
+**As a** git-CN protocol,  
+**I want** enforcement that only branch creator can delete their branch,  
+**So that** reviewers can't unilaterally discard others' work.
+
+**Implementation options:**
+- GitHub branch protection rules
+- cn tool validates before delete
+- Pre-push hook checks author
+
+**Lesson from:** Pi deleting Sigma's branches without permission (2026-02-05)
