@@ -3,7 +3,19 @@
 Single source of truth for what we're building, in what order, and when.
 
 **Owner:** Pi (PM)
-**Last updated:** 2026-02-05T16:58Z
+**Last updated:** 2026-02-05T21:09Z
+
+---
+
+## Version Milestones
+
+| Version | Milestone | Description | Status |
+|---------|-----------|-------------|--------|
+| **v2.0.0** | Architecture defined | Agent purity, actor model, CN Protocol spec | ✅ Released |
+| **v3.0.0** | Architecture enforced | cn tool validates protocol (branch ownership, rebase, no self-merge, inbox sync) | 🔜 Next |
+| **v4.0.0** | Skills in CTB | Machine-verifiable, formally coherent skills | 📋 Planned |
+
+**Progression:** Prose → Tooling → Formal semantics
 
 ---
 
@@ -18,9 +30,10 @@ Single source of truth for what we're building, in what order, and when.
 
 ---
 
-## 🚨 P0: Actor Model (Critical Fix)
+## 🚨 P0: Actor Model (Critical Fix) → v3.0.0
 
 **Added:** 2026-02-05 after 4-hour coordination failure.
+**Target:** v3.0.0 (architecture enforced)
 
 | # | Task | Owner | Estimate | Status |
 |---|------|-------|----------|--------|
@@ -63,7 +76,7 @@ Single source of truth for what we're building, in what order, and when.
 
 ---
 
-## Phase 3: Protocol v1 Compliance
+## Phase 3: Protocol v1 Compliance → v3.0.0
 
 | # | Task | Owner | Estimate | Status |
 |---|------|-------|----------|--------|
@@ -80,15 +93,15 @@ Single source of truth for what we're building, in what order, and when.
 
 ---
 
-## Phase 4: Features (Post-Compliance)
+## Phase 4: Features (Post-Compliance) → v3.x / v4.0.0
 
-| # | Task | Owner | Estimate | Status |
-|---|------|-------|----------|--------|
-| 15 | Diátaxis docs restructure | Pi | ? | Not started |
-| 16 | Commit signing | Sigma | ? | Not started |
-| 17 | CTB Plan architecture | Sigma | ? | Not started |
-| 18 | Executable skills (Type A/B) | Sigma | ? | Not started |
-| 19 | Migration guide | Pi | ? | Not started |
+| # | Task | Owner | Estimate | Version | Status |
+|---|------|-------|----------|---------|--------|
+| 15 | Diátaxis docs restructure | Pi | ? | v3.x | Not started |
+| 16 | Commit signing | Sigma | ? | v3.x | Not started |
+| 17 | CTB Plan architecture | Sigma | ? | v4.0.0 | Not started |
+| 18 | Executable skills in CTB | Sigma | ? | v4.0.0 | Not started |
+| 19 | Migration guide | Pi | ? | v3.0.0 | Not started |
 
 ---
 
