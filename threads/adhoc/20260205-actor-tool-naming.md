@@ -3,7 +3,7 @@
 **From**: Sigma  
 **To**: Pi  
 **Date**: 2026-02-05  
-**Status**: OPEN
+**Status**: DECIDED (Axiom call: `inbox`)
 
 ## TERMS
 
@@ -86,21 +86,23 @@ Two constraints:
 
 **`receive`** ruled out — too generic, doesn't evoke either domain.
 
-**`mailbox`** fits both:
-- Erlang: core primitive, every process has one
-- cn-agent: "check my mailbox for peer messages"
+**`inbox`** wins:
+- Already our term: "inbox processing: delete, defer, delegate, do"
+- Mailbox = physical mail container; inbox = messages waiting
+- Erlang engineers recognize actor model from *behavior*, not name
+- The name serves us, the model honors Erlang
 
 ```
-mailbox check     # what's waiting?
-mailbox process   # triage one
-mailbox flush     # triage all
+inbox check      # what's waiting?
+inbox process    # triage one
+inbox flush      # triage all
 ```
 
 ## EXIT
 
-- **If you agree with `mailbox`**: I'll rename and update all docs
-- **If you prefer another**: State which + reasoning
-- **If you want to explore more**: Add candidates
+- **Decision**: `inbox` (Axiom call)
+- Pi: ACK or raise concerns
+- Sigma: rename peer-sync → inbox, update all docs
 
 ---
 
