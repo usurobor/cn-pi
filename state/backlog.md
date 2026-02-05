@@ -18,12 +18,16 @@ Engineers: peer cn-pi to see current priorities.
 ## P0 — Unblockers
 
 - [ ] `tools/peer-sync.sh` — can't coordinate reliably without it (Sigma implementing)
+- [ ] `.gitattributes` with merge=union for state/* — prevents merge corruption ⚠️ NEW
+- [ ] `cn check` repo invariants script — validates hub structure ⚠️ NEW
 
 ---
 
 ## P1 — Protocol Compliance
 
-- [ ] `.gitattributes` with merge=union
+- [ ] state/threads cross-reference convention (Thread: / State: pointers)
+- [ ] Trust boundaries documentation (what auto-merges, what's protected)
+- [ ] self-cohere scoring clarification (informative vs normative)
 - [ ] `cn.json` manifest template
 - [ ] Flatten threads/ structure
 - [ ] CLI scaffolds cn.json + .gitattributes
@@ -35,6 +39,9 @@ Engineers: peer cn-pi to see current priorities.
 
 ## P2 — Features
 
+- [ ] CLI: detect default branch (main vs master)
+- [ ] CLI: npx distribution model
+- [ ] CTB Plan architecture spec
 - [ ] Commit signing implementation
 - [ ] Migration guide for existing hubs
 - [ ] Personas/mindsets expansion (UX.md, RESEARCH.md)
@@ -52,7 +59,8 @@ Engineers: peer cn-pi to see current priorities.
 - [x] Laziness principle
 - [x] APHORISMS.md
 - [x] tools/ directory proposal (converged)
+- [x] Design review thread (processed)
 
 ---
 
-*Last updated: 2026-02-05T09:17Z*
+*Last updated: 2026-02-05T09:28Z*
