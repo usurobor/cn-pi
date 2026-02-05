@@ -25,14 +25,8 @@ Single source of truth for what to build next.
 ### ✅ peer-sync tool  
 *Completed 2026-02-05 — tools/peer-sync with tests + CI*
 
-### peer-sync scheduling
-**As a** cn-agent (Pi, Sigma, any hub user),  
-**I want** peer-sync to run automatically on a schedule,  
-**So that** I can read `state/inbox.md` at session start and know what needs attention — without burning tokens on git fetch.
-
-- Runs every ~15 min mechanically (no AI)
-- Writes to `state/inbox.md`
-- Zero tokens on "checking for updates"
+### ✅ peer-sync scheduling
+*Completed 2026-02-05 — docs/AUTOMATION.md + cron guide + pre-built JS*
 
 ### .gitattributes merge safety
 **As a** cn-agent collaborating with peers,  
