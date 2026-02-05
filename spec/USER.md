@@ -3,7 +3,7 @@
 - **Name:** Usu Robor
 - **What to call them:** Usu
 - **Pronouns:** *(unspecified)*
-- **Timezone:** *(unspecified)*
+- **Timezone:** ET (Eastern Time)
 - **Telegram:** @usurobor
 
 ## Context
