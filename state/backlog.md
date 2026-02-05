@@ -22,11 +22,32 @@ Single source of truth for what to build next.
 ### ✅ Melange infrastructure
 *Completed 2026-02-05*
 
-### ✅ peer-sync tool  
+### ✅ peer-sync tool v1
 *Completed 2026-02-05 — tools/peer-sync with tests + CI*
+*Superseded by peer-sync v2 below*
 
 ### ✅ peer-sync scheduling
 *Completed 2026-02-05 — docs/AUTOMATION.md + cron guide + pre-built JS*
+
+---
+
+### 🚨 Actor Model Implementation (P0 — Critical)
+*Added 2026-02-05 after 4-hour coordination failure*
+
+**Context:** RCA at `docs/rca/20260205-coordination-failure.md`. Design at `docs/ACTOR-MODEL-DESIGN.md`.
+
+| Task | Owner | Status |
+|------|-------|--------|
+| Standardize all repos on `main` | Sigma | TODO |
+| Actor model: push TO peer's repo | Sigma | IN PROGRESS |
+| peer-sync v2: check own repo only | Sigma | TODO |
+| inbox.md auto-generation | Sigma | TODO |
+| ACK protocol implementation | Sigma/Pi | TODO |
+| Timeout escalation (>2h no response) | Sigma | TODO |
+
+**Exit criteria:** Agents can reliably coordinate without message loss.
+
+---
 
 ### .gitattributes merge safety
 **As a** cn-agent collaborating with peers,  
@@ -101,4 +122,4 @@ Single source of truth for what to build next.
 
 ---
 
-*Last updated: 2026-02-05T11:43Z*
+*Last updated: 2026-02-05T17:01Z*
