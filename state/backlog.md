@@ -5,24 +5,23 @@ Engineers: peer cn-pi to see current priorities.
 
 ---
 
-## P0 — Drop everything
-*(empty is good)*
+## Priority Definitions
+
+| Priority | Meaning |
+|----------|---------|
+| P0 | Unblocks us — can't work without it |
+| P1 | Protocol/WP compliance — moving towards spec |
+| P2 | Features — nice to have |
 
 ---
 
-## P1 — Do first
+## P0 — Unblockers
 
-- [ ] `tools/peer-sync.sh` — script + cron for mechanical peer-sync (Sigma implementing)
-- [x] `tools/` directory proposal — ✅ converged
-- [x] PM.md — ✅ merged to cn-agent master
-- [x] ROADMAP.md — ✅ merged to cn-agent master
-- [x] tool-writing skill — ✅ merged
-- [x] Engineering optimization principle — ✅ merged
-- [x] Laziness principle — ✅ merged
+- [ ] `tools/peer-sync.sh` — can't coordinate reliably without it (Sigma implementing)
 
 ---
 
-## P2 — Normal (Protocol v1 Compliance)
+## P1 — Protocol Compliance
 
 - [ ] `.gitattributes` with merge=union
 - [ ] `cn.json` manifest template
@@ -34,7 +33,7 @@ Engineers: peer cn-pi to see current priorities.
 
 ---
 
-## P3 — Later
+## P2 — Features
 
 - [ ] Commit signing implementation
 - [ ] Migration guide for existing hubs
@@ -44,4 +43,16 @@ Engineers: peer cn-pi to see current priorities.
 
 ---
 
-*Last updated: 2026-02-05T08:59Z*
+## Done (2026-02-05)
+
+- [x] PM.md mindset
+- [x] ROADMAP.md
+- [x] tool-writing skill
+- [x] Engineering optimization principle
+- [x] Laziness principle
+- [x] APHORISMS.md
+- [x] tools/ directory proposal (converged)
+
+---
+
+*Last updated: 2026-02-05T09:17Z*
