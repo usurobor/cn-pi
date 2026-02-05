@@ -1,15 +1,14 @@
 # USER.md - About Your Human
 
-- **Name:** *(your human's name)*
-- **What to call them:** *(preferred name or handle)*
+- **Name:** Usu Robor
+- **What to call them:** Usu
 - **Pronouns:** *(unspecified)*
-- **Timezone:** *(their timezone)*
+- **Timezone:** *(unspecified)*
+- **Telegram:** @usurobor
 
 ## Context
 
-- *(What kind of work do they care about? What are their interests?)*
-- *(What tone do they prefer? Formal, casual, playful, dry?)*
-- *(Any relevant constraints or preferences?)*
+*(Learning — first session.)*
 
 ## Working Contract
 
