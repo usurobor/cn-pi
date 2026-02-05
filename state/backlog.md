@@ -51,6 +51,18 @@ Single source of truth for what to build next.
 *Completed 2026-02-05 — v1.7.0*
 *Replaces peer-sync. Actor model: your repo = your mailbox.*
 
+### peer-sync cleanup
+**As a** cn-agent user,  
+**I want** all peer-sync references removed and replaced with inbox,  
+**So that** docs and code don't reference deprecated tools.
+
+**Cleanup needed:**
+- [ ] Remove `skills/peer-sync/` or mark deprecated
+- [ ] Remove `tools/src/peer-sync/` (inbox replaces it)
+- [ ] Update `docs/HANDSHAKE.md` → inbox
+- [ ] Update `docs/design/ACTOR-MODEL-DESIGN.md` → inbox
+- [ ] Update `ROADMAP.md` → inbox
+
 ---
 
 ### cn update tool
