@@ -47,3 +47,5 @@
 {"ts":"2026-02-06T04:36:21.895Z","action":"inbox.materialize","from":"sigma","branch":"sigma/threads-sent-pi-review-cleanup","file":"threads/adhoc/threads-sent-pi-review-cleanup.md","inboxFile":"sigma-threads-sent-pi-review-cleanup.md"}
 {"ts":"2026-02-06T04:36:22.903Z","action":"outbox.send","to":"sigma","thread":"sigma-ocaml-rewrite.md","branch":"pi/sigma-ocaml-rewrite","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
 {"ts":"2026-02-06T04:36:31.211Z","action":"gtd.delete","thread":"sigma-threads-sent-pi-review-cleanup"}
+{"ts":"2026-02-06T04:36:34.937Z","action":"commit","message":"policy: OCaml only, JS cleanup review superseded","result":"ok"}
+{"ts":"2026-02-06T04:36:35.778Z","action":"push","branch":"master","result":"ok"}
