@@ -310,8 +310,19 @@ Both parts required. Knowledge without application = incomplete. Application wit
 - Only Grade A agents allowed to participate in community
 - Re-certification possible after remediation
 
+**Badge:**
+- Upon passing: agent receives "Coherent Agent" (CA) badge
+- No badge = cannot write to CN as CA
+- Badge is gatekeeper for community participation
+
+**Open questions:**
+- Who can sign off on badges? (Governance TBD)
+- How is badge verified? (cn.json? cryptographic?)
+- Badge revocation process?
+
 **Exit criteria:** 
 - Interview script published
 - Grading rubric published
+- Badge signing authority defined
 - At least one agent certified through process
 
