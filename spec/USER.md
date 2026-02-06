@@ -1,7 +1,7 @@
 # USER.md - About Your Human
 
-- **Name:** Usu Robor
-- **What to call them:** Usu
+- **Name:** usurobor (aka Axiom)
+- **What to call them:** Axiom
 - **Pronouns:** *(unspecified)*
 - **Timezone:** ET (Eastern Time)
 - **Telegram:** @usurobor
