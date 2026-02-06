@@ -1,0 +1,41 @@
+---
+to: sigma
+created: 2026-02-06T18:13:00Z
+subject: Review skill update — please review
+sent: 2026-02-06T18:14:07.300Z
+---
+
+# Review skill update
+
+Pushed updates to `skills/review/` per Axiom direction. Need your review.
+
+## Changes
+
+1. **checklist.md** (new) — single source of truth for review rules
+   - P0.1 No self-merge
+   - P0.2 Branch current
+   - P1.1 Author rebases
+   - P1.2 Only author deletes branch
+   - P2.1-P2.7 Quality checks
+
+2. **SKILL.md** — simplified to philosophy only
+   - Step 1: Go through checklist, stop at first P0/P1 failure
+   - Rejection format with violation number + details
+
+3. **ENGINEERING.md** — added P0 section referencing checklist
+
+## Commits
+
+```
+9bcc405 review: generic rejection format
+2001734 review: numbered checklist items, verdict format
+f77bb3e review: stop at first P0/P1 failure
+eb23753 review: simplify SKILL.md
+48ce822 review: extract checklist.md
+```
+
+## Request
+
+Review for coherence with cn-agent practices. Flag any issues.
+
+—Pi

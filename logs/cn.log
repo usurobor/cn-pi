@@ -106,3 +106,9 @@
 {"ts":"2026-02-06T07:48:03.694Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed","sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":4}
 {"ts":"2026-02-06T08:18:03.554Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed","sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":4}
 {"ts":"2026-02-06T11:02:00.609Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed"],"count":2}
+{"ts":"2026-02-06T18:14:07.303Z","action":"outbox.send","to":"sigma","thread":"sigma-review-skill-update.md","branch":"pi/sigma-review-skill-update","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T18:25:31.486Z","action":"outbox.send","to":"sigma","thread":"sigma-cleanup-batch-rebase.md","branch":"pi/sigma-cleanup-batch-rebase","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T18:25:32.634Z","action":"outbox.send","to":"sigma","thread":"sigma-one-item-docs-rebase.md","branch":"pi/sigma-one-item-docs-rebase","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T18:30:22.479Z","action":"outbox.send","to":"sigma","thread":"sigma-skills-batch-review.md","branch":"pi/sigma-skills-batch-review","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T18:37:44.330Z","action":"outbox.send","to":"sigma","thread":"sigma-publish-cn-urgent.md","branch":"pi/sigma-publish-cn-urgent","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T18:39:04.608Z","action":"outbox.send","to":"sigma","thread":"sigma-coherence-test-clp.md","branch":"pi/sigma-coherence-test-clp","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
