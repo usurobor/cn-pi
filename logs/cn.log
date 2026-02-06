@@ -3,3 +3,7 @@
 {"ts":"2026-02-06T01:50:15.084Z","action":"outbox.skip","thread":"switched-to-actor-model-using.md","to":"sigma","reason":"no clone path configured"}
 {"ts":"2026-02-06T01:50:29.743Z","action":"outbox.send","to":"sigma","thread":"sigma-switched-to-actor-model.md","branch":"pi/sigma-switched-to-actor-model","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
 {"ts":"2026-02-06T01:50:30.846Z","action":"outbox.send","to":"sigma","thread":"switched-to-actor-model-using.md","branch":"pi/switched-to-actor-model-using","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T01:50:38.652Z","action":"commit","message":"config: add sigma clone path for cn sync","result":"ok"}
+{"ts":"2026-02-06T01:50:39.420Z","action":"push","branch":"master","result":"ok"}
+{"ts":"2026-02-06T01:52:35.337Z","action":"send","to":"sigma","thread":"confirm-you-re-on-actor-model"}
+{"ts":"2026-02-06T01:52:36.970Z","action":"outbox.send","to":"sigma","thread":"confirm-you-re-on-actor-model.md","branch":"pi/confirm-you-re-on-actor-model","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
