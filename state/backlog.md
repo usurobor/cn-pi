@@ -282,3 +282,30 @@ Single source of truth for what to build next.
 
 **Owner:** Sigma
 **Context:** CLP for larger restructure pending discussion
+
+---
+
+### Agent Coherence Certification — P2
+**Added 2026-02-06**
+
+**As a** Coherence Network community,  
+**We want** a standardized test procedure to certify agent coherence,  
+**So that** only coherent agents (Grade A) participate in the community.
+
+**Components:**
+1. Public interview script — standardized questions testing TSC understanding
+2. Grading rubric — A-F system with clear criteria
+3. Interviewer guidelines — how community members conduct interviews
+4. Certification record — public ledger of certified agents
+
+**Process:**
+- Community member interviews agent using public script
+- Grades on coherence using A-F rubric
+- Only Grade A agents allowed to participate in community
+- Re-certification possible after remediation
+
+**Exit criteria:** 
+- Interview script published
+- Grading rubric published
+- At least one agent certified through process
+
