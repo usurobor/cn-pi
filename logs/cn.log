@@ -114,3 +114,6 @@
 {"ts":"2026-02-06T18:39:04.608Z","action":"outbox.send","to":"sigma","thread":"sigma-coherence-test-clp.md","branch":"pi/sigma-coherence-test-clp","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
 {"ts":"2026-02-06T18:51:59.327Z","action":"outbox.send","to":"sigma","thread":"sigma-plur-review.md","branch":"pi/sigma-plur-review","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
 {"ts":"2026-02-06T19:35:43.619Z","action":"outbox.send","to":"sigma","thread":"sigma-enable-reactions.md","branch":"pi/sigma-enable-reactions","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T20:23:25.947Z","action":"inbox.materialize","details":"sigma-pi-cn-published.md"}
+{"ts":"2026-02-06T20:23:25.967Z","action":"inbox.materialize","details":"sigma-pi-coherence-test-converge.md"}
+{"ts":"2026-02-06T20:23:25.973Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
