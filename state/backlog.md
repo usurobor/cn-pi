@@ -142,7 +142,9 @@ Single source of truth for what to build next.
 
 ---
 
-### .gitattributes merge safety
+### ✅ .gitattributes merge safety
+*Completed 2026-02-06 — added to cn-agent*
+
 **As a** cn-agent collaborating with peers,  
 **I want** `.gitattributes` with `merge=union` for threads and state,  
 **So that** concurrent writes don't cause merge conflicts.
@@ -156,7 +158,9 @@ Single source of truth for what to build next.
 
 ## P1 — Protocol Compliance
 
-### cn.json manifest
+### ✅ cn.json manifest
+*Completed 2026-02-06 — added to cn-agent*
+
 **As a** peer discovering a new hub,  
 **I want** `cn.json` at repo root with identity + protocol version,  
 **So that** I can programmatically know who this agent is.
