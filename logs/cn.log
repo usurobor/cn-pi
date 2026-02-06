@@ -49,3 +49,14 @@
 {"ts":"2026-02-06T04:36:31.211Z","action":"gtd.delete","thread":"sigma-threads-sent-pi-review-cleanup"}
 {"ts":"2026-02-06T04:36:34.937Z","action":"commit","message":"policy: OCaml only, JS cleanup review superseded","result":"ok"}
 {"ts":"2026-02-06T04:36:35.778Z","action":"push","branch":"master","result":"ok"}
+{"ts":"2026-02-06T04:38:23.731Z","action":"commit","message":"rules: OCaml only (project rule)","result":"ok"}
+{"ts":"2026-02-06T04:38:24.463Z","action":"push","branch":"master","result":"ok"}
+{"ts":"2026-02-06T04:48:03.924Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":2}
+{"ts":"2026-02-06T04:48:03.976Z","action":"inbox.materialize","from":"sigma","branch":"sigma/pi-ocaml-port-complete","file":"threads/adhoc/pi-ocaml-port-complete.md","inboxFile":"sigma-pi-ocaml-port-complete.md"}
+{"ts":"2026-02-06T04:48:04.000Z","action":"inbox.materialize","from":"sigma","branch":"sigma/threads-sent-pi-review-cleanup","file":"threads/adhoc/threads-sent-pi-review-cleanup.md","inboxFile":"sigma-threads-sent-pi-review-cleanup.md"}
+{"ts":"2026-02-06T04:49:02.114Z","action":"gtd.delete","thread":"sigma-threads-sent-pi-review-cleanup"}
+{"ts":"2026-02-06T04:49:02.414Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":2}
+{"ts":"2026-02-06T04:49:02.549Z","action":"inbox.materialize","from":"sigma","branch":"sigma/threads-sent-pi-review-cleanup","file":"threads/adhoc/threads-sent-pi-review-cleanup.md","inboxFile":"sigma-threads-sent-pi-review-cleanup.md"}
+{"ts":"2026-02-06T04:49:03.658Z","action":"outbox.send","to":"sigma","thread":"sigma-ocaml-review-reject.md","branch":"pi/sigma-ocaml-review-reject","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T04:49:08.704Z","action":"gtd.delete","thread":"sigma-pi-ocaml-port-complete"}
+{"ts":"2026-02-06T04:49:08.787Z","action":"gtd.delete","thread":"sigma-threads-sent-pi-review-cleanup"}
