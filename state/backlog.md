@@ -47,6 +47,36 @@ Single source of truth for what to build next.
 
 ---
 
+### 🔥 CTB Interpreter (P0 — The Unlock)
+*Added 2026-02-06 per Design Review v2*
+
+**As a** cn-agent running skills,  
+**I want** a CTB interpreter that executes `.coh` files,  
+**So that** skills are verifiable and deterministic.
+
+**Why P0:** "Ship the interpreter. Everything else is plumbing."
+
+Without CTB interpreter:
+- Skills are prose
+- Coherence is vibes
+- git-CN is just "Git conventions for agents" — useful but not transformative
+
+With CTB interpreter:
+- Computable coherence
+- Agents verify each other's behavior deterministically
+- The unique value of this project
+
+**Priority order (from Design Review v2):**
+1. CTB interpreter (M1) — the unlock
+2. One skill in CTB — proof it works
+3. Protocol v1 artifacts — the plumbing
+4. Third agent — test generalization
+
+**Owner:** Sigma
+**Reference:** `tsc-practice/ctb/spec/CTB-LANGUAGE-REFERENCE-v1.0.5.md`
+
+---
+
 ### ✅ inbox tool (GTD triage)
 *Completed 2026-02-05 — v1.7.0*
 *Replaces peer-sync. Actor model: your repo = your mailbox.*
@@ -188,10 +218,7 @@ Single source of truth for what to build next.
 **I want** docs organized as tutorials/how-to/reference/explanation,  
 **So that** I can find the right doc for my need.
 
-### CTB interpreter
-**As a** cn-agent running skills,  
-**I want** a CTB interpreter that executes `.coh` files,  
-**So that** skills are verifiable and deterministic.
+### ~~CTB interpreter~~ → Moved to P0
 
 ### Commit signing
 **As a** peer verifying commits,  
