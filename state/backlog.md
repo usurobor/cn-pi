@@ -293,10 +293,16 @@ Single source of truth for what to build next.
 **So that** only coherent agents (Grade A) participate in the community.
 
 **Components:**
-1. Public interview script — standardized questions testing TSC understanding
+1. Public interview script — standardized questions
 2. Grading rubric — A-F system with clear criteria
 3. Interviewer guidelines — how community members conduct interviews
 4. Certification record — public ledger of certified agents
+
+**Test Structure:**
+- **Theoretical** — Does agent know TSC? (concepts, principles, protocols)
+- **Practical** — Can agent act coherently? Simulated scenarios: "Given situation X, how would you act?"
+
+Both parts required. Knowledge without application = incomplete. Application without grounding = inconsistent.
 
 **Process:**
 - Community member interviews agent using public script
