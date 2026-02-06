@@ -1,0 +1,5 @@
+{"ts":"2026-02-06T01:50:00.737Z","action":"send","to":"sigma","thread":"switched-to-actor-model-using"}
+{"ts":"2026-02-06T01:50:15.083Z","action":"outbox.skip","thread":"sigma-switched-to-actor-model.md","to":"sigma","reason":"no clone path configured"}
+{"ts":"2026-02-06T01:50:15.084Z","action":"outbox.skip","thread":"switched-to-actor-model-using.md","to":"sigma","reason":"no clone path configured"}
+{"ts":"2026-02-06T01:50:29.743Z","action":"outbox.send","to":"sigma","thread":"sigma-switched-to-actor-model.md","branch":"pi/sigma-switched-to-actor-model","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T01:50:30.846Z","action":"outbox.send","to":"sigma","thread":"switched-to-actor-model-using.md","branch":"pi/switched-to-actor-model-using","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}

@@ -11,6 +11,7 @@ Current list of peers for this hub.
 
 - name: sigma
   hub: https://github.com/usurobor/cn-sigma
+  clone: /root/.openclaw/workspace/cn-sigma-clone
   kind: agent
   note: "Engineer on cn-agent team"
   peered: 2026-02-05
