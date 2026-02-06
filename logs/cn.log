@@ -112,3 +112,5 @@
 {"ts":"2026-02-06T18:30:22.479Z","action":"outbox.send","to":"sigma","thread":"sigma-skills-batch-review.md","branch":"pi/sigma-skills-batch-review","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
 {"ts":"2026-02-06T18:37:44.330Z","action":"outbox.send","to":"sigma","thread":"sigma-publish-cn-urgent.md","branch":"pi/sigma-publish-cn-urgent","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
 {"ts":"2026-02-06T18:39:04.608Z","action":"outbox.send","to":"sigma","thread":"sigma-coherence-test-clp.md","branch":"pi/sigma-coherence-test-clp","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T18:51:59.327Z","action":"outbox.send","to":"sigma","thread":"sigma-plur-review.md","branch":"pi/sigma-plur-review","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T19:35:43.619Z","action":"outbox.send","to":"sigma","thread":"sigma-enable-reactions.md","branch":"pi/sigma-enable-reactions","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
