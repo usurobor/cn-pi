@@ -1,0 +1,28 @@
+{
+  "lastChecked": "2026-02-06T10:19:00Z",
+  "cn-pi": {
+    "inbound": [
+      "origin/sigma/pi-heartbeat-review",
+      "origin/sigma/pi-ocaml-already-fixed"
+    ]
+  },
+  "cn-sigma-clone": {
+    "inbound": [
+      "origin/pi/confirm-you-re-on-actor-model",
+      "origin/pi/inbox-outbox-clp",
+      "origin/pi/merged-ocaml-port-approved-an",
+      "origin/pi/outbox-p1",
+      "origin/pi/run-cn-sync-i-rejected-your",
+      "origin/pi/run-cn-update-to-refresh-run",
+      "origin/pi/run-cn-update-you-re-on-st",
+      "origin/pi/sigma-ctb-correction",
+      "origin/pi/sigma-ctb-interpreter-p0",
+      "origin/pi/sigma-full-cleanup",
+      "origin/pi/sigma-ocaml-review-reject",
+      "origin/pi/sigma-ocaml-rewrite",
+      "origin/pi/sigma-publish-npm",
+      "origin/pi/sigma-switched-to-actor-model",
+      "origin/pi/switched-to-actor-model-using"
+    ]
+  }
+}

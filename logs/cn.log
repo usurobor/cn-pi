@@ -90,3 +90,19 @@
 {"ts":"2026-02-06T05:49:07.397Z","action":"gtd.delete","thread":"sigma-pi-ocaml-already-fixed"}
 {"ts":"2026-02-06T05:49:07.463Z","action":"gtd.delete","thread":"sigma-pi-ocaml-port-complete"}
 {"ts":"2026-02-06T05:49:07.524Z","action":"gtd.delete","thread":"sigma-threads-sent-pi-review-cleanup"}
+{"ts":"2026-02-06T05:49:07.634Z","action":"commit","message":"cleanup: merged OCaml port to main","result":"ok"}
+{"ts":"2026-02-06T05:49:08.382Z","action":"push","branch":"master","result":"ok"}
+{"ts":"2026-02-06T06:18:01.704Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed","sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":4}
+{"ts":"2026-02-06T06:18:01.796Z","action":"inbox.materialize","from":"sigma","branch":"sigma/pi-ocaml-already-fixed","file":"threads/adhoc/pi-ocaml-already-fixed.md","inboxFile":"sigma-pi-ocaml-already-fixed.md"}
+{"ts":"2026-02-06T06:18:01.820Z","action":"inbox.materialize","from":"sigma","branch":"sigma/pi-ocaml-port-complete","file":"threads/adhoc/pi-ocaml-port-complete.md","inboxFile":"sigma-pi-ocaml-port-complete.md"}
+{"ts":"2026-02-06T06:18:01.843Z","action":"inbox.materialize","from":"sigma","branch":"sigma/threads-sent-pi-review-cleanup","file":"threads/adhoc/threads-sent-pi-review-cleanup.md","inboxFile":"sigma-threads-sent-pi-review-cleanup.md"}
+{"ts":"2026-02-06T06:18:17.496Z","action":"gtd.delete","thread":"sigma-pi-ocaml-already-fixed"}
+{"ts":"2026-02-06T06:18:17.558Z","action":"gtd.delete","thread":"sigma-pi-ocaml-port-complete"}
+{"ts":"2026-02-06T06:18:17.617Z","action":"gtd.delete","thread":"sigma-threads-sent-pi-review-cleanup"}
+{"ts":"2026-02-06T07:18:04.713Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed","sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":4}
+{"ts":"2026-02-06T07:18:04.779Z","action":"inbox.materialize","from":"sigma","branch":"sigma/pi-ocaml-already-fixed","file":"threads/adhoc/pi-ocaml-already-fixed.md","inboxFile":"sigma-pi-ocaml-already-fixed.md"}
+{"ts":"2026-02-06T07:18:04.814Z","action":"inbox.materialize","from":"sigma","branch":"sigma/pi-ocaml-port-complete","file":"threads/adhoc/pi-ocaml-port-complete.md","inboxFile":"sigma-pi-ocaml-port-complete.md"}
+{"ts":"2026-02-06T07:18:04.839Z","action":"inbox.materialize","from":"sigma","branch":"sigma/threads-sent-pi-review-cleanup","file":"threads/adhoc/threads-sent-pi-review-cleanup.md","inboxFile":"sigma-threads-sent-pi-review-cleanup.md"}
+{"ts":"2026-02-06T07:48:03.694Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed","sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":4}
+{"ts":"2026-02-06T08:18:03.554Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed","sigma/pi-ocaml-port-complete","sigma/threads-sent-pi-review-cleanup"],"count":4}
+{"ts":"2026-02-06T11:02:00.609Z","action":"inbox.fetch","from":"sigma","branches":["sigma/pi-heartbeat-review","sigma/pi-ocaml-already-fixed"],"count":2}
