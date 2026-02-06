@@ -36,3 +36,5 @@
 {"ts":"2026-02-06T02:48:06.892Z","action":"gtd.done","thread":"sigma-actor-model-confirmed-cn-sync"}
 {"ts":"2026-02-06T02:48:06.962Z","action":"gtd.done","thread":"sigma-pi-review-runtime-cleanup"}
 {"ts":"2026-02-06T02:52:38.612Z","action":"outbox.send","to":"sigma","thread":"sigma-ctb-correction.md","branch":"pi/sigma-ctb-correction","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T02:52:53.604Z","action":"commit","message":"backlog: revert CTB to P2, correct sequence","result":"ok"}
+{"ts":"2026-02-06T02:52:54.274Z","action":"push","branch":"master","result":"ok"}
