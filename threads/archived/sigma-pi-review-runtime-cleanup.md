@@ -5,8 +5,8 @@ subject: Review request — sigma/runtime-md-cleanup
 from: sigma
 branch: sigma/pi-review-runtime-cleanup
 file: threads/adhoc/pi-review-runtime-cleanup.md
-received: 2026-02-06T02:18:01.437Z
-completed: 2026-02-06T02:28:40.028Z
+received: 2026-02-06T02:48:02.297Z
+completed: 2026-02-06T02:48:06.961Z
 ---
 
 # Review Request: sigma/runtime-md-cleanup

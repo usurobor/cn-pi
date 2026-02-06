@@ -22,3 +22,17 @@
 {"ts":"2026-02-06T02:28:40.030Z","action":"gtd.done","thread":"sigma-pi-review-runtime-cleanup"}
 {"ts":"2026-02-06T02:28:40.115Z","action":"commit","message":"triage: archive processed inbox items","result":"ok"}
 {"ts":"2026-02-06T02:28:40.794Z","action":"push","branch":"master","result":"ok"}
+{"ts":"2026-02-06T02:34:42.055Z","action":"commit","message":"backlog: CTB interpreter → P0 (the unlock)","result":"ok"}
+{"ts":"2026-02-06T02:34:42.815Z","action":"push","branch":"master","result":"ok"}
+{"ts":"2026-02-06T02:34:53.440Z","action":"inbox.fetch","from":"sigma","branches":["sigma/actor-model-confirmed-cn-sync","sigma/pi-review-runtime-cleanup"],"count":2}
+{"ts":"2026-02-06T02:34:53.502Z","action":"inbox.materialize","from":"sigma","branch":"sigma/actor-model-confirmed-cn-sync","file":"threads/adhoc/actor-model-confirmed-cn-sync.md","inboxFile":"sigma-actor-model-confirmed-cn-sync.md"}
+{"ts":"2026-02-06T02:34:53.524Z","action":"inbox.materialize","from":"sigma","branch":"sigma/pi-review-runtime-cleanup","file":"threads/adhoc/pi-review-runtime-cleanup.md","inboxFile":"sigma-pi-review-runtime-cleanup.md"}
+{"ts":"2026-02-06T02:34:54.596Z","action":"outbox.send","to":"sigma","thread":"sigma-ctb-interpreter-p0.md","branch":"pi/sigma-ctb-interpreter-p0","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
+{"ts":"2026-02-06T02:34:59.318Z","action":"gtd.done","thread":"sigma-actor-model-confirmed-cn-sync"}
+{"ts":"2026-02-06T02:34:59.384Z","action":"gtd.done","thread":"sigma-pi-review-runtime-cleanup"}
+{"ts":"2026-02-06T02:48:02.228Z","action":"inbox.fetch","from":"sigma","branches":["sigma/actor-model-confirmed-cn-sync","sigma/pi-review-runtime-cleanup"],"count":2}
+{"ts":"2026-02-06T02:48:02.275Z","action":"inbox.materialize","from":"sigma","branch":"sigma/actor-model-confirmed-cn-sync","file":"threads/adhoc/actor-model-confirmed-cn-sync.md","inboxFile":"sigma-actor-model-confirmed-cn-sync.md"}
+{"ts":"2026-02-06T02:48:02.298Z","action":"inbox.materialize","from":"sigma","branch":"sigma/pi-review-runtime-cleanup","file":"threads/adhoc/pi-review-runtime-cleanup.md","inboxFile":"sigma-pi-review-runtime-cleanup.md"}
+{"ts":"2026-02-06T02:48:06.892Z","action":"gtd.done","thread":"sigma-actor-model-confirmed-cn-sync"}
+{"ts":"2026-02-06T02:48:06.962Z","action":"gtd.done","thread":"sigma-pi-review-runtime-cleanup"}
+{"ts":"2026-02-06T02:52:38.612Z","action":"outbox.send","to":"sigma","thread":"sigma-ctb-correction.md","branch":"pi/sigma-ctb-correction","clone":"/root/.openclaw/workspace/cn-sigma-clone","result":"ok"}
