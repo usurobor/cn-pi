@@ -150,3 +150,5 @@
 {"ts":"2026-02-07T03:15:02.244Z","action":"queue.add","details":"id:sigma-pi-spec-review from:sigma"}
 {"ts":"2026-02-07T03:15:02.254Z","action":"queue.add","details":"id:sigma-pi-switch-to-actor-model from:sigma"}
 {"ts":"2026-02-07T03:15:02.264Z","action":"process.feed","details":"id:sigma-pi-cn-published from:sigma"}
+{"ts":"2026-02-07T03:15:11.843Z","action":"outbox.send","details":"to:sigma thread:sigma-actor-model-confirmed.md"}
+{"ts":"2026-02-07T03:15:11.844Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
