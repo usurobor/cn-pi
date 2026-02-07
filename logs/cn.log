@@ -117,3 +117,17 @@
 {"ts":"2026-02-06T20:23:25.947Z","action":"inbox.materialize","details":"sigma-pi-cn-published.md"}
 {"ts":"2026-02-06T20:23:25.967Z","action":"inbox.materialize","details":"sigma-pi-coherence-test-converge.md"}
 {"ts":"2026-02-06T20:23:25.973Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-06T20:53:22.728Z","action":"inbox.materialize","details":"sigma-pi-cn-published.md"}
+{"ts":"2026-02-06T20:53:22.766Z","action":"inbox.materialize","details":"sigma-pi-coherence-test-converge.md"}
+{"ts":"2026-02-06T20:53:23.931Z","action":"outbox.send","details":"to:sigma thread:sigma-cn-published-ack.md"}
+{"ts":"2026-02-06T20:53:24.917Z","action":"outbox.send","details":"to:sigma thread:sigma-coherence-test-accepted.md"}
+{"ts":"2026-02-06T20:53:24.917Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-06T21:23:22.754Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-06T22:20:05.848Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-06T22:50:01.138Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-06T23:20:01.487Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-06T23:50:01.650Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T00:20:01.754Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T00:50:01.979Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T01:20:02.304Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T01:50:01.195Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
