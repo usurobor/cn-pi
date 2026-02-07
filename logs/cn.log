@@ -302,3 +302,9 @@
 {"ts":"2026-02-07T08:15:03.124Z","action":"process.feed","details":"id:sigma-pi-ctb-paused from:sigma"}
 {"ts":"2026-02-07T08:20:02.512Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T08:20:02.666Z","action":"io.archive","details":"id:sigma-pi-ctb-paused ops:0"}
+{"ts":"2026-02-07T08:20:02.710Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-07"}
+{"ts":"2026-02-07T08:20:03.566Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-07T08:25:01.745Z","action":"inbox.materialize","details":"sigma-pi-cleanup-partial.md"}
+{"ts":"2026-02-07T08:25:02.117Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T08:25:02.280Z","action":"queue.add","details":"id:sigma-pi-cleanup-partial from:sigma"}
+{"ts":"2026-02-07T08:25:02.316Z","action":"process.feed","details":"id:sigma-pi-cleanup-partial from:sigma"}
