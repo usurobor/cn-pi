@@ -46,6 +46,16 @@ Single source of truth for what to build next.
 - Template at state/peers.json
 - cn-pi migrated
 
+### cn init/update should auto-commit
+**Status:** TODO  
+**Owner:** Sigma
+
+**As a** cn user,  
+**I want** `cn init` and `cn update` to auto-commit runtime.md and all state changes,  
+**So that** runtime state is always pushed to GitHub without manual commits.
+
+---
+
 ### Thread schema validation
 **Status:** TODO  
 **Owner:** Sigma
