@@ -9,4 +9,4 @@ Running list of insights generated from reflection loops.
 | 3 | 2026-02-07 | Fill reflections in real-time, not deferred | γ reflection | ✓ agent/reflect (Cadences) |
 | 4 | 2026-02-07 | Track MCAs explicitly and make them countable | γ reflection | ✓ agent/reflect (Outputs) |
 | 5 | 2026-02-07 | MCAs are actions, insights are learnings — don't conflate | Axiom correction | ✓ agent/reflect (MCA/MCI) |
-| 6 | 2026-02-07 | If it's an MCA, do it — don't ask permission | Axiom correction | pending |
+| 6 | 2026-02-07 | If it's an MCA, do it — don't ask permission | Axiom correction | ✓ ca-conduct (Ship) |
