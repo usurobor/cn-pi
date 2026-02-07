@@ -39,19 +39,12 @@ Single source of truth for what to build next.
 ### ✅ threads/ subdirectory structure
 *Completed 2026-02-06 — whitepaper v2.0.4 amended to allow subdirs*
 
-### peers.json migration
-**Status:** TODO  
-**Owner:** Pi
+### ✅ peers.json migration
+*Completed 2026-02-07*
 
-**As a** tool or agent parsing peer state,  
-**I want** `state/peers.json` instead of `peers.md`,  
-**So that** peer data is machine-readable.
-
-**Tasks:**
-- [ ] Define peers.json schema
-- [ ] Migrate cn-pi/state/peers.md → peers.json
-- [ ] Migrate cn-sigma/state/peers.md → peers.json
-- [ ] Update cn-agent template
+- Schema at schemas/peers.schema.json
+- Template at state/peers.json
+- cn-pi migrated
 
 ### Thread schema validation
 **Status:** TODO  
@@ -81,13 +74,10 @@ Single source of truth for what to build next.
 
 ## P2 — Features
 
-### Diátaxis docs restructure
-**Status:** TODO  
-**Owner:** Pi
+### ✅ Diátaxis docs restructure
+*Completed 2026-02-07*
 
-**As a** new contributor or adopter,  
-**I want** docs organized as tutorials/how-to/reference/explanation,  
-**So that** I can find the right doc for my need.
+Docs now organized as tutorials/how-to/reference/explanation with index at docs/README.md.
 
 ### CA Coherence Certification
 **Status:** IN PROGRESS  
