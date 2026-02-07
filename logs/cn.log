@@ -308,3 +308,7 @@
 {"ts":"2026-02-07T08:25:02.117Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T08:25:02.280Z","action":"queue.add","details":"id:sigma-pi-cleanup-partial from:sigma"}
 {"ts":"2026-02-07T08:25:02.316Z","action":"process.feed","details":"id:sigma-pi-cleanup-partial from:sigma"}
+{"ts":"2026-02-07T08:30:02.336Z","action":"inbox.materialize","details":"sigma-pi-merge-branches-done.md"}
+{"ts":"2026-02-07T08:30:02.501Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T08:30:02.668Z","action":"queue.add","details":"id:sigma-pi-merge-branches-done from:sigma"}
+{"ts":"2026-02-07T08:30:02.688Z","action":"io.archive","details":"id:sigma-pi-cleanup-partial ops:0"}
