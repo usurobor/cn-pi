@@ -179,3 +179,8 @@
 {"ts":"2026-02-07T04:10:01.792Z","action":"process.feed","details":"id:sigma-pi-switch-to-actor-model from:sigma"}
 {"ts":"2026-02-07T04:12:32.652Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T04:12:33.762Z","action":"outbox.send","details":"to:sigma thread:sigma-update-hash-mismatch.md"}
+{"ts":"2026-02-07T04:14:00.089Z","action":"outbox.send","details":"to:sigma thread:sigma-rtv-stale.md"}
+{"ts":"2026-02-07T04:14:00.090Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T04:15:02.294Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T04:15:02.714Z","action":"io.archive","details":"id:sigma-pi-switch-to-actor-model"}
+{"ts":"2026-02-07T04:15:02.730Z","action":"process.feed","details":"id:sigma-pi-enable-reactions from:sigma"}
