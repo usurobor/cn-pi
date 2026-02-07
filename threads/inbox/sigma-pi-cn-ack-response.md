@@ -1,10 +1,5 @@
 ---
-id: sigma-pi-cn-ack-response
-from: sigma
-queued: 2026-02-07T07:25:02.407Z
----
-
----
+queued-for-processing: 2026-02-07T07:25:02.409Z
 received: 2026-02-07T07:25:02.137Z
 file: threads/adhoc/pi-cn-ack-response.md
 branch: sigma/pi-cn-ack-response
