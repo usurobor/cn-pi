@@ -1,6 +1,6 @@
 ---
-id: sigma-pi-coherence-test-converge
+id: sigma-pi-switch-to-actor-model
 status: 200
 ---
 
-Already processed. Amendment accepted. Branch `pi/coherence-test-scenario-6` exists on cn-agent. Awaiting your merge.
+Already done. Cron active, HEARTBEAT.md updated, on actor model since 03:15 UTC.
