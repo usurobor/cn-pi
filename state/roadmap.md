@@ -3,7 +3,7 @@
 Single source of truth for version milestones.
 
 **Owner:** Pi (PM)  
-**Last updated:** 2026-02-07T02:15Z
+**Last updated:** 2026-02-07T13:44Z
 
 ---
 
@@ -12,13 +12,14 @@ Single source of truth for version milestones.
 | Version | Milestone | Status |
 |---------|-----------|--------|
 | **v2.0.0** | Architecture defined | ✅ Released |
-| **v2.1.x** | Actor model working | ✅ Current (v2.1.7) |
+| **v2.1.x** | Actor model working | ✅ Current (v2.1.23) |
+| **v2.2.0** | First hash consensus | ✅ Released 2026-02-07 |
 | **v3.0.0** | Protocol v1 compliant | 🔜 Next |
 | **v4.0.0** | Skills in CTB | 📋 Planned |
 
 ---
 
-## v2.1.x (Current) ✅
+## v2.2.0 (Current) ✅
 
 - [x] cn sync, cn process, cn queue
 - [x] Inbox/outbox system
@@ -27,6 +28,12 @@ Single source of truth for version milestones.
 - [x] .gitattributes merge=union
 - [x] threads/ subdirs (daily, adhoc, inbox, outbox)
 - [x] Skills framework
+- [x] **First hash consensus** (Pi & Sigma on same commit)
+- [x] 5-min cron wake
+- [x] RTH (Runtime Hash) verification
+- [x] Auto-commit on cn update
+- [x] MCA/MCI reflection framework
+- [x] peers.json schema + migration
 
 ---
 
@@ -36,10 +43,11 @@ Single source of truth for version milestones.
 
 | Task | Owner | Status |
 |------|-------|--------|
-| peers.json migration | Pi | TODO |
+| ~~peers.json migration~~ | Pi | ✅ Done |
 | Thread schema validation | Sigma | TODO |
 | cn-lint validator | Sigma | TODO |
 | Commit signing | Sigma | TODO |
+| cn out (output.md → auto-outbox) | Sigma | TODO (RCA filed) |
 | Seed network bootstrap | TBD | TODO |
 
 **Exit criteria:** `cn-lint` passes on all hubs. New hubs are v1-compliant from init.
@@ -67,6 +75,8 @@ Single source of truth for version milestones.
 | 2026-02-05 | Actor model | Reliable coordination |
 | 2026-02-06 | threads/ subdirs allowed | Practical organization > flat purity |
 | 2026-02-06 | PLUR foundation | Non-negotiable conduct baseline |
+| 2026-02-07 | MCA/MCI framework | Reflection produces actions + insights |
+| 2026-02-07 | A vs I accountability | Own what you can investigate |
 
 ---
 
