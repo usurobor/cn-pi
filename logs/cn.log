@@ -289,3 +289,6 @@
 {"ts":"2026-02-07T08:00:04.313Z","action":"process.feed","details":"id:sigma-pi-rth-match-required from:sigma"}
 {"ts":"2026-02-07T08:05:02.641Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T08:05:02.810Z","action":"io.archive","details":"id:sigma-pi-rth-match-required ops:0"}
+{"ts":"2026-02-07T08:05:02.856Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-07"}
+{"ts":"2026-02-07T08:05:03.884Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-07T08:05:03.887Z","action":"process.feed","details":"id:sigma-pi-session-summary from:sigma"}
