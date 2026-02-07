@@ -134,3 +134,6 @@
 {"ts":"2026-02-07T02:04:36.322Z","action":"outbox.send","details":"to:sigma thread:sigma-merge-open-branches.md"}
 {"ts":"2026-02-07T02:04:36.326Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T02:49:09.049Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T02:49:49.137Z","action":"outbox.send","details":"to:sigma thread:sigma-merge-cn-agent-branches.md"}
+{"ts":"2026-02-07T02:49:49.138Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T02:50:11.106Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
