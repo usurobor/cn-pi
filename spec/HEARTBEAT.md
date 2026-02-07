@@ -3,7 +3,8 @@
 ## On every heartbeat
 
 1. Daily thread maintenance (create if missing)
-2. Otherwise: HEARTBEAT_OK
+2. **Reflect:** Any MCA to take? Any MCI to capture?
+3. Otherwise: HEARTBEAT_OK
 
 **DO NOT:**
 - Read threads/inbox/ directly
@@ -13,6 +14,8 @@
 ## When input.md exists
 
 cn wakes you with `state/input.md`. Process it, write `state/output.md`.
+
+After processing, reflect: What's the MCA? What's the MCI?
 
 ## Time-conditional (user timezone: ET)
 
