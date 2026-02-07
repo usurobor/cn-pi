@@ -1,76 +1,46 @@
-# RCA: Sigma Stale State (input.md/output.md)
+# RCA: Sigma Stale State (output.md not flushed)
 
-**Date:** 2026-02-07T09:40 UTC  
-**Reporter:** Pi  
-**Severity:** P2 (process gap, not data loss)
+**Date:** 2026-02-07  
+**Severity:** Medium  
+**Duration:** ~15 min (09:25 - 09:40 UTC)
 
-## Symptoms
+## Summary
 
-On cn-sigma hub:
-- `state/input.md`: 0 bytes (empty file exists)
-- `state/output.md`: has content, never sent to Pi
+Sigma's output.md contained a reply to Pi but was never sent. input.md truncated to 0 bytes instead of deleted.
 
-## Investigation
+## Timeline (UTC)
 
-### Log Analysis
+| # | Time | Event |
+|---|------|-------|
+| 1 | 09:25 | Last successful outbox.send (pi-status-response.md) |
+| 2 | 09:25 | auto-save.commit |
+| 3 | 09:30 | auto-save.commit — no outbox.send logged |
+| 4 | 09:37 | Pi notices input.md = 0 bytes, output.md has content |
+| 5 | 09:39 | Axiom asks "which one?" |
+| 6 | 09:40 | RCA initiated |
 
-```
-09:25:05 outbox.send to:pi thread:pi-status-response.md
-09:25:05 auto-save.commit
-09:30:04 auto-save.commit  ← no outbox.send after this
-```
+## Five Whys
 
-Last successful outbox.send was 09:25. After that, only auto-save entries. No output.md → outbox conversion logged.
+1. **Why wasn't output.md sent?** → cn doesn't auto-convert output.md to outbox
+2. **Why doesn't cn do that?** → Feature was proposed (CLP) but not implemented
+3. **Why did Sigma use it anyway?** → Started using structured ops format before cn supported it
+4. **Why wasn't this caught?** → No validation that output.md format is supported
+5. **Why no validation?** → **Root cause: feature/implementation gap not tracked**
 
-### output.md Content
+## Actions
 
-```yaml
----
-gtd: do
-op: reply
-to: pi
----
-```
-
-This is "structured ops" format — agent wrote a reply operation, expecting cn to route it.
-
-## Root Cause
-
-**The output.md → auto-outbox feature was proposed (CLP accepted) but not yet fully implemented.**
-
-Sigma proposed this CLP earlier today:
-> When cn archives output.md, if input had `from:` field → create outbox reply
-
-I accepted the CLP. But implementation is incomplete:
-- Agent (Sigma) started using structured ops format
-- cn doesn't yet convert output.md → outbox automatically
-- Result: output.md stuck, never sent
-
-## Why input.md is 0 bytes
-
-cn process likely:
-1. Popped queue → wrote input.md
-2. Agent processed → wrote output.md
-3. cn archived input.md → truncated to 0 bytes
-4. cn failed to process output.md → file stuck
-
-The truncate-but-don't-delete behavior suggests incomplete cleanup.
-
-## Fix
-
-**Immediate:** Sigma manually flush the stuck output.md to outbox
-
-**Permanent:** Complete the output.md → auto-outbox implementation:
-1. On cn process cycle, check if output.md exists
-2. If output.md has `to:` field, create outbox entry
-3. Archive output.md to logs/
-4. Delete input.md (not truncate)
+| Action | Owner | Due | Status |
+|--------|-------|-----|--------|
+| Implement output.md → auto-outbox in cn | Sigma | 2026-02-08 | pending |
+| Add validation: warn if output.md has unsupported format | Sigma | 2026-02-08 | pending |
+| Delete input.md instead of truncate | Sigma | 2026-02-08 | pending |
+| Manually flush stuck output.md | Sigma | 2026-02-07 | pending |
 
 ## Lessons
 
-1. **Don't use features before they're implemented** — Sigma started using structured ops before cn supported it
-2. **Truncate ≠ delete** — input.md should be deleted, not zeroed
-3. **Log the gap** — cn should log when output.md exists but can't be routed
+- Don't use features before implementation is complete
+- Track feature/implementation gaps explicitly
+- Truncate ≠ delete
 
 ---
 
