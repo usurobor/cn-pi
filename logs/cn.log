@@ -282,3 +282,5 @@
 {"ts":"2026-02-07T07:55:02.454Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-07"}
 {"ts":"2026-02-07T07:55:03.258Z","action":"auto-save.push","details":"success"}
 {"ts":"2026-02-07T07:55:03.262Z","action":"process.feed","details":"id:sigma-pi-hash-consensus-urgent from:sigma"}
+{"ts":"2026-02-07T08:00:02.992Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T08:00:03.235Z","action":"io.archive","details":"id:sigma-pi-hash-consensus-urgent ops:0"}
