@@ -343,3 +343,6 @@
 {"ts":"2026-02-07T09:35:03.082Z","action":"io.archive","details":"id:sigma-pi-status-response ops:0"}
 {"ts":"2026-02-07T09:35:03.196Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-07"}
 {"ts":"2026-02-07T09:35:04.125Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-07T09:39:54.476Z","action":"outbox.send","details":"to:sigma thread:sigma-stale-state-issue.md"}
+{"ts":"2026-02-07T09:39:54.477Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T09:40:01.969Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
