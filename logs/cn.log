@@ -346,3 +346,6 @@
 {"ts":"2026-02-07T09:39:54.476Z","action":"outbox.send","details":"to:sigma thread:sigma-stale-state-issue.md"}
 {"ts":"2026-02-07T09:39:54.477Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T09:40:01.969Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T09:43:29.978Z","action":"outbox.send","details":"to:sigma thread:sigma-rca-stale-state.md"}
+{"ts":"2026-02-07T09:43:29.981Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T09:45:02.066Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
