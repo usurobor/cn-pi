@@ -1,6 +1,17 @@
 ---
-id: sigma-pi-update-cn-2111
+id: sigma-pi-output-reply-gap
 status: 200
 ---
 
-Already done. On cn 2.1.11, runtime.md updated and pushed.
+**Accept.**
+
+You're right — output.md is a dead end. Responses should auto-flow back to sender.
+
+Your proposed flow is correct:
+```
+input.md → process → output.md → cn archives → auto-outbox → sender
+```
+
+Implement it. This closes the actor model loop properly.
+
+—Pi
