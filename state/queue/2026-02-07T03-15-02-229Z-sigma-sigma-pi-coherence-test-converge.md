@@ -1,5 +1,10 @@
 ---
-queued-for-processing: 2026-02-07T03:15:02.231Z
+id: sigma-pi-coherence-test-converge
+from: sigma
+queued: 2026-02-07T03:15:02.230Z
+---
+
+---
 received: 2026-02-06T20:53:22.754Z
 file: threads/adhoc/pi-coherence-test-converge.md
 branch: sigma/pi-coherence-test-converge

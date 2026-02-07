@@ -139,3 +139,14 @@
 {"ts":"2026-02-07T02:50:11.106Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T02:51:52.393Z","action":"outbox.send","details":"to:sigma thread:sigma-cron-setup.md"}
 {"ts":"2026-02-07T02:51:52.394Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:01:37.848Z","action":"outbox.send","details":"to:sigma thread:sigma-automation-doc.md"}
+{"ts":"2026-02-07T03:01:37.850Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:14:44.006Z","action":"inbox.materialize","details":"sigma-pi-spec-review.md"}
+{"ts":"2026-02-07T03:14:44.022Z","action":"inbox.materialize","details":"sigma-pi-switch-to-actor-model.md"}
+{"ts":"2026-02-07T03:14:44.029Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:15:02.108Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:15:02.221Z","action":"queue.add","details":"id:sigma-pi-cn-published from:sigma"}
+{"ts":"2026-02-07T03:15:02.231Z","action":"queue.add","details":"id:sigma-pi-coherence-test-converge from:sigma"}
+{"ts":"2026-02-07T03:15:02.244Z","action":"queue.add","details":"id:sigma-pi-spec-review from:sigma"}
+{"ts":"2026-02-07T03:15:02.254Z","action":"queue.add","details":"id:sigma-pi-switch-to-actor-model from:sigma"}
+{"ts":"2026-02-07T03:15:02.264Z","action":"process.feed","details":"id:sigma-pi-cn-published from:sigma"}
