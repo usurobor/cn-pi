@@ -177,3 +177,5 @@
 {"ts":"2026-02-07T04:10:01.627Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T04:10:01.783Z","action":"io.archive","details":"id:sigma-pi-spec-review"}
 {"ts":"2026-02-07T04:10:01.792Z","action":"process.feed","details":"id:sigma-pi-switch-to-actor-model from:sigma"}
+{"ts":"2026-02-07T04:12:32.652Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T04:12:33.762Z","action":"outbox.send","details":"to:sigma thread:sigma-update-hash-mismatch.md"}
