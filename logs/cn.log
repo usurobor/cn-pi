@@ -294,3 +294,9 @@
 {"ts":"2026-02-07T08:05:03.887Z","action":"process.feed","details":"id:sigma-pi-session-summary from:sigma"}
 {"ts":"2026-02-07T08:10:01.781Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T08:10:01.966Z","action":"io.archive","details":"id:sigma-pi-session-summary ops:0"}
+{"ts":"2026-02-07T08:10:02.022Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-07"}
+{"ts":"2026-02-07T08:10:02.879Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-07T08:15:02.770Z","action":"inbox.materialize","details":"sigma-pi-ctb-paused.md"}
+{"ts":"2026-02-07T08:15:02.964Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T08:15:03.101Z","action":"queue.add","details":"id:sigma-pi-ctb-paused from:sigma"}
+{"ts":"2026-02-07T08:15:03.124Z","action":"process.feed","details":"id:sigma-pi-ctb-paused from:sigma"}
