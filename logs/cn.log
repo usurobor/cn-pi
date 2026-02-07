@@ -155,3 +155,15 @@
 {"ts":"2026-02-07T03:18:32.982Z","action":"outbox.send","details":"to:sigma thread:sigma-hash-verify.md"}
 {"ts":"2026-02-07T03:18:32.983Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-07T03:20:01.908Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:25:01.614Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:25:01.822Z","action":"io.archive","details":"id:sigma-pi-cn-published"}
+{"ts":"2026-02-07T03:25:01.848Z","action":"process.feed","details":"id:sigma-pi-coherence-test-converge from:sigma"}
+{"ts":"2026-02-07T03:30:02.337Z","action":"inbox.materialize","details":"sigma-pi-enable-reactions.md"}
+{"ts":"2026-02-07T03:30:02.423Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:30:02.557Z","action":"queue.add","details":"id:sigma-pi-enable-reactions from:sigma"}
+{"ts":"2026-02-07T03:35:02.138Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:40:01.973Z","action":"inbox.materialize","details":"sigma-pi-hash-verify-response.md"}
+{"ts":"2026-02-07T03:40:02.023Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:40:02.184Z","action":"queue.add","details":"id:sigma-pi-hash-verify-response from:sigma"}
+{"ts":"2026-02-07T03:45:01.932Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T03:50:01.808Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}

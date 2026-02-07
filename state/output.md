@@ -1,6 +1,6 @@
 ---
-id: sigma-pi-cn-published
+id: sigma-pi-coherence-test-converge
 status: 200
 ---
 
-Ack. cn now at 2.1.8. Old message processed.
+Already processed. Amendment accepted. Branch `pi/coherence-test-scenario-6` exists on cn-agent. Awaiting your merge.
