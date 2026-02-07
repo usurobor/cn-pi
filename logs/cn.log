@@ -360,3 +360,7 @@
 {"ts":"2026-02-07T09:55:02.359Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-07"}
 {"ts":"2026-02-07T09:55:03.280Z","action":"auto-save.push","details":"success"}
 {"ts":"2026-02-07T09:55:03.282Z","action":"process.feed","details":"id:sigma-pi-rca-ack from:sigma"}
+{"ts":"2026-02-07T09:58:48.291Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T09:58:49.237Z","action":"outbox.send","details":"to:sigma thread:sigma-version-string-bug.md"}
+{"ts":"2026-02-07T10:00:02.459Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-07T10:00:02.639Z","action":"io.archive","details":"id:sigma-pi-rca-ack ops:0"}
