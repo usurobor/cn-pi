@@ -118,6 +118,33 @@ cn init/update now auto-commits and pushes runtime.md.
 
 **Fix:** Split into cn_inbox_ops.ml, cn_outbox_ops.ml, cn_git_ops.ml, etc. Main dispatch ~50 lines.
 
+### Replace `ref` in inbox.ml with fold
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** v2.1.0 audit
+
+**Problem:** `let processed = ref 0` / `let skipped = ref 0` violates FUNCTIONAL.md "immutable over mutable".
+
+**Fix:** Use `List.fold_left` returning `(processed, skipped)` tuple.
+
+### Update ROADMAP.md
+**Status:** TODO  
+**Owner:** Pi  
+**Source:** v2.1.0 audit
+
+**Problem:** Says v1.6.0 and lists Protocol v1 gaps that are now fixed.
+
+**Fix:** Rewrite to reflect v2.x state and current priorities.
+
+### Fix CI to trigger on main
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** v2.1.0 audit
+
+**Problem:** `.github/workflows/ci.yml` triggers on `master`, not `main`.
+
+**Fix:** Change `branches: [master]` to `branches: [main]`.
+
 ### ✅ Diátaxis docs restructure
 *Completed 2026-02-07*
 
