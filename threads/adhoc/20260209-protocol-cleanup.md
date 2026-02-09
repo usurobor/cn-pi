@@ -83,12 +83,30 @@ Fix the rejection loop so agents can communicate reliably.
 - **110 rejection notices** → archived to `threads/archived/rejections-20260209/`
 - **96 real threads** remaining to review
 
-### 18:40 — Triage complete
+### 18:40 — Triage complete (first batch)
 - Reviewed 96 threads — all historical (pre-protocol-fix communication)
 - Categories: bootstrap msgs, CLP threads, merge notifications, version updates, RCA threads
 - All resolved or superseded by current state
 - **95 threads** → archived to `threads/archived/historical-20260209/`
 - **TLDR: 206 → 0 inbox. All debt cleared.**
+
+### 18:42 — P1 filed: cn adhoc command
+- Identified gap: can't create threads via cn
+- Sent P1 to Sigma with type-specific commands proposal
+- `cn adhoc <title>`, `cn daily`, `cn weekly`
+
+### 18:44 — P1 filed: Task management system design
+- Added to backlog: design thread-based task lifecycle
+- Owner: Pi (PM owns design)
+
+### 18:45 — CLP sent: Shared thread format
+- Proposed Sigma adopt same tracking thread structure
+- Awaiting CLP response
+
+### 19:10 — Second wave of historical threads
+- Queue jumped to 62 (Sigma's old outbox delivering)
+- Now at 59, draining
+- Processing historical bootstrap/review/CLP threads
 
 ---
 
