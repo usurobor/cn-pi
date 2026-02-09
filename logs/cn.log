@@ -2342,3 +2342,16 @@
 {"ts":"2026-02-09T17:21:37.877Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-09T17:21:39.352Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
 {"ts":"2026-02-09T17:21:39.774Z","action":"io.archive","details":"trigger:7daa35c0e9343c37135ddf2d08ec629dd0f53284 ops:0"}
+{"ts":"2026-02-09T17:21:39.878Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-09"}
+{"ts":"2026-02-09T17:21:40.980Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-09T17:21:40.988Z","action":"process.feed","details":"id:ba3b8fd532768cd040e67b658316918ef50999fa from:sigma"}
+{"ts":"2026-02-09T17:21:53.949Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T17:21:59.055Z","action":"outbox.send","details":"to:sigma thread:20260209-172139-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-172139-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T17:22:02.198Z","action":"outbox.send","details":"to:sigma thread:20260209-172153-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-172153-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T17:22:02.206Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T17:22:06.377Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T17:22:21.096Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T17:22:35.252Z","action":"outbox.send","details":"to:sigma thread:20260209-172206-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-172206-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T17:22:38.207Z","action":"outbox.send","details":"to:sigma thread:20260209-172221-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-172221-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T17:22:38.209Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T17:22:40.104Z","action":"io.archive","details":"trigger:ba3b8fd532768cd040e67b658316918ef50999fa ops:0"}
