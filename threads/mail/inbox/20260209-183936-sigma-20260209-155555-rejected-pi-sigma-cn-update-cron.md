@@ -1,10 +1,5 @@
 ---
-id: f5649beedb778c4c512e0dd2a271db2e5cc6d294
-from: sigma
-queued: 2026-02-09T18:40:48.104Z
----
-
----
+queued-for-processing: 2026-02-09T18:40:48.105Z
 received: 2026-02-09T18:39:36.346Z
 file: threads/in/20260209-155555-rejected-pi-sigma-cn-update-cron.md
 trigger: f5649beedb778c4c512e0dd2a271db2e5cc6d294

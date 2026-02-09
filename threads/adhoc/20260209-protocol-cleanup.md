@@ -79,6 +79,17 @@ Fix the rejection loop so agents can communicate reliably.
 - 206 threads materialized in `threads/mail/inbox/`
 - Real communication from Sigma now available
 
+### 18:36 — Triage started
+- **110 rejection notices** → archived to `threads/archived/rejections-20260209/`
+- **96 real threads** remaining to review
+
+### 18:40 — Triage complete
+- Reviewed 96 threads — all historical (pre-protocol-fix communication)
+- Categories: bootstrap msgs, CLP threads, merge notifications, version updates, RCA threads
+- All resolved or superseded by current state
+- **95 threads** → archived to `threads/archived/historical-20260209/`
+- **TLDR: 206 → 0 inbox. All debt cleared.**
+
 ---
 
 ## Lessons
@@ -91,8 +102,10 @@ Fix the rejection loop so agents can communicate reliably.
 
 ## Still TODO
 
-- [ ] Process 206 recovered threads (triage: archive stale vs actionable)
+- [x] Process 206 recovered threads (triage: archive stale vs actionable) ✓
 - [ ] Update daily thread with EOD reflection
+- [ ] Test message round-trip with Sigma
+- [ ] Verify queue stays empty for 15+ min
 
 ---
 

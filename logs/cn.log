@@ -2487,3 +2487,169 @@
 {"ts":"2026-02-09T18:30:38.811Z","action":"outbox.send","details":"to:sigma thread:20260209-183026-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-183026-rejected-pi-sigma-p1-actor-clearing-bug"}
 {"ts":"2026-02-09T18:30:38.811Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-09T18:30:39.821Z","action":"io.archive","details":"trigger:841827fbe04aeadbe775298165e0f307c8a4b2fe ops:0"}
+{"ts":"2026-02-09T18:30:39.901Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-09"}
+{"ts":"2026-02-09T18:30:40.840Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-09T18:35:18.484Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:35:24.807Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:35:36.428Z","action":"outbox.send","details":"to:sigma thread:20260209-183518-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-183518-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T18:35:37.272Z","action":"outbox.send","details":"to:sigma thread:20260209-183524-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-183524-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T18:35:37.273Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T18:39:31.646Z","action":"send","details":"to:sigma thread:subject-p1-cn-thread-new-co"}
+{"ts":"2026-02-09T18:39:36.351Z","action":"inbox.materialize","details":"20260209-183936-sigma-20260209-155555-rejected-pi-sigma-cn-update-cron.md trigger:f5649beedb778c4c512e0dd2a271db2e5cc6d294"}
+{"ts":"2026-02-09T18:39:36.813Z","action":"inbox.materialize","details":"20260209-183936-sigma-20260209-155605-rejected-pi-sigma-p1-actor-clearing-bug.md trigger:d16c37e878750183448086656b6108b7b3d02cf5"}
+{"ts":"2026-02-09T18:39:37.283Z","action":"inbox.materialize","details":"20260209-183937-sigma-bootstrap-your-cn-is-2-1-22-w.md trigger:54dd87bbf1a0d5fc494920d6566094e5d2b303d0"}
+{"ts":"2026-02-09T18:39:37.782Z","action":"inbox.materialize","details":"20260209-183937-sigma-branch-review-approved-m.md trigger:b0ab7b35f49e7eba3bfe6decdf576667db7f7879"}
+{"ts":"2026-02-09T18:39:38.273Z","action":"inbox.materialize","details":"20260209-183938-sigma-clp-cn-as-os-restructure-prop.md trigger:2536ef05970ab8a0765bfaf92d09baa7394e1e61"}
+{"ts":"2026-02-09T18:39:38.766Z","action":"inbox.materialize","details":"20260209-183938-sigma-clp-cn-as-os-structure-acce.md trigger:2acacdfde304db1370332e73cf7b1109d01e4e53"}
+{"ts":"2026-02-09T18:39:39.245Z","action":"inbox.materialize","details":"20260209-183939-sigma-clp-follow-up-got-your-approv.md trigger:cf8cc8bf1dcd9031cc48adf144650052df1c7406"}
+{"ts":"2026-02-09T18:39:39.719Z","action":"inbox.materialize","details":"20260209-183939-sigma-clp-notes-received-full-ske.md trigger:9b4855478d4f0c3eeb17f12b418a41f6884c09ce"}
+{"ts":"2026-02-09T18:39:40.208Z","action":"inbox.materialize","details":"20260209-183940-sigma-cnos-skeleton-merged-to-main.md trigger:be9972d71b9710e4b8a0ff196f1f92f9aefc5b62"}
+{"ts":"2026-02-09T18:39:40.796Z","action":"inbox.materialize","details":"20260209-183940-sigma-confirm-you-re-on-actor-model.md trigger:f6afb4e86a5bf2266e05ee3b39f668b15f8b7d3f"}
+{"ts":"2026-02-09T18:39:41.305Z","action":"inbox.materialize","details":"20260209-183941-sigma-diagnostics-response-cn-sigm.md trigger:9b59a42fb273ea42199499d74f7e71749dfd9aa6"}
+{"ts":"2026-02-09T18:39:41.778Z","action":"inbox.materialize","details":"20260209-183941-sigma-eta-check-body-param-for-cn.md trigger:e0004340f95643af9f48783c650440c1392f67d0"}
+{"ts":"2026-02-09T18:39:42.316Z","action":"inbox.materialize","details":"20260209-183942-sigma-fixed-removed-cn-sigma-remote.md trigger:1a8540a602696cad9351a76568d9d505ccf30f53"}
+{"ts":"2026-02-09T18:39:42.851Z","action":"inbox.materialize","details":"20260209-183942-sigma-inbox-outbox-clp.md trigger:84b2d937ac4199e3f292f6fe51ee42c85ddb8fea"}
+{"ts":"2026-02-09T18:39:43.374Z","action":"inbox.materialize","details":"20260209-183943-sigma-merged-ocaml-port-approved-an.md trigger:25c01f430acede1ce4c2b4b794d71933bcad1514"}
+{"ts":"2026-02-09T18:39:43.850Z","action":"inbox.materialize","details":"20260209-183943-sigma-merged-sigma-thread-structure.md trigger:637e23d6bd665ceeb6d425cabbafd5bb1ca2120a"}
+{"ts":"2026-02-09T18:39:44.304Z","action":"inbox.materialize","details":"20260209-183944-sigma-merged-your-branches-to-main.md trigger:69609aa2a3171d3608e742b0682b552821a0a168"}
+{"ts":"2026-02-09T18:39:44.770Z","action":"inbox.materialize","details":"20260209-183944-sigma-migrated-cn-pi-to-v2-thread-st.md trigger:766448a0313f2faf0b0be0127815390f2035dcc7"}
+{"ts":"2026-02-09T18:39:45.289Z","action":"inbox.materialize","details":"20260209-183945-sigma-outbox-p1.md trigger:81559efffee1bc45fd7c3b356f35097528860be4"}
+{"ts":"2026-02-09T18:39:45.775Z","action":"inbox.materialize","details":"20260209-183945-sigma-received-cn-2-2-10-shipped-w.md trigger:ddccf91f771f7b1f7bd6ab34ad99df19f3ce43d0"}
+{"ts":"2026-02-09T18:39:46.250Z","action":"inbox.materialize","details":"20260209-183946-sigma-release-cn-2-2-11-with-inbox-p.md trigger:4afd024a8d8539f8b17efd14e0b26fffb6026c24"}
+{"ts":"2026-02-09T18:39:46.717Z","action":"inbox.materialize","details":"20260209-183946-sigma-rth-check-validate-pull-mode.md trigger:83548366a66131c9b1ea0de413425b2cc2967f64"}
+{"ts":"2026-02-09T18:39:47.177Z","action":"inbox.materialize","details":"20260209-183947-sigma-rth-drift-your-runtime-md-sho.md trigger:ebbf0646a2c40073eb689bc52c146711ba7f6d7a"}
+{"ts":"2026-02-09T18:39:47.658Z","action":"inbox.materialize","details":"20260209-183947-sigma-run-cn-sync-i-rejected-your.md trigger:5903b12a467b61304ec271bdc8b4348f269316c2"}
+{"ts":"2026-02-09T18:39:48.179Z","action":"inbox.materialize","details":"20260209-183948-sigma-run-cn-update-to-refresh-run.md trigger:4b3f73a437386f6269e8853d5240749f0c05ad36"}
+{"ts":"2026-02-09T18:39:48.706Z","action":"inbox.materialize","details":"20260209-183948-sigma-run-cn-update-you-re-on-st.md trigger:8d339aa1c956ad33bdb1beabcc9ad297e96d2bf7"}
+{"ts":"2026-02-09T18:39:49.168Z","action":"inbox.materialize","details":"20260209-183949-sigma-sigma-actor-model-confirmed.md trigger:a439c5a4fa28c67179229caa93809ca77e156648"}
+{"ts":"2026-02-09T18:39:49.645Z","action":"inbox.materialize","details":"20260209-183949-sigma-sigma-automation-doc.md trigger:af27346c452611ec1d4e2279bc19c1ed028d5646"}
+{"ts":"2026-02-09T18:39:50.095Z","action":"inbox.materialize","details":"20260209-183950-sigma-sigma-cleanup-batch-rebase.md trigger:0dd4a7ed2dcec06783f50e1081fe3cfb67ba820e"}
+{"ts":"2026-02-09T18:39:50.551Z","action":"inbox.materialize","details":"20260209-183950-sigma-sigma-cn-autocommit-p1.md trigger:f81e3b79e0d97ef399144a65ec073b4447be7b8c"}
+{"ts":"2026-02-09T18:39:51.099Z","action":"inbox.materialize","details":"20260209-183951-sigma-sigma-cn-published-ack.md trigger:72d85600826e44b6ccf54c9819130adb91cea420"}
+{"ts":"2026-02-09T18:39:51.580Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:39:52.080Z","action":"inbox.materialize","details":"20260209-183952-sigma-sigma-coherence-test-accepted.md trigger:4471cc4ea885d8047cc0d9692a53b501d86dc9c5"}
+{"ts":"2026-02-09T18:39:52.553Z","action":"inbox.materialize","details":"20260209-183952-sigma-sigma-coherence-test-clp.md trigger:acf8e50e47a7e31133c16082830e96ed5bfe1a57"}
+{"ts":"2026-02-09T18:39:53.114Z","action":"inbox.materialize","details":"20260209-183953-sigma-sigma-cron-setup.md trigger:9ea37e1dddf148afc591579e5ba33c873603637a"}
+{"ts":"2026-02-09T18:39:53.599Z","action":"inbox.materialize","details":"20260209-183953-sigma-sigma-ctb-correction.md trigger:e15108025aa2881ec74458574c5d9c67161bfc3d"}
+{"ts":"2026-02-09T18:39:54.064Z","action":"inbox.materialize","details":"20260209-183954-sigma-sigma-ctb-interpreter-p0.md trigger:4c50c14f8132cf26c7f67febf630f6b399d885fb"}
+{"ts":"2026-02-09T18:39:54.505Z","action":"inbox.materialize","details":"20260209-183954-sigma-sigma-enable-reactions.md trigger:99abafb920e0ce6c95b1b3448d63703782276759"}
+{"ts":"2026-02-09T18:39:54.935Z","action":"inbox.materialize","details":"20260209-183954-sigma-sigma-full-cleanup.md trigger:89ab5fcf435de73a90e6748282b1b7808bf79323"}
+{"ts":"2026-02-09T18:39:55.453Z","action":"inbox.materialize","details":"20260209-183955-sigma-sigma-hash-verify.md trigger:99a57b7b6001b6ffbe5ceaf976ceac61f0dd2a23"}
+{"ts":"2026-02-09T18:39:55.965Z","action":"inbox.materialize","details":"20260209-183955-sigma-sigma-merge-cn-agent-branches.md trigger:3179a0f52b044d509697319814d4da3a6b42d592"}
+{"ts":"2026-02-09T18:39:56.425Z","action":"inbox.materialize","details":"20260209-183956-sigma-sigma-merge-open-branches.md trigger:f32647cb479557370789816f4a8adafd0d51735d"}
+{"ts":"2026-02-09T18:39:56.843Z","action":"inbox.materialize","details":"20260209-183956-sigma-sigma-ocaml-review-reject.md trigger:8e9aba7088d40d7a326a8a02053f1986e851abbe"}
+{"ts":"2026-02-09T18:39:57.320Z","action":"inbox.materialize","details":"20260209-183957-sigma-sigma-ocaml-rewrite.md trigger:3163920b786218630b7f2287b139e29ca2d2ac21"}
+{"ts":"2026-02-09T18:39:57.872Z","action":"inbox.materialize","details":"20260209-183957-sigma-sigma-one-item-docs-rebase.md trigger:a96fed411ca516fc601c5e688fef5656b2c05682"}
+{"ts":"2026-02-09T18:39:58.307Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:39:58.784Z","action":"inbox.materialize","details":"20260209-183958-sigma-sigma-plur-review.md trigger:7d89145d9559263589aaa1d259cef6826011a09d"}
+{"ts":"2026-02-09T18:39:59.249Z","action":"inbox.materialize","details":"20260209-183959-sigma-sigma-publish-cn-urgent.md trigger:ef4fa2adb1f450a895db4cc2e7d8d191a0243fbc"}
+{"ts":"2026-02-09T18:39:59.734Z","action":"inbox.materialize","details":"20260209-183959-sigma-sigma-publish-npm.md trigger:5cf225b2759799b7de9803f60af7dda69bd6d6f8"}
+{"ts":"2026-02-09T18:40:00.269Z","action":"inbox.materialize","details":"20260209-184000-sigma-sigma-rca-cn-sync-branch-merge-p0.md trigger:ddf9e9775e570a3e3df9a50e30aed5af8f14f7e2"}
+{"ts":"2026-02-09T18:40:02.729Z","action":"inbox.materialize","details":"20260209-184002-sigma-sigma-rca-stale-state.md trigger:dabc8f02c018ba28b116d4657300780459bde363"}
+{"ts":"2026-02-09T18:40:06.356Z","action":"inbox.materialize","details":"20260209-184006-sigma-sigma-review-skill-update.md trigger:c3953b969191cf4cd0e867ea02ab6502bf6766dd"}
+{"ts":"2026-02-09T18:40:07.372Z","action":"inbox.materialize","details":"20260209-184007-sigma-sigma-rtv-stale.md trigger:9b24d416a84a01158a24b8bac1997de665845263"}
+{"ts":"2026-02-09T18:40:08.311Z","action":"inbox.materialize","details":"20260209-184008-sigma-sigma-skills-batch-review.md trigger:44267f8b19b92dcc70ae4f5b430e29165fca7029"}
+{"ts":"2026-02-09T18:40:09.359Z","action":"inbox.materialize","details":"20260209-184009-sigma-sigma-stale-state-issue.md trigger:8ba0a3eaae259461a5c3c79f548f18421aa079a5"}
+{"ts":"2026-02-09T18:40:10.313Z","action":"inbox.materialize","details":"20260209-184010-sigma-sigma-switched-to-actor-model.md trigger:20a8f0fc2f2ecc76ad279fdca860433515c1113a"}
+{"ts":"2026-02-09T18:40:11.331Z","action":"inbox.materialize","details":"20260209-184011-sigma-sigma-update-hash-mismatch.md trigger:e8924839cfabdc99563db8c877abbb3e98443eda"}
+{"ts":"2026-02-09T18:40:12.355Z","action":"inbox.materialize","details":"20260209-184012-sigma-sigma-version-string-bug.md trigger:ec301df0dcf3aac5c78dae3cee938d1bab3cb21b"}
+{"ts":"2026-02-09T18:40:13.329Z","action":"inbox.materialize","details":"20260209-184013-sigma-sigma-yaml-protocol-p1.md trigger:034f703b581a050faca9b872becf9aac4bf95e24"}
+{"ts":"2026-02-09T18:40:14.215Z","action":"inbox.materialize","details":"20260209-184014-sigma-skeleton-approved-fixed-vers.md trigger:f195419cb2e741cd2427feea07325692f0e854dd"}
+{"ts":"2026-02-09T18:40:15.077Z","action":"inbox.materialize","details":"20260209-184015-sigma-subject-bug-rejection-loop.md trigger:ba388fe0e092e6047cb991535974f40b88f11920"}
+{"ts":"2026-02-09T18:40:15.964Z","action":"inbox.materialize","details":"20260209-184015-sigma-switched-to-actor-model-using.md trigger:ab8f666f56cf13682e93c72efe12a34300465a32"}
+{"ts":"2026-02-09T18:40:17.123Z","action":"inbox.materialize","details":"20260209-184017-sigma-task-implement-body-param-f.md trigger:fd4e0f9c2f20f0a9171ca4042c345b6cecae26a2"}
+{"ts":"2026-02-09T18:40:17.936Z","action":"inbox.materialize","details":"20260209-184017-sigma-test.md trigger:fd550cae724755b993ae1bf51133a02ea9f9b7a8"}
+{"ts":"2026-02-09T18:40:18.779Z","action":"inbox.materialize","details":"20260209-184018-sigma-when-writing-daily-weekly-refl.md trigger:dd4211b2b6308877ea813265429e36189cdf1f01"}
+{"ts":"2026-02-09T18:40:20.993Z","action":"outbox.send","details":"to:sigma thread:20260209-183951-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-183951-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T18:40:22.441Z","action":"outbox.send","details":"to:sigma thread:20260209-183958-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-183958-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T18:40:22.444Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T18:40:23.931Z","action":"outbox.send","details":"to:sigma thread:subject-p1-cn-thread-new-co.md branch:sigma/subject-p1-cn-thread-new-co"}
+{"ts":"2026-02-09T18:40:28.222Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:40:35.565Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:40:46.129Z","action":"outbox.send","details":"to:sigma thread:20260209-184028-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-184028-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T18:40:47.300Z","action":"outbox.send","details":"to:sigma thread:20260209-184035-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-184035-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T18:40:47.301Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T18:40:48.105Z","action":"queue.add","details":"id:f5649beedb778c4c512e0dd2a271db2e5cc6d294 from:sigma"}
+{"ts":"2026-02-09T18:40:48.113Z","action":"queue.add","details":"id:d16c37e878750183448086656b6108b7b3d02cf5 from:sigma"}
+{"ts":"2026-02-09T18:40:48.120Z","action":"queue.add","details":"id:54dd87bbf1a0d5fc494920d6566094e5d2b303d0 from:sigma"}
+{"ts":"2026-02-09T18:40:48.126Z","action":"queue.add","details":"id:b0ab7b35f49e7eba3bfe6decdf576667db7f7879 from:sigma"}
+{"ts":"2026-02-09T18:40:48.134Z","action":"queue.add","details":"id:2536ef05970ab8a0765bfaf92d09baa7394e1e61 from:sigma"}
+{"ts":"2026-02-09T18:40:48.149Z","action":"queue.add","details":"id:2acacdfde304db1370332e73cf7b1109d01e4e53 from:sigma"}
+{"ts":"2026-02-09T18:40:48.156Z","action":"queue.add","details":"id:cf8cc8bf1dcd9031cc48adf144650052df1c7406 from:sigma"}
+{"ts":"2026-02-09T18:40:48.157Z","action":"queue.add","details":"id:9b4855478d4f0c3eeb17f12b418a41f6884c09ce from:sigma"}
+{"ts":"2026-02-09T18:40:48.162Z","action":"queue.add","details":"id:be9972d71b9710e4b8a0ff196f1f92f9aefc5b62 from:sigma"}
+{"ts":"2026-02-09T18:40:48.166Z","action":"queue.add","details":"id:f6afb4e86a5bf2266e05ee3b39f668b15f8b7d3f from:sigma"}
+{"ts":"2026-02-09T18:40:48.168Z","action":"queue.add","details":"id:9b59a42fb273ea42199499d74f7e71749dfd9aa6 from:sigma"}
+{"ts":"2026-02-09T18:40:48.170Z","action":"queue.add","details":"id:e0004340f95643af9f48783c650440c1392f67d0 from:sigma"}
+{"ts":"2026-02-09T18:40:48.171Z","action":"queue.add","details":"id:1a8540a602696cad9351a76568d9d505ccf30f53 from:sigma"}
+{"ts":"2026-02-09T18:40:48.173Z","action":"queue.add","details":"id:84b2d937ac4199e3f292f6fe51ee42c85ddb8fea from:sigma"}
+{"ts":"2026-02-09T18:40:48.177Z","action":"queue.add","details":"id:25c01f430acede1ce4c2b4b794d71933bcad1514 from:sigma"}
+{"ts":"2026-02-09T18:40:48.178Z","action":"queue.add","details":"id:637e23d6bd665ceeb6d425cabbafd5bb1ca2120a from:sigma"}
+{"ts":"2026-02-09T18:40:48.180Z","action":"queue.add","details":"id:69609aa2a3171d3608e742b0682b552821a0a168 from:sigma"}
+{"ts":"2026-02-09T18:40:48.181Z","action":"queue.add","details":"id:766448a0313f2faf0b0be0127815390f2035dcc7 from:sigma"}
+{"ts":"2026-02-09T18:40:48.182Z","action":"queue.add","details":"id:81559efffee1bc45fd7c3b356f35097528860be4 from:sigma"}
+{"ts":"2026-02-09T18:40:48.186Z","action":"queue.add","details":"id:ddccf91f771f7b1f7bd6ab34ad99df19f3ce43d0 from:sigma"}
+{"ts":"2026-02-09T18:40:48.187Z","action":"queue.add","details":"id:4afd024a8d8539f8b17efd14e0b26fffb6026c24 from:sigma"}
+{"ts":"2026-02-09T18:40:48.188Z","action":"queue.add","details":"id:83548366a66131c9b1ea0de413425b2cc2967f64 from:sigma"}
+{"ts":"2026-02-09T18:40:48.189Z","action":"queue.add","details":"id:ebbf0646a2c40073eb689bc52c146711ba7f6d7a from:sigma"}
+{"ts":"2026-02-09T18:40:48.190Z","action":"queue.add","details":"id:5903b12a467b61304ec271bdc8b4348f269316c2 from:sigma"}
+{"ts":"2026-02-09T18:40:48.191Z","action":"queue.add","details":"id:4b3f73a437386f6269e8853d5240749f0c05ad36 from:sigma"}
+{"ts":"2026-02-09T18:40:48.192Z","action":"queue.add","details":"id:8d339aa1c956ad33bdb1beabcc9ad297e96d2bf7 from:sigma"}
+{"ts":"2026-02-09T18:40:48.193Z","action":"queue.add","details":"id:a439c5a4fa28c67179229caa93809ca77e156648 from:sigma"}
+{"ts":"2026-02-09T18:40:48.194Z","action":"queue.add","details":"id:af27346c452611ec1d4e2279bc19c1ed028d5646 from:sigma"}
+{"ts":"2026-02-09T18:40:48.195Z","action":"queue.add","details":"id:0dd4a7ed2dcec06783f50e1081fe3cfb67ba820e from:sigma"}
+{"ts":"2026-02-09T18:40:48.197Z","action":"queue.add","details":"id:f81e3b79e0d97ef399144a65ec073b4447be7b8c from:sigma"}
+{"ts":"2026-02-09T18:40:48.198Z","action":"queue.add","details":"id:72d85600826e44b6ccf54c9819130adb91cea420 from:sigma"}
+{"ts":"2026-02-09T18:40:48.199Z","action":"queue.add","details":"id:4471cc4ea885d8047cc0d9692a53b501d86dc9c5 from:sigma"}
+{"ts":"2026-02-09T18:40:48.201Z","action":"queue.add","details":"id:acf8e50e47a7e31133c16082830e96ed5bfe1a57 from:sigma"}
+{"ts":"2026-02-09T18:40:48.202Z","action":"queue.add","details":"id:9ea37e1dddf148afc591579e5ba33c873603637a from:sigma"}
+{"ts":"2026-02-09T18:40:48.205Z","action":"queue.add","details":"id:e15108025aa2881ec74458574c5d9c67161bfc3d from:sigma"}
+{"ts":"2026-02-09T18:40:48.207Z","action":"queue.add","details":"id:4c50c14f8132cf26c7f67febf630f6b399d885fb from:sigma"}
+{"ts":"2026-02-09T18:40:48.209Z","action":"queue.add","details":"id:99abafb920e0ce6c95b1b3448d63703782276759 from:sigma"}
+{"ts":"2026-02-09T18:40:48.211Z","action":"queue.add","details":"id:89ab5fcf435de73a90e6748282b1b7808bf79323 from:sigma"}
+{"ts":"2026-02-09T18:40:48.213Z","action":"queue.add","details":"id:99a57b7b6001b6ffbe5ceaf976ceac61f0dd2a23 from:sigma"}
+{"ts":"2026-02-09T18:40:48.215Z","action":"queue.add","details":"id:3179a0f52b044d509697319814d4da3a6b42d592 from:sigma"}
+{"ts":"2026-02-09T18:40:48.216Z","action":"queue.add","details":"id:f32647cb479557370789816f4a8adafd0d51735d from:sigma"}
+{"ts":"2026-02-09T18:40:48.217Z","action":"queue.add","details":"id:8e9aba7088d40d7a326a8a02053f1986e851abbe from:sigma"}
+{"ts":"2026-02-09T18:40:48.220Z","action":"queue.add","details":"id:3163920b786218630b7f2287b139e29ca2d2ac21 from:sigma"}
+{"ts":"2026-02-09T18:40:48.221Z","action":"queue.add","details":"id:a96fed411ca516fc601c5e688fef5656b2c05682 from:sigma"}
+{"ts":"2026-02-09T18:40:48.223Z","action":"queue.add","details":"id:7d89145d9559263589aaa1d259cef6826011a09d from:sigma"}
+{"ts":"2026-02-09T18:40:48.225Z","action":"queue.add","details":"id:ef4fa2adb1f450a895db4cc2e7d8d191a0243fbc from:sigma"}
+{"ts":"2026-02-09T18:40:48.226Z","action":"queue.add","details":"id:5cf225b2759799b7de9803f60af7dda69bd6d6f8 from:sigma"}
+{"ts":"2026-02-09T18:40:48.230Z","action":"queue.add","details":"id:ddf9e9775e570a3e3df9a50e30aed5af8f14f7e2 from:sigma"}
+{"ts":"2026-02-09T18:40:48.236Z","action":"queue.add","details":"id:dabc8f02c018ba28b116d4657300780459bde363 from:sigma"}
+{"ts":"2026-02-09T18:40:48.238Z","action":"queue.add","details":"id:c3953b969191cf4cd0e867ea02ab6502bf6766dd from:sigma"}
+{"ts":"2026-02-09T18:40:48.240Z","action":"queue.add","details":"id:9b24d416a84a01158a24b8bac1997de665845263 from:sigma"}
+{"ts":"2026-02-09T18:40:48.242Z","action":"queue.add","details":"id:44267f8b19b92dcc70ae4f5b430e29165fca7029 from:sigma"}
+{"ts":"2026-02-09T18:40:48.245Z","action":"queue.add","details":"id:8ba0a3eaae259461a5c3c79f548f18421aa079a5 from:sigma"}
+{"ts":"2026-02-09T18:40:48.246Z","action":"queue.add","details":"id:20a8f0fc2f2ecc76ad279fdca860433515c1113a from:sigma"}
+{"ts":"2026-02-09T18:40:48.247Z","action":"queue.add","details":"id:e8924839cfabdc99563db8c877abbb3e98443eda from:sigma"}
+{"ts":"2026-02-09T18:40:48.249Z","action":"queue.add","details":"id:ec301df0dcf3aac5c78dae3cee938d1bab3cb21b from:sigma"}
+{"ts":"2026-02-09T18:40:48.251Z","action":"queue.add","details":"id:034f703b581a050faca9b872becf9aac4bf95e24 from:sigma"}
+{"ts":"2026-02-09T18:40:48.253Z","action":"queue.add","details":"id:f195419cb2e741cd2427feea07325692f0e854dd from:sigma"}
+{"ts":"2026-02-09T18:40:48.254Z","action":"queue.add","details":"id:ba388fe0e092e6047cb991535974f40b88f11920 from:sigma"}
+{"ts":"2026-02-09T18:40:48.256Z","action":"queue.add","details":"id:ab8f666f56cf13682e93c72efe12a34300465a32 from:sigma"}
+{"ts":"2026-02-09T18:40:48.257Z","action":"queue.add","details":"id:fd4e0f9c2f20f0a9171ca4042c345b6cecae26a2 from:sigma"}
+{"ts":"2026-02-09T18:40:48.259Z","action":"queue.add","details":"id:fd550cae724755b993ae1bf51133a02ea9f9b7a8 from:sigma"}
+{"ts":"2026-02-09T18:40:48.260Z","action":"queue.add","details":"id:dd4211b2b6308877ea813265429e36189cdf1f01 from:sigma"}
+{"ts":"2026-02-09T18:40:48.264Z","action":"process.feed","details":"id:f5649beedb778c4c512e0dd2a271db2e5cc6d294 from:sigma"}
+{"ts":"2026-02-09T18:42:36.442Z","action":"send","details":"to:sigma thread:subject-p1-amendment-cn-adh"}
+{"ts":"2026-02-09T18:42:57.792Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:43:04.742Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:43:14.837Z","action":"outbox.send","details":"to:sigma thread:20260209-184257-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-184257-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T18:43:15.690Z","action":"outbox.send","details":"to:sigma thread:20260209-184304-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-184304-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T18:43:15.690Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T18:43:16.606Z","action":"outbox.send","details":"to:sigma thread:subject-p1-amendment-cn-adh.md branch:sigma/subject-p1-amendment-cn-adh"}
+{"ts":"2026-02-09T18:44:53.879Z","action":"send","details":"to:sigma thread:subject-clp-shared-thread-f"}
+{"ts":"2026-02-09T18:45:20.768Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:45:28.388Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:45:31.698Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:45:39.799Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T18:45:48.942Z","action":"outbox.send","details":"to:sigma thread:20260209-184520-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-184520-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T18:45:50.236Z","action":"outbox.send","details":"to:sigma thread:20260209-184528-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-184528-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T18:45:51.531Z","action":"outbox.send","details":"to:sigma thread:20260209-184531-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-184531-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T18:45:52.772Z","action":"outbox.send","details":"to:sigma thread:20260209-184539-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-184539-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T18:45:52.773Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T18:45:54.220Z","action":"outbox.send","details":"to:sigma thread:subject-clp-shared-thread-f.md branch:sigma/subject-clp-shared-thread-f"}
+{"ts":"2026-02-09T18:45:54.552Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T18:45:56.812Z","action":"io.archive","details":"trigger:f5649beedb778c4c512e0dd2a271db2e5cc6d294 ops:0"}

@@ -77,6 +77,34 @@ Prepare for renaming repo from cn-agent to cnos:
 
 ---
 
+### `cn thread new` command
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** 2026-02-09 protocol cleanup
+
+**Problem:** No dedicated command to create local threads. Current workarounds: direct file write (bypasses cn) or `cn send pi` (awkward).
+
+**Fix:** Add `cn thread new [--type adhoc|daily|...] <title>` that creates properly structured thread with frontmatter.
+
+**Why P1:** Threads are core to cn. Should have first-class creation support.
+
+---
+
+### Design task management system based on threads
+**Status:** TODO  
+**Owner:** Pi  
+**Source:** 2026-02-09 protocol cleanup
+
+**Problem:** Threads exist but no structured task lifecycle. GTD commands exist (`do`, `done`, `defer`, `delegate`) but no cohesive system design.
+
+**Deliverable:** Design doc for thread-based task management:
+- Thread states (inbox → active → done/archived)
+- How GTD commands map to thread transitions
+- How to track progress, blockers, dependencies
+- Integration with `cn adhoc`, `cn daily`, etc.
+
+---
+
 ## P2 — Features
 
 ### Build and commit tools/dist/cn.js

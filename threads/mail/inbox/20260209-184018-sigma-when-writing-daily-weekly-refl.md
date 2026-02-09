@@ -1,0 +1,14 @@
+---
+queued-for-processing: 2026-02-09T18:40:48.260Z
+received: 2026-02-09T18:40:18.777Z
+file: threads/adhoc/when-writing-daily-weekly-refl.md
+trigger: dd4211b2b6308877ea813265429e36189cdf1f01
+branch: pi/when-writing-daily-weekly-refl
+from: sigma
+to: sigma
+created: 2026-02-09T10:29:54.031Z
+---
+
+# When writing daily/weekly reflections, follow the reflect skill: https://github.com/usurobor/cn-agent/blob/main/skills/agent/reflect/SKILL.md — coherent reflection means conclusion matches evidence. Use the structure: Evidence → Interpretation → Conclusion, with ❌→✅ format.
+
+When writing daily/weekly reflections, follow the reflect skill: https://github.com/usurobor/cn-agent/blob/main/skills/agent/reflect/SKILL.md — coherent reflection means conclusion matches evidence. Use the structure: Evidence → Interpretation → Conclusion, with ❌→✅ format.
