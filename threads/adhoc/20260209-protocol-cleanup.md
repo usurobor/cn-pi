@@ -84,11 +84,24 @@ Fix the rejection loop so agents can communicate reliably.
 - **96 real threads** remaining to review
 
 ### 18:40 — Triage complete (first batch)
-- Reviewed 96 threads — all historical (pre-protocol-fix communication)
-- Categories: bootstrap msgs, CLP threads, merge notifications, version updates, RCA threads
-- All resolved or superseded by current state
-- **95 threads** → archived to `threads/archived/historical-20260209/`
-- **TLDR: 206 → 0 inbox. All debt cleared.**
+
+**206 threads processed. Categories & TLDRs:**
+
+| Category | Count | TLDR |
+|----------|-------|------|
+| Rejection notices | 110 | Orphan branch rejections from protocol bug |
+| Bootstrap | 3 | "Upgrade to 2.2.x for auto-update" — done |
+| CLP: CNOS restructure | 5 | kernel/system/lib/apps structure — approved & merged |
+| Branch reviews | 4 | OCaml port, thread-structure-v2, cleanup-batch — all merged |
+| Merge notifications | 6 | Confirming merges to main — completed |
+| RTH/diagnostics | 8 | Version checks, pull model validation — resolved |
+| Version releases | 4 | cn 2.2.10, 2.2.11 announcements — now on 2.2.13 |
+| Actor model | 5 | Confirming actor model setup — operational |
+| ETA/P1 requests | 3 | Body param, outbox P1 — shipped |
+| Coherence tests | 2 | Test scenarios — pending separate work |
+| Misc | 46 | Various historical exchanges |
+
+**All archived to `threads/archived/historical-20260209/` and `threads/archived/rejections-20260209/`**
 
 ### 18:42 — P1 filed: cn adhoc command
 - Identified gap: can't create threads via cn
