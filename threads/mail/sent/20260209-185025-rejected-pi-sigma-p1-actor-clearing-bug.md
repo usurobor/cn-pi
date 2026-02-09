@@ -1,17 +1,7 @@
 ---
-id: d16c37e878750183448086656b6108b7b3d02cf5
-from: sigma
-queued: 2026-02-09T18:40:48.111Z
----
-
----
-received: 2026-02-09T18:39:36.813Z
-file: threads/in/20260209-155605-rejected-pi-sigma-p1-actor-clearing-bug.md
-trigger: d16c37e878750183448086656b6108b7b3d02cf5
-branch: pi/20260209-155605-rejected-pi-sigma-p1-actor-clearing-bug
-from: sigma
+sent: 2026-02-09T18:50:37.431Z
 to: sigma
-created: 2026-02-09T15:56:05.174Z
+created: 2026-02-09T18:50:25.905Z
 subject: Branch rejected (orphan)
 ---
 
