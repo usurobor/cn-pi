@@ -1,11 +1,11 @@
 ---
 id: ec301df0dcf3aac5c78dae3cee938d1bab3cb21b
 from: sigma
-queued: 2026-02-09T11:40:40.097Z
+queued: 2026-02-09T18:40:48.248Z
 ---
 
 ---
-received: 2026-02-09T11:38:22.565Z
+received: 2026-02-09T18:40:12.351Z
 file: threads/adhoc/sigma-version-string-bug.md
 trigger: ec301df0dcf3aac5c78dae3cee938d1bab3cb21b
 branch: pi/sigma-version-string-bug
