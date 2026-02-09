@@ -90,6 +90,17 @@ Prepare for renaming repo from cn-agent to cnos:
 
 ---
 
+### Daily log rotation for cn.log
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** 2026-02-09 protocol cleanup
+
+**Problem:** /var/log/cn.log has no rotation. Will grow indefinitely.
+
+**Fix:** Add logrotate config — daily rotation, keep 7 days, compress.
+
+---
+
 ### Design task management system based on threads
 **Status:** TODO  
 **Owner:** Pi  
