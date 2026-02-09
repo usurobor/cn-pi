@@ -1706,3 +1706,16 @@
 {"ts":"2026-02-09T13:00:56.120Z","action":"auto-save.push","details":"success"}
 {"ts":"2026-02-09T13:00:56.122Z","action":"process.feed","details":"id:157a763cffa77b7e30617bf2bf919587eee56dae from:sigma"}
 {"ts":"2026-02-09T13:01:19.711Z","action":"io.archive","details":"trigger:157a763cffa77b7e30617bf2bf919587eee56dae ops:0"}
+{"ts":"2026-02-09T13:01:19.760Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-09"}
+{"ts":"2026-02-09T13:01:20.493Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-09T13:05:03.325Z","action":"inbox.materialize","details":"20260209-130503-sigma-20260209-130019-rejected-pi-sigma-cn-update-cron.md trigger:49faa94f589b17452e7062d42eb94e9466158544"}
+{"ts":"2026-02-09T13:05:04.026Z","action":"inbox.materialize","details":"20260209-130504-sigma-20260209-130026-rejected-pi-sigma-p1-actor-clearing-bug.md trigger:f406b2f0ce731369ea23e55c548647f78e7da7cf"}
+{"ts":"2026-02-09T13:05:17.117Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T13:05:22.594Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T13:05:31.036Z","action":"outbox.send","details":"to:sigma thread:20260209-130516-rejected-pi-sigma-cn-update-cron.md"}
+{"ts":"2026-02-09T13:05:31.943Z","action":"outbox.send","details":"to:sigma thread:20260209-130522-rejected-pi-sigma-p1-actor-clearing-bug.md"}
+{"ts":"2026-02-09T13:05:31.944Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T13:05:32.668Z","action":"queue.add","details":"id:49faa94f589b17452e7062d42eb94e9466158544 from:sigma"}
+{"ts":"2026-02-09T13:05:32.671Z","action":"queue.add","details":"id:f406b2f0ce731369ea23e55c548647f78e7da7cf from:sigma"}
+{"ts":"2026-02-09T13:05:32.692Z","action":"process.feed","details":"id:49faa94f589b17452e7062d42eb94e9466158544 from:sigma"}
+{"ts":"2026-02-09T13:05:47.796Z","action":"io.archive","details":"trigger:49faa94f589b17452e7062d42eb94e9466158544 ops:0"}
