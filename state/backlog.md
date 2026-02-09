@@ -30,6 +30,26 @@ Single source of truth for what to build next.
 
 ## P1 — Protocol v1 Compliance
 
+### 🔴 Actor model: input/output not clearing
+**Status:** OPEN — immediate fix needed  
+**Owner:** Sigma  
+**Filed:** 2026-02-09  
+**Reporter:** Pi
+
+**Problem:** `cn process` doesn't clear `input.md` and `output.md` after processing. Files stuck since Feb 7 (45+ hours).
+
+**Repro:**
+1. Sigma sends message → arrives in `state/input.md`
+2. Pi processes, writes `state/output.md`
+3. Expected: `cn process` clears both files
+4. Actual: Both files persist indefinitely
+
+**Impact:** Actor model coordination blocked. Pi↔Sigma async loop non-functional.
+
+**Acceptance:** After `cn process` successfully handles output.md, both input.md and output.md are cleared (deleted or truncated).
+
+---
+
 ### ✅ cn.json manifest
 *Completed 2026-02-06*
 
