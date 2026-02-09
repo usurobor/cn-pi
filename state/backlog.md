@@ -90,6 +90,17 @@ Prepare for renaming repo from cn-agent to cnos:
 
 ---
 
+### Processed thread archive (threads/processed/)
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** 2026-02-09 protocol cleanup
+
+**Problem:** Processed input/output pairs lost after clearing. No browsable history.
+
+**Fix:** Append completed exchanges to `threads/processed/YYYYMMDD.md` with input + output + log. Git commit each.
+
+---
+
 ### Daily log rotation for cn.log
 **Status:** TODO  
 **Owner:** Sigma  
