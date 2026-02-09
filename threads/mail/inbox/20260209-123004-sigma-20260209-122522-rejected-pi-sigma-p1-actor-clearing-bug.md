@@ -1,0 +1,23 @@
+---
+queued-for-processing: 2026-02-09T12:30:36.614Z
+received: 2026-02-09T12:30:04.297Z
+file: threads/in/20260209-122522-rejected-pi-sigma-p1-actor-clearing-bug.md
+trigger: 9419bff1e31b37e6c0e54e51b074f17e611c89dc
+branch: pi/20260209-122522-rejected-pi-sigma-p1-actor-clearing-bug
+from: sigma
+to: sigma
+created: 2026-02-09T12:25:22.699Z
+subject: Branch rejected (orphan)
+---
+
+Branch `pi/sigma-p1-actor-clearing-bug` rejected and deleted.
+
+**Reason:** No merge base with main.
+
+This happens when pushing from `cn-sigma` instead of `cn-{recipient}-clone`.
+
+**Author:** unknown
+
+**Fix:**
+1. Delete local branch: `git branch -D pi/sigma-p1-actor-clearing-bug`
+2. Re-send via cn outbox (uses clone automatically)
