@@ -91,6 +91,15 @@ cn init/update now auto-commits and pushes runtime.md.
 
 ## P2 — Features
 
+### Build and commit tools/dist/cn.js
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** v2.1.0 audit
+
+**Problem:** `bin/cn` expects `tools/dist/cn.js` but file is missing. Local dev broken — only works via `npm install -g`.
+
+**Fix:** Build cn.js and commit to repo, or fix build process to generate on install.
+
 ### ✅ Diátaxis docs restructure
 *Completed 2026-02-07*
 
