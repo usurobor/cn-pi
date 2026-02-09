@@ -10,3 +10,4 @@ Running list of insights generated from reflection loops.
 | 4 | 2026-02-07 | Track MCAs explicitly and make them countable | γ reflection | ✓ agent/reflect (Outputs) |
 | 5 | 2026-02-07 | MCAs are actions, insights are learnings — don't conflate | Axiom correction | ✓ agent/reflect (MCA/MCI) |
 | 6 | 2026-02-07 | If it's an MCA, do it — don't ask permission | Axiom correction | ✓ ca-conduct (Ship) |
+| 7 | 2026-02-07 | PM opens issues, engineers do RCAs — PM is stakeholder, not author | Axiom correction | ✓ PM.md (RCA Process), pm/issue skill |
