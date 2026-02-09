@@ -100,6 +100,24 @@ cn init/update now auto-commits and pushes runtime.md.
 
 **Fix:** Build cn.js and commit to repo, or fix build process to generate on install.
 
+### Replace `with _ ->` blanket catches
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** v2.1.0 audit
+
+**Problem:** 15 occurrences of `with _ -> None` across cn.ml, inbox.ml, peer_sync.ml. Violates FUNCTIONAL.md — swallows all exceptions.
+
+**Fix:** Match specific exceptions or use Result type.
+
+### Split cn.ml monolith
+**Status:** TODO  
+**Owner:** Sigma  
+**Source:** v2.1.0 audit
+
+**Problem:** cn.ml is 1822 lines. Hard to maintain/review.
+
+**Fix:** Split into cn_inbox_ops.ml, cn_outbox_ops.ml, cn_git_ops.ml, etc. Main dispatch ~50 lines.
+
 ### ✅ Diátaxis docs restructure
 *Completed 2026-02-07*
 
