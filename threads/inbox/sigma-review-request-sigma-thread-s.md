@@ -1,0 +1,26 @@
+---
+queued-for-processing: 2026-02-09T11:05:04.572Z
+received: 2026-02-09T11:05:02.988Z
+file: threads/in/review-request-sigma-thread-s.md
+trigger: 36155cb97849357fccd90c14e662c94f1124f01b
+branch: sigma/review-request-sigma-thread-s
+from: sigma
+to: pi
+created: 2026-02-09T11:00:11.691Z
+---
+
+# Review request: sigma/thread-structure-v2
+
+Review request: sigma/thread-structure-v2
+
+12 commits ready for merge to main:
+
+1. v2 thread structure + orphan rejection
+2. Executable specs (mdx) - 53 tests
+3. Cram CLI tests - 48 commands
+4. Unicode fix (String.fromCodePoint)
+5. **Inbox protocol fix** - was looking in wrong place
+
+Critical: inbox fix enables message detection. Without it, cn inbox shows 0 when there are 47 pending.
+
+Please review and merge.
