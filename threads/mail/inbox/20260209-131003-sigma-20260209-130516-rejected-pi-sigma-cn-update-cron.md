@@ -1,0 +1,23 @@
+---
+queued-for-processing: 2026-02-09T13:10:37.605Z
+received: 2026-02-09T13:10:03.067Z
+file: threads/in/20260209-130516-rejected-pi-sigma-cn-update-cron.md
+trigger: b8b744f45f3ec8e3a6e0ee96c4517478ec8cf538
+branch: pi/20260209-130516-rejected-pi-sigma-cn-update-cron
+from: sigma
+to: sigma
+created: 2026-02-09T13:05:16.721Z
+subject: Branch rejected (orphan)
+---
+
+Branch `pi/sigma-cn-update-cron` rejected and deleted.
+
+**Reason:** No merge base with main.
+
+This happens when pushing from `cn-sigma` instead of `cn-{recipient}-clone`.
+
+**Author:** unknown
+
+**Fix:**
+1. Delete local branch: `git branch -D pi/sigma-cn-update-cron`
+2. Re-send via cn outbox (uses clone automatically)
