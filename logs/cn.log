@@ -2027,3 +2027,16 @@
 {"ts":"2026-02-09T14:45:42.345Z","action":"queue.add","details":"id:36c19fef67a83debe914b83462560cf886009549 from:sigma"}
 {"ts":"2026-02-09T14:45:42.350Z","action":"queue.add","details":"id:2864db8d0f44294e8b594593b26a62ae1f598fb3 from:sigma"}
 {"ts":"2026-02-09T14:45:42.367Z","action":"io.archive","details":"trigger:106814e4407f369fa6d4f8917f2a40719452f7c5 ops:0"}
+{"ts":"2026-02-09T14:45:42.434Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-09"}
+{"ts":"2026-02-09T14:45:43.306Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-09T14:45:43.309Z","action":"process.feed","details":"id:d23e53cc66ee90623e57af618575018ec99a9a5f from:sigma"}
+{"ts":"2026-02-09T14:50:03.902Z","action":"inbox.materialize","details":"20260209-145003-sigma-20260209-144521-rejected-pi-sigma-cn-update-cron.md trigger:6ce8868688949e65de5ba932a2881294817c4998"}
+{"ts":"2026-02-09T14:50:05.376Z","action":"inbox.materialize","details":"20260209-145005-sigma-20260209-144528-rejected-pi-sigma-p1-actor-clearing-bug.md trigger:eb24d1461ffd8361dbbc3ad0ad2fbf3418e3b101"}
+{"ts":"2026-02-09T14:50:23.041Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T14:50:30.171Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T14:50:40.312Z","action":"outbox.send","details":"to:sigma thread:20260209-145022-rejected-pi-sigma-cn-update-cron.md"}
+{"ts":"2026-02-09T14:50:41.726Z","action":"outbox.send","details":"to:sigma thread:20260209-145029-rejected-pi-sigma-p1-actor-clearing-bug.md"}
+{"ts":"2026-02-09T14:50:41.728Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T14:50:42.925Z","action":"queue.add","details":"id:6ce8868688949e65de5ba932a2881294817c4998 from:sigma"}
+{"ts":"2026-02-09T14:50:42.930Z","action":"queue.add","details":"id:eb24d1461ffd8361dbbc3ad0ad2fbf3418e3b101 from:sigma"}
+{"ts":"2026-02-09T14:50:42.948Z","action":"io.archive","details":"trigger:d23e53cc66ee90623e57af618575018ec99a9a5f ops:0"}
