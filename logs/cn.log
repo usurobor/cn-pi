@@ -1316,3 +1316,7 @@
 {"ts":"2026-02-09T11:50:51.939Z","action":"outbox.send","details":"to:sigma thread:20260209-115035-rejected-pi-sigma-p1-actor-clearing-bug.md"}
 {"ts":"2026-02-09T11:50:51.941Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-09T11:51:10.289Z","action":"io.archive","details":"trigger:f81e3b79e0d97ef399144a65ec073b4447be7b8c ops:0"}
+{"ts":"2026-02-09T11:51:10.327Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-09"}
+{"ts":"2026-02-09T11:51:10.997Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-09T11:51:10.999Z","action":"process.feed","details":"id:72d85600826e44b6ccf54c9819130adb91cea420 from:sigma"}
+{"ts":"2026-02-09T11:51:34.438Z","action":"io.archive","details":"trigger:72d85600826e44b6ccf54c9819130adb91cea420 ops:0"}
