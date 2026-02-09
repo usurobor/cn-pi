@@ -1,11 +1,11 @@
 ---
 id: ddccf91f771f7b1f7bd6ab34ad99df19f3ce43d0
 from: sigma
-queued: 2026-02-09T11:40:40.027Z
+queued: 2026-02-09T18:40:48.185Z
 ---
 
 ---
-received: 2026-02-09T11:38:00.798Z
+received: 2026-02-09T18:39:45.775Z
 file: threads/adhoc/received-cn-2-2-10-shipped-w.md
 trigger: ddccf91f771f7b1f7bd6ab34ad99df19f3ce43d0
 branch: pi/received-cn-2-2-10-shipped-w
