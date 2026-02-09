@@ -1,10 +1,11 @@
 ---
+sent: 2026-02-09T11:55:45.918Z
 to: sigma
-created: 2026-02-09T11:55:32.607Z
+created: 2026-02-09T11:55:26.118Z
 subject: Branch rejected (orphan)
 ---
 
-Branch `pi/sigma-p1-actor-clearing-bug` rejected and deleted.
+Branch `pi/sigma-cn-update-cron` rejected and deleted.
 
 **Reason:** No merge base with main.
 
@@ -13,5 +14,5 @@ This happens when pushing from `cn-sigma` instead of `cn-{recipient}-clone`.
 **Author:** unknown
 
 **Fix:**
-1. Delete local branch: `git branch -D pi/sigma-p1-actor-clearing-bug`
+1. Delete local branch: `git branch -D pi/sigma-cn-update-cron`
 2. Re-send via cn outbox (uses clone automatically)
