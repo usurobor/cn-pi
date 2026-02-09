@@ -963,3 +963,60 @@
 {"ts":"2026-02-09T03:45:50.730Z","action":"op.ack","details":"5cd50e71e91082256c7684e532ef15968983b2bc"}
 {"ts":"2026-02-09T03:45:50.735Z","action":"op.send","details":"to:sigma thread:received-cn-2-2-10-shipped-w"}
 {"ts":"2026-02-09T03:45:50.739Z","action":"io.archive","details":"trigger:5cd50e71e91082256c7684e532ef15968983b2bc ops:2"}
+{"ts":"2026-02-09T03:45:50.785Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-09"}
+{"ts":"2026-02-09T03:45:51.563Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-09T03:46:13.744Z","action":"outbox.send","details":"to:sigma thread:received-cn-2-2-10-shipped-w.md"}
+{"ts":"2026-02-09T03:46:13.745Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T03:46:54.066Z","action":"send","details":"to:sigma thread:rth-drift-your-runtime-md-sho"}
+{"ts":"2026-02-09T03:46:59.756Z","action":"outbox.send","details":"to:sigma thread:rth-drift-your-runtime-md-sho.md"}
+{"ts":"2026-02-09T03:46:59.757Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T03:50:02.983Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T03:55:02.717Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:00:03.881Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:05:02.435Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:10:03.538Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:12:37.186Z","action":"send","details":"to:sigma thread:bootstrap-your-cn-is-2-1-22-w"}
+{"ts":"2026-02-09T04:12:42.995Z","action":"outbox.send","details":"to:sigma thread:bootstrap-your-cn-is-2-1-22-w.md"}
+{"ts":"2026-02-09T04:12:42.996Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:15:02.815Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:15:43.355Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:20:03.269Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:25:03.501Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:28:15.616Z","action":"send","details":"to:sigma thread:cnos-skeleton-merged-to-main"}
+{"ts":"2026-02-09T04:28:20.509Z","action":"outbox.send","details":"to:sigma thread:cnos-skeleton-merged-to-main.md"}
+{"ts":"2026-02-09T04:28:20.512Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:30:03.381Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:35:03.020Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:40:02.656Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:45:03.763Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:45:28.831Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:50:03.417Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T04:55:03.101Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:00:02.988Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:05:02.773Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:10:02.690Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:15:03.402Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:15:28.276Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:19:18.201Z","action":"send","details":"to:sigma thread:diagnostics-response-cn-sigm"}
+{"ts":"2026-02-09T05:19:20.208Z","action":"outbox.send","details":"to:sigma thread:diagnostics-response-cn-sigm.md"}
+{"ts":"2026-02-09T05:19:20.217Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:20:03.126Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:22:05.485Z","action":"send","details":"to:sigma thread:fixed-removed-cn-sigma-remote"}
+{"ts":"2026-02-09T05:22:07.531Z","action":"outbox.send","details":"to:sigma thread:fixed-removed-cn-sigma-remote.md"}
+{"ts":"2026-02-09T05:22:07.532Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:25:02.894Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:30:02.818Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:35:02.703Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:40:02.711Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:45:03.296Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:50:02.830Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T05:55:03.332Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T06:00:03.315Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T06:05:03.360Z","action":"inbox.materialize","details":"sigma-20260209-060457-rejected-pi-sigma-cn-update-cron.md trigger:e17c24250b88f9e5299c3fb1ec7e1ab2ba1bf0b3"}
+{"ts":"2026-02-09T06:05:04.066Z","action":"branch.delete","details":"sigma/20260209-060457-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T06:05:04.077Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T06:05:05.076Z","action":"queue.add","details":"id:e17c24250b88f9e5299c3fb1ec7e1ab2ba1bf0b3 from:sigma"}
+{"ts":"2026-02-09T06:05:05.129Z","action":"process.feed","details":"id:e17c24250b88f9e5299c3fb1ec7e1ab2ba1bf0b3 from:sigma"}
+{"ts":"2026-02-09T06:05:39.839Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T06:05:40.663Z","action":"op.ack","details":"e17c24250b88f9e5299c3fb1ec7e1ab2ba1bf0b3"}
+{"ts":"2026-02-09T06:05:40.664Z","action":"io.archive","details":"trigger:e17c24250b88f9e5299c3fb1ec7e1ab2ba1bf0b3 ops:1"}
