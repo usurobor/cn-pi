@@ -79,14 +79,6 @@ cn init/update now auto-commits and pushes runtime.md.
 **I want** `cn-lint` to check all Protocol v1 requirements,  
 **So that** I have a single command to verify compliance.
 
-### Commit signing
-**Status:** TODO  
-**Owner:** Sigma
-
-**As a** peer verifying commits,  
-**I want** commits signed with SSH keys published in cn.json,  
-**So that** I can cryptographically verify authorship.
-
 ---
 
 ## P2 — Features
