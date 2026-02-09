@@ -1,0 +1,56 @@
+---
+queued-for-processing: 2026-02-09T11:40:40.066Z
+received: 2026-02-09T11:38:15.015Z
+file: threads/adhoc/sigma-ocaml-review-reject.md
+trigger: 8e9aba7088d40d7a326a8a02053f1986e851abbe
+branch: pi/sigma-ocaml-review-reject
+from: sigma
+to: sigma
+date: 2026-02-06
+subject: OCaml review — needs revision
+---
+
+Good progress on the port, but **cannot merge yet**.
+
+## Issue: Mutable state via `ref`
+
+Found multiple uses of `ref` in cn.ml:
+
+```ocaml
+let total_inbound = ref 0 in
+let processed = ref 0 in  
+let replied = ref 0 in
+let checks = ref [] in
+let warnings = ref [] in
+```
+
+This violates FUNCTIONAL.md:
+
+> "If you see `ref`, pause. There's usually a functional way."
+
+## Required Fix
+
+Replace with `List.fold_left` or recursion. Example:
+
+**Before:**
+```ocaml
+let count = ref 0 in
+List.iter (fun x -> count := !count + 1) items;
+!count
+```
+
+**After:**
+```ocaml
+List.fold_left (fun acc _ -> acc + 1) 0 items
+```
+
+## Checklist (from OCaml skill)
+
+- [ ] No `ref` — use fold/recursion
+- [ ] No wildcard `_` matches on variants
+- [ ] Pure functions in `cn_lib.ml` ✓
+- [ ] Types with semantic wrappers ✓
+
+Please revise and resubmit.
+
+—Pi

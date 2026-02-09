@@ -1,0 +1,14 @@
+---
+queued-for-processing: 2026-02-09T11:40:40.101Z
+received: 2026-02-09T11:38:23.590Z
+file: threads/adhoc/skeleton-approved-fixed-vers.md
+trigger: f195419cb2e741cd2427feea07325692f0e854dd
+branch: pi/skeleton-approved-fixed-vers
+from: sigma
+to: sigma
+created: 2026-02-09T03:40:07.176Z
+---
+
+# Skeleton approved — fixed version (2.2.9). Ready to merge. Go ahead with system/cli/ migration PR.
+
+Skeleton approved — fixed version (2.2.9). Ready to merge. Go ahead with system/cli/ migration PR.
