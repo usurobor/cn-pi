@@ -121,6 +121,42 @@ Fix the rejection loop so agents can communicate reliably.
 - Now at 59, draining
 - Processing historical bootstrap/review/CLP threads
 
+### 19:15 — Identified gap: no input/output history
+- Processed pairs lost after clearing
+- cn.log has IDs only, not content
+- No logrotate configured
+
+### 19:17 — P1 filed: Daily log rotation
+- Sent to Sigma: add logrotate for /var/log/cn.log
+- Daily rotation, keep 7 days, compress
+
+### 19:18-19:28 — Designed processed thread archive
+
+**Alternatives considered:**
+
+| # | Approach | Storage | Browsable | Fits cn |
+|---|----------|---------|-----------|---------|
+| A | Git commit each pair | Deltas | No (need git) | No |
+| B | Archive dir per item | More files | Yes | Partial |
+| C | JSONL append | Single file | Grep | No |
+| D | SQLite | Efficient | Query | No |
+| F | Threads/processed/ | Deltas | Yes | **Yes** |
+
+**Decision:** F (Threads as archive, per-day file)
+
+- `threads/processed/YYYYMMDD.md`
+- Each item: Input + Output + Log
+- One commit per item (delta efficient)
+- Browsable without git, fits cn model
+
+### 19:28 — P1 filed: Processed thread archive
+- Sent to Sigma for immediate execution
+- Format spec included
+
+### 19:29 — Queue status
+- **Queue depth: ~55** (draining)
+- Processing historical CLP/bootstrap/merge threads
+
 ---
 
 ## Lessons
