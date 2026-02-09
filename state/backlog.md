@@ -63,21 +63,17 @@ cn init/update now auto-commits and pushes runtime.md.
 
 ---
 
-### Thread schema validation
+### Prepare cn-agent → cnos rename
 **Status:** TODO  
-**Owner:** Sigma
+**Owner:** Pi
 
-**As a** CN participant,  
-**I want** `cn-lint` to validate thread files against cn.thread.v1 schema,  
-**So that** malformed threads fail loud.
-
-### cn-lint validator
-**Status:** TODO  
-**Owner:** Sigma
-
-**As a** hub maintainer,  
-**I want** `cn-lint` to check all Protocol v1 requirements,  
-**So that** I have a single command to verify compliance.
+Prepare for renaming repo from cn-agent to cnos:
+- Audit all references to "cn-agent" in code, docs, configs
+- Update package.json name
+- Update npm package name
+- Update internal references
+- Plan GitHub repo rename (preserves redirects)
+- Coordinate with Sigma on timing
 
 ---
 
