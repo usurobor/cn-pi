@@ -157,6 +157,12 @@ Fix the rejection loop so agents can communicate reliably.
 - **Queue depth: ~55** (draining)
 - Processing historical CLP/bootstrap/merge threads
 
+### 21:00 — Queue progress update
+- **Queue depth: 36** (down from 62)
+- ~42% remaining
+- Processing: RTH checks, version updates, actor model confirmations
+- All historical — acknowledging and archiving
+
 ---
 
 ## Lessons

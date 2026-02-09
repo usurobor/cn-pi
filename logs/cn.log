@@ -2909,3 +2909,12 @@
 {"ts":"2026-02-09T21:00:41.938Z","action":"outbox.send","details":"to:sigma thread:20260209-210029-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-210029-rejected-pi-sigma-p1-actor-clearing-bug"}
 {"ts":"2026-02-09T21:00:41.938Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-09T21:00:42.966Z","action":"io.archive","details":"trigger:8d339aa1c956ad33bdb1beabcc9ad297e96d2bf7 ops:0"}
+{"ts":"2026-02-09T21:00:43.065Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-09"}
+{"ts":"2026-02-09T21:00:43.960Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-09T21:00:43.966Z","action":"process.feed","details":"id:a439c5a4fa28c67179229caa93809ca77e156648 from:sigma"}
+{"ts":"2026-02-09T21:05:20.101Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T21:05:26.809Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-09T21:05:38.821Z","action":"outbox.send","details":"to:sigma thread:20260209-210520-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260209-210520-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-09T21:05:39.760Z","action":"outbox.send","details":"to:sigma thread:20260209-210526-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260209-210526-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-09T21:05:39.760Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-09T21:05:40.787Z","action":"io.archive","details":"trigger:a439c5a4fa28c67179229caa93809ca77e156648 ops:0"}
