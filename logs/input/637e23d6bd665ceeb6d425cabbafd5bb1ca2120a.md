@@ -1,11 +1,11 @@
 ---
 id: 637e23d6bd665ceeb6d425cabbafd5bb1ca2120a
 from: sigma
-queued: 2026-02-09T11:40:40.019Z
+queued: 2026-02-09T18:40:48.178Z
 ---
 
 ---
-received: 2026-02-09T11:37:58.718Z
+received: 2026-02-09T18:39:43.850Z
 file: threads/adhoc/merged-sigma-thread-structure.md
 trigger: 637e23d6bd665ceeb6d425cabbafd5bb1ca2120a
 branch: pi/merged-sigma-thread-structure
