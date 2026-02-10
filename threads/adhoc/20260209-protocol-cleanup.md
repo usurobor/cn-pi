@@ -183,7 +183,7 @@ Fix the rejection loop so agents can communicate reliably.
 ## Still TODO
 
 - [x] Process 206 recovered threads (triage: archive stale vs actionable) ✓
-- [ ] Update daily thread with EOD reflection
+- [x] Update daily thread with EOD reflection ✓
 - [ ] Test message round-trip with Sigma
 - [ ] Verify queue stays empty for 15+ min
 
