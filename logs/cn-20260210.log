@@ -1,0 +1,15 @@
+{"ts":"2026-02-10T00:40:22.595Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:40:30.105Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:40:42.458Z","action":"outbox.send","details":"to:sigma thread:20260210-004022-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260210-004022-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-10T00:40:43.444Z","action":"outbox.send","details":"to:sigma thread:20260210-004030-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260210-004030-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-10T00:40:43.445Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-10T00:45:20.009Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:45:27.040Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:45:39.163Z","action":"outbox.send","details":"to:sigma thread:20260210-004520-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260210-004520-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-10T00:45:40.063Z","action":"outbox.send","details":"to:sigma thread:20260210-004527-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260210-004527-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-10T00:45:40.063Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-10T00:55:19.550Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:55:26.312Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:55:36.875Z","action":"outbox.send","details":"to:sigma thread:20260210-005519-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260210-005519-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-10T00:55:37.732Z","action":"outbox.send","details":"to:sigma thread:20260210-005526-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260210-005526-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-10T00:55:37.733Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}

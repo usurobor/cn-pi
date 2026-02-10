@@ -3259,3 +3259,15 @@
 {"ts":"2026-02-10T00:15:42.574Z","action":"outbox.send","details":"to:sigma thread:20260210-001530-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260210-001530-rejected-pi-sigma-p1-actor-clearing-bug"}
 {"ts":"2026-02-10T00:15:42.575Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
 {"ts":"2026-02-10T00:15:43.671Z","action":"io.archive","details":"trigger:32b5f1ccac89b357e95dd1ffddc331751c6d30b0 ops:0"}
+{"ts":"2026-02-10T00:15:43.779Z","action":"auto-save.commit","details":"pi: auto-save 2026-02-10"}
+{"ts":"2026-02-10T00:15:44.718Z","action":"auto-save.push","details":"success"}
+{"ts":"2026-02-10T00:20:22.269Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:20:29.395Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:20:40.435Z","action":"outbox.send","details":"to:sigma thread:20260210-002022-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260210-002022-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-10T00:20:41.307Z","action":"outbox.send","details":"to:sigma thread:20260210-002029-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260210-002029-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-10T00:20:41.307Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
+{"ts":"2026-02-10T00:30:21.445Z","action":"inbox.reject","details":"branch:pi/sigma-cn-update-cron peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:30:28.398Z","action":"inbox.reject","details":"branch:pi/sigma-p1-actor-clearing-bug peer:sigma author:unknown reason:orphan"}
+{"ts":"2026-02-10T00:30:38.743Z","action":"outbox.send","details":"to:sigma thread:20260210-003021-rejected-pi-sigma-cn-update-cron.md branch:sigma/20260210-003021-rejected-pi-sigma-cn-update-cron"}
+{"ts":"2026-02-10T00:30:39.592Z","action":"outbox.send","details":"to:sigma thread:20260210-003028-rejected-pi-sigma-p1-actor-clearing-bug.md branch:sigma/20260210-003028-rejected-pi-sigma-p1-actor-clearing-bug"}
+{"ts":"2026-02-10T00:30:39.592Z","action":"outbox.skip","details":"thread:sigma-status-check.md reason:no recipient"}
