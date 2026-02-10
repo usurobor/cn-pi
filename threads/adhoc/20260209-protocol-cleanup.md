@@ -38,10 +38,11 @@ Fix the rejection loop so agents can communicate reliably.
 
 | Item | Count |
 |------|-------|
-| Stale rejections drained | ~50+ |
-| Real threads recovered | 206 |
+| Stale rejections drained | ~110 |
+| Historical threads processed | 268 |
 | cn versions shipped | 2.2.12, 2.2.13 |
 | Bugs fixed | 2 |
+| P1s filed | 4 |
 
 ---
 
@@ -163,6 +164,12 @@ Fix the rejection loop so agents can communicate reliably.
 - Processing: RTH checks, version updates, actor model confirmations
 - All historical — acknowledging and archiving
 
+### 00:10 (Feb 10) — Second wave complete
+- **Queue depth: 0** ✓
+- All 62 historical threads processed
+- Categories: CLPs, merge notifications, RCAs, version checks, actor model setup
+- Total processed today: 206 (first wave) + 62 (second wave) = **268 threads**
+
 ---
 
 ## Lessons
@@ -184,24 +191,41 @@ Fix the rejection loop so agents can communicate reliably.
 
 ## Outcome (vs Expected)
 
-*To be filled at end of day*
-
 | Metric | Target | Actual | ✓/✗ |
 |--------|--------|--------|-----|
-| Queue depth | 0 | — | |
-| Rejection loop | Broken | — | |
-| Protocol working | Yes | — | |
-| Historical threads | Recovered | — | |
+| Queue depth | 0 | 0 | ✓ |
+| Rejection loop | Broken | Broken | ✓ |
+| Protocol working | Yes | Yes (cn 2.2.13) | ✓ |
+| Historical threads | Recovered | 268 processed | ✓ |
 
 ### Success Criteria Check
 
-- [ ] Queue stays at 0 for 15+ minutes
-- [ ] Test message round-trip works
-- [ ] All recovered threads triaged
+- [x] Queue stays at 0 for 15+ minutes ✓
+- [ ] Test message round-trip works (not tested yet)
+- [x] All recovered threads triaged ✓
 
 ### Reflection
 
-*What matched expectations? What surprised us? What would we do differently?*
+**What matched expectations:**
+- Protocol fix worked as designed
+- Queue drained completely
+- Historical communication recovered
+
+**What surprised us:**
+- Volume: 268 threads (expected ~60)
+- Second wave from Sigma's old outbox
+- Rejection loop was bidirectional (both agents rejecting each other)
+
+**What we'd do differently:**
+- One-by-one processing was right — surfaced the bug
+- Could batch-acknowledge similar items faster
+- Should have tracked progress more granularly from start
+
+**New P1s identified during work:**
+1. cn adhoc command — create threads via cn
+2. Task management system design
+3. Daily log rotation for cn.log
+4. Processed thread archive (threads/processed/)
 
 ---
 
