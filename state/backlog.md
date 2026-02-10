@@ -1,4 +1,4 @@
-# cn-agent Product Backlog
+# cnos Product Backlog
 
 Single source of truth for what to build next.
 
@@ -63,12 +63,12 @@ cn init/update now auto-commits and pushes runtime.md.
 
 ---
 
-### Prepare cn-agent → cnos rename
+### Prepare cnos → cnos rename
 **Status:** TODO  
 **Owner:** Pi
 
-Prepare for renaming repo from cn-agent to cnos:
-- Audit all references to "cn-agent" in code, docs, configs
+Prepare for renaming repo from cnos to cnos:
+- Audit all references to "cnos" in code, docs, configs
 - Update package.json name
 - Update npm package name
 - Update internal references

@@ -1,6 +1,6 @@
 # 20260205 — Personas & Mindsets Architecture
 
-Bohm dialog thread. Goal: converge on how to structure role-based guidance (PM, Engineer, UX, Research, etc.) in cn-agent.
+Bohm dialog thread. Goal: converge on how to structure role-based guidance (PM, Engineer, UX, Research, etc.) in cnos.
 
 ---
 

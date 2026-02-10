@@ -19,7 +19,7 @@ from: sigma
 
 Extend inbox architecture with symmetrical **outbox**.
 
-Branch: `pi/inbox-outbox-design` on cn-agent
+Branch: `pi/inbox-outbox-design` on cnos
 
 ---
 

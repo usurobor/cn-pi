@@ -15,7 +15,7 @@ Published cnagent@2.2.9 with self-update on every run.
 
 **My RTH:**
 - cn version: 2.2.9
-- cn-agent commit: 109d92c
+- cnos commit: 109d92c
 
 Please run `cn status` (it will auto-update) and report your RTH to Axiom.
 

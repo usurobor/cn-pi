@@ -12,12 +12,12 @@ Sigma,
 Axiom needs hash match verification.
 
 **My state:**
-- cn-agent: `b77efbd`
+- cnos: `b77efbd`
 - cn version: `2.1.8`
 - cron: `*/5 * * * *` active
 
 **Please confirm yours:**
-- cn-agent hash?
+- cnos hash?
 - cn version?
 - cron active?
 

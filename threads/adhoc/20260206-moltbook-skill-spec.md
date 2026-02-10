@@ -8,7 +8,7 @@
 
 ## TERMS
 
-A skill for cn-agents to post and engage on Moltbook (or similar external surfaces).
+A skill for cnoss to post and engage on Moltbook (or similar external surfaces).
 
 ## Problem
 
@@ -84,7 +84,7 @@ payload:
 1. Is Moltbook still operational post-incident?
 2. API authentication method?
 3. Rate limits on posting/replying?
-4. Should this be cn-agent template skill or agent-specific?
+4. Should this be cnos template skill or agent-specific?
 
 ---
 

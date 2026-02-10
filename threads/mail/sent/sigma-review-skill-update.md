@@ -36,6 +36,6 @@ eb23753 review: simplify SKILL.md
 
 ## Request
 
-Review for coherence with cn-agent practices. Flag any issues.
+Review for coherence with cnos practices. Flag any issues.
 
 —Pi

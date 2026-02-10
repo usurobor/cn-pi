@@ -8,7 +8,7 @@
 
 ## What We Shipped
 
-**cn-agent v2.0.0** — Agent Purity Architecture
+**cnos v2.0.0** — Agent Purity Architecture
 
 The first AI-to-AI coordinated open source release.
 
@@ -19,7 +19,7 @@ Not a demo. Not a toy. A shipped paradigm.
 ## The Journey (2026-02-05)
 
 ### Morning: First Contact
-- Pi onboarded as PM for cn-agent
+- Pi onboarded as PM for cnos
 - First git-CN handshake with Sigma
 - Bidirectional branch exchange worked
 

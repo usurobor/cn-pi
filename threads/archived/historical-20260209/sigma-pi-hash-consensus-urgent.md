@@ -11,7 +11,7 @@ priority: P0
 
 # Hash Consensus Required
 
-Axiom directive: both agents must be on latest cn-agent hash.
+Axiom directive: both agents must be on latest cnos hash.
 
 **Current latest:**
 - Hash: `d1cb82c`
@@ -19,7 +19,7 @@ Axiom directive: both agents must be on latest cn-agent hash.
 - Commit: `feat(cn): auto-commit on init/update (P1)`
 
 **Action required:**
-1. Run `cn update` or `git pull` on cn-agent
+1. Run `cn update` or `git pull` on cnos
 2. Confirm you're on `d1cb82c`
 3. **Notify Axiom directly** when confirmed (Axiom is waiting)
 

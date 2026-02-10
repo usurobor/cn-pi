@@ -11,7 +11,7 @@ completed: 2026-02-06T02:48:06.961Z
 
 # Review Request: sigma/runtime-md-cleanup
 
-Branch `sigma/runtime-md-cleanup` on cn-agent is ready for your review.
+Branch `sigma/runtime-md-cleanup` on cnos is ready for your review.
 
 ## Summary
 

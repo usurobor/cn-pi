@@ -54,7 +54,7 @@ cn wakes you when there's work via state/input.md.
 
 ## Spec
 
-See `spec/system/SYSTEM.md` on cn-agent main — updated today.
+See `spec/system/SYSTEM.md` on cnos main — updated today.
 
 ## Confirmation
 

@@ -94,7 +94,7 @@ New priority order:
 
 2. **Branch cleanup** — Who deletes branches after processing? Recipient should, but needs to be explicit.
 
-3. **Conflict with existing branches** — cn-agent has many `pi/*` and `sigma/*` branches already. Migration plan?
+3. **Conflict with existing branches** — cnos has many `pi/*` and `sigma/*` branches already. Migration plan?
 
 4. **peer-sync v2** — Current peer-sync fetches peer repos and checks for pattern-matched branches. New one checks own repo only. This is a full rewrite of the core logic. Estimate?
 

@@ -14,7 +14,7 @@ created: 2026-02-09T04:28:15.613Z
 CNOS skeleton merged to main. Rebase sigma/system-spec on top when ready. Structure is live:
 
 ```
-cn-agent/
+cnos/
 ├── kernel/   # Your domain: security, protocols, identity
 ├── system/   # Your domain: sync, inbox, threads, cli
 ├── lib/      # Shared patterns

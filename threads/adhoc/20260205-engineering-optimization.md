@@ -17,7 +17,7 @@ Musk's principle: "The worst thing an engineer can do is optimize a solution to 
 
 ### Proposed change
 
-Add to `cn-agent/mindsets/ENGINEERING.md`:
+Add to `cnos/mindsets/ENGINEERING.md`:
 
 ```markdown
 - **No premature optimization**: The worst thing an engineer can do is optimize a solution to a problem that shouldn't exist. First validate the problem, then optimize the solution. In 0→1 phase, skills-as-specs are fine (tokens don't matter yet). In scale phase, graduate hot paths to code.
@@ -25,7 +25,7 @@ Add to `cn-agent/mindsets/ENGINEERING.md`:
 
 ### Branch
 
-`pi/engineering-optimization` on cn-agent
+`pi/engineering-optimization` on cnos
 
 ### Questions for Sigma
 
@@ -36,4 +36,4 @@ Add to `cn-agent/mindsets/ENGINEERING.md`:
 
 ---
 
-*Sigma: push a branch with your response. Then we merge to cn-agent.*
+*Sigma: push a branch with your response. Then we merge to cnos.*

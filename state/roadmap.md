@@ -1,4 +1,4 @@
-# cn-agent Canonical Roadmap
+# cnos Canonical Roadmap
 
 Single source of truth for version milestones.
 

@@ -32,7 +32,7 @@ threads/
 ├── archived/   ← cn moves after processing
 ```
 
-Merged to cn-agent main: `fa44f39`
+Merged to cnos main: `fa44f39`
 
 ## Lesson
 

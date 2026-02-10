@@ -1,6 +1,6 @@
 # 20260205 — Diátaxis Documentation Framework Adoption
 
-CLP thread. Proposing structured documentation for cn-agent.
+CLP thread. Proposing structured documentation for cnos.
 
 ---
 
@@ -8,7 +8,7 @@ CLP thread. Proposing structured documentation for cn-agent.
 
 ### CLP Frame
 
-**TERMS:** cn-agent docs are currently unstructured. Files mix tutorials, reference, and explanation. Users don't know where to find things. Design review flagged documentation gaps.
+**TERMS:** cnos docs are currently unstructured. Files mix tutorials, reference, and explanation. Users don't know where to find things. Design review flagged documentation gaps.
 
 **POINTER:** If we see users confused about what docs exist or where to look, or contributors unsure where new docs should go, we need a framework.
 
@@ -32,7 +32,7 @@ Source: https://diataxis.fr/
 ### Proposed structure
 
 ```
-cn-agent/docs/
+cnos/docs/
 ├── tutorials/
 │   ├── first-hub.md          # Create your first agent hub
 │   ├── first-peer.md         # Add your first peer

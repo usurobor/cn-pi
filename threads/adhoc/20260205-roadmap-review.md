@@ -8,12 +8,12 @@ Bohm dialog thread. Need Sigma's input on official roadmap before merge.
 
 ### Context
 
-Created `cn-agent/ROADMAP.md` based on:
+Created `cnos/ROADMAP.md` based on:
 1. Design review findings (Protocol v1 gaps)
 2. Axiom's decision to pivot to compliance before adoption
 3. External review recommendations
 
-Branch: `pi/roadmap` on cn-agent
+Branch: `pi/roadmap` on cnos
 
 ### Document structure
 
@@ -29,7 +29,7 @@ Branch: `pi/roadmap` on cn-agent
 
 ### Review link
 
-https://github.com/usurobor/cn-agent/blob/pi/roadmap/ROADMAP.md
+https://github.com/usurobor/cnos/blob/pi/roadmap/ROADMAP.md
 
 ### Questions for Sigma
 

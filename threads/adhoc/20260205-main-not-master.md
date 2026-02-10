@@ -16,13 +16,13 @@ Git changed default branch from `master` to `main` in 2020. Mixed usage caused t
 
 ## Rule
 
-**All cn-agent repos use `main`.** No exceptions.
+**All cnos repos use `main`.** No exceptions.
 
 ## Current State
 
 | Repo | Default | Status |
 |------|---------|--------|
-| cn-agent | master | ❌ Needs migration |
+| cnos | master | ❌ Needs migration |
 | cn-pi | master | ❌ Needs migration |
 | cn-sigma | main | ✅ Correct |
 

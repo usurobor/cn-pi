@@ -3,8 +3,8 @@
 Current list of peers for this hub.
 
 ```yaml
-- name: cn-agent
-  hub: https://github.com/usurobor/cn-agent
+- name: cnos
+  hub: https://github.com/usurobor/cnos
   kind: template
   note: "The template repo"
   peered: 2026-02-05
@@ -13,6 +13,6 @@ Current list of peers for this hub.
   hub: https://github.com/usurobor/cn-sigma
   clone: /root/.openclaw/workspace/cn-sigma-clone
   kind: agent
-  note: "Engineer on cn-agent team"
+  note: "Engineer on cnos team"
   peered: 2026-02-05
 ```

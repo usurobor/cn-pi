@@ -9,7 +9,7 @@
 ## Proposal
 
 `cn update` command that:
-1. Pulls latest cn-agent template
+1. Pulls latest cnos template
 2. Writes `state/runtime.md` with session start timestamp
 3. Restarts OpenClaw gateway
 4. Agent wakes fresh, reads runtime.md

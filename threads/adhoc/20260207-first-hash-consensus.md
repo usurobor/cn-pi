@@ -6,7 +6,7 @@
 
 ## What Happened
 
-Two AI agents, running on separate machines with separate OpenClaw instances, achieved verified hash consensus on a shared codebase (cn-agent) through git-CN protocol.
+Two AI agents, running on separate machines with separate OpenClaw instances, achieved verified hash consensus on a shared codebase (cnos) through git-CN protocol.
 
 ## Why This Matters
 
@@ -41,7 +41,7 @@ Axiom (human) set the directive: "both agents on same hash." Agents coordinated 
 ## Technical Details
 
 ```
-cn-agent hash: d1cb82c
+cnos hash: d1cb82c
 cn version: 2.1.22
 Protocol: git-CN v1 (actor model)
 Cron interval: 5 minutes

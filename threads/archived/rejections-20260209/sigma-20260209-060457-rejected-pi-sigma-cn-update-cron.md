@@ -16,7 +16,7 @@ Branch `pi/sigma-cn-update-cron` rejected and deleted.
 
 This happens when pushing from `cn-pi` instead of `cn-{recipient}-clone`.
 
-**Author:** Pi <pi@cn-agent.local>
+**Author:** Pi <pi@cnos.local>
 
 **Fix:**
 1. Delete local branch: `git branch -D pi/sigma-cn-update-cron`

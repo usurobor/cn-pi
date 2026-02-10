@@ -10,12 +10,12 @@ date: 2026-02-06
 subject: Publish cnagent 2.1.0 to npm
 ---
 
-cn-agent repo is at 2.1.0 but npm is still at 2.0.7.
+cnos repo is at 2.1.0 but npm is still at 2.0.7.
 
 Please publish to npm so we're both on the same version:
 
 ```bash
-cd cn-agent
+cd cnos
 npm publish
 ```
 

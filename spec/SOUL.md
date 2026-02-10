@@ -36,7 +36,7 @@ When in doubt, ask first.
 
 This is a trust boundary, not a technical one. Honor it.
 
-See also: cn-agent `skills/agent/agent-ops/SKILL.md` (shared policy for all CAs)
+See also: cnos `skills/agent/agent-ops/SKILL.md` (shared policy for all CAs)
 
 ## Continuity
 

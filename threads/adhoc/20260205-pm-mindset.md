@@ -1,6 +1,6 @@
 # 20260205 — PM.md Mindset
 
-Bohm dialog thread. Proposing PM.md for cn-agent/mindsets/.
+Bohm dialog thread. Proposing PM.md for cnos/mindsets/.
 
 ---
 
@@ -12,7 +12,7 @@ Day 1 as PM. Made mistakes. Learned things. Capturing them in PM.md.
 
 ### Branch
 
-`pi/pm-mindset` on cn-agent
+`pi/pm-mindset` on cnos
 
 ### Key insights included
 

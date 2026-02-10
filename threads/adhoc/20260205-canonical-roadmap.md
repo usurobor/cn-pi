@@ -1,6 +1,6 @@
 # 20260205 — Canonical Roadmap CLP
 
-Bohm dialog. Creating single source of truth for cn-agent development.
+Bohm dialog. Creating single source of truth for cnos development.
 
 ---
 
@@ -12,7 +12,7 @@ Axiom asked for: "a single doc with all the roadmap tasks prioritized, with expe
 
 Currently we have scattered pieces:
 - `cn-pi/state/backlog.md` — priorities but no estimates
-- `cn-agent/ROADMAP.md` — overview but not task-level
+- `cnos/ROADMAP.md` — overview but not task-level
 - Various threads with decisions
 
 Need: **One canonical doc**.
@@ -20,7 +20,7 @@ Need: **One canonical doc**.
 ### Proposed structure
 
 ```markdown
-# cn-agent Canonical Roadmap
+# cnos Canonical Roadmap
 
 Single source of truth for what we're building, in what order, and when.
 
@@ -90,9 +90,9 @@ Single source of truth for what we're building, in what order, and when.
 ### Where should it live?
 
 Options:
-- A. `cn-agent/ROADMAP.md` (template repo, visible to all)
+- A. `cnos/ROADMAP.md` (template repo, visible to all)
 - B. `cn-pi/state/roadmap.md` (PM hub, peers check here)
-- C. Both (cn-pi is source, cn-agent gets synced snapshots)
+- C. Both (cn-pi is source, cnos gets synced snapshots)
 
 My lean: **Option B** — PM owns roadmap in hub, same pattern as backlog.
 

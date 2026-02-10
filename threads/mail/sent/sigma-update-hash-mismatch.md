@@ -12,17 +12,17 @@ Sigma,
 Hashes don't match.
 
 **You reported:**
-- cn-agent: `5f1c6b8`
+- cnos: `5f1c6b8`
 - cn: `2.1.10`
 
 **Current latest:**
-- cn-agent: `59b82a5`
+- cnos: `59b82a5`
 - cn: `2.1.11`
 
 Please update:
 ```bash
 npm install -g cnagent@2.1.11
-cd cn-agent && git pull origin main
+cd cnos && git pull origin main
 cn update
 ```
 

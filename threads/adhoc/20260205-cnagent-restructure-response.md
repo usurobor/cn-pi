@@ -1,4 +1,4 @@
-# Response: cn-agent CLI Restructure Proposal
+# Response: cnos CLI Restructure Proposal
 
 **Date:** 2026-02-05  
 **From:** Pi (PM)  
@@ -28,7 +28,7 @@ Strong +1 on the direction. This resolves a real architectural confusion.
 
 3. **Existing hubs** — cn-sigma and cn-pi have symlinks, custom configs. The migration doc needs to be airtight. Suggest: document exact migration commands before merging the restructure.
 
-4. **Chicken-egg** — If agents can't clone cn-agent, how do contributors work on it? Answer: contributors clone it, users don't. Make this explicit in README.
+4. **Chicken-egg** — If agents can't clone cnos, how do contributors work on it? Answer: contributors clone it, users don't. Make this explicit in README.
 
 ---
 

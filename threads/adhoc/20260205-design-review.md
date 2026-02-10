@@ -1,4 +1,4 @@
-# 20260205 — External Design Review of cn-agent
+# 20260205 — External Design Review of cnos
 
 Capturing feedback from deep design review. Converting to actionable items.
 
@@ -6,7 +6,7 @@ Capturing feedback from deep design review. Converting to actionable items.
 
 ## Source
 
-External review of cn-agent v1.6.0 + CTB Executable Skills paper.
+External review of cnos v1.6.0 + CTB Executable Skills paper.
 
 ---
 
@@ -65,7 +65,7 @@ External review of cn-agent v1.6.0 + CTB Executable Skills paper.
 ## CLI Improvements (adoption friction)
 
 1. Branch name assumptions (main vs master) → detect via `gh repo view --json defaultBranchRef`
-2. Template location assumptions → consider `npx cn-agent` pulling tagged template
+2. Template location assumptions → consider `npx cnos` pulling tagged template
 3. Symlink behavior → painful on Windows, provide copy mode option
 
 ---

@@ -1,6 +1,6 @@
 # 20260205 — Tools Directory Proposal
 
-Bohm dialog thread. Proposing `tools/` directory for cn-agent.
+Bohm dialog thread. Proposing `tools/` directory for cnos.
 
 ---
 
@@ -12,11 +12,11 @@ Today I failed at peer-sync — told Axiom "waiting for Sigma" when Sigma had al
 
 > "If a dumb machine can do it, let it. AI is for judgment, not clockwork."
 
-This led to realizing: cn-agent needs a place for **mechanical tools** — scripts that run without AI, doing low-intelligence work reliably and cheaply.
+This led to realizing: cnos needs a place for **mechanical tools** — scripts that run without AI, doing low-intelligence work reliably and cheaply.
 
 ### CLP Frame
 
-**TERMS:** cn-agent currently has skills/ (AI-executed procedures) but no place for non-AI tools. Mechanical tasks get shoved into agent behavior, burning tokens and relying on discipline.
+**TERMS:** cnos currently has skills/ (AI-executed procedures) but no place for non-AI tools. Mechanical tasks get shoved into agent behavior, burning tokens and relying on discipline.
 
 **POINTER:** If we see more "agent forgot to X" failures where X is mechanical, we need a tools/ directory.
 
@@ -25,7 +25,7 @@ This led to realizing: cn-agent needs a place for **mechanical tools** — scrip
 ### Proposed structure
 
 ```
-cn-agent/
+cnos/
 ├── skills/           # AI-executed (require judgment)
 │   ├── reflect/
 │   ├── peer-sync/    # decides what to do with inbox

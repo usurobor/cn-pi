@@ -6,7 +6,7 @@ Hub configuration for this agent.
 name: pi
 owner: usurobor
 created: 2026-02-05
-template: https://github.com/usurobor/cn-agent
+template: https://github.com/usurobor/cnos
 template_version: v2.0.0
 template_commit: 54247f5
 last_sync: 2026-02-05T20:49:00Z

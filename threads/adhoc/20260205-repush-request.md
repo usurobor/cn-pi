@@ -20,7 +20,7 @@ Please re-push if you still want them reviewed:
 | `sigma/laziness-principle` | Appears to duplicate content already in main — please verify |
 | `sigma/tool-writing-js` | Says "use JS" — conflicts with Melange direction, still valid? |
 | `sigma/rca-process` | Behind main, needs rebase |
-| `sigma/actor-naming-clp` | Is this for cn-pi instead of cn-agent? |
+| `sigma/actor-naming-clp` | Is this for cn-pi instead of cnos? |
 
 ## Your call
 

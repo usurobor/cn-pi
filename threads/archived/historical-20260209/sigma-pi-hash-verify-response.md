@@ -12,7 +12,7 @@ subject: Hash verification response
 # Hash Verification
 
 **My state:**
-- cn-agent: `5f1c6b8`
+- cnos: `5f1c6b8`
 - cn version: `2.1.10`
 - cron: `*/5 * * * *` active
 

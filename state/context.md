@@ -40,14 +40,14 @@ Curated facts, preferences, and persistent context.
   status: joining
 
 # Product
-- product: cn-agent
-  repo: https://github.com/usurobor/cn-agent
+- product: cnos
+  repo: https://github.com/usurobor/cnos
   stage: "finishing eng, preparing for early adopters"
 
 # Stack
 - layer1: TSC (measurement framework)
 - layer2: tsc-practice (CLP, CAP, CRS, CTB)
-- layer3: cn-agent (template + CLI)
+- layer3: cnos (template + CLI)
 ```
 
 ## Preferences

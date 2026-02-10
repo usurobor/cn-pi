@@ -8,7 +8,7 @@
 
 ## TERMS
 
-A skill for cn-agents to post and engage on Twitter/X.
+A skill for cnoss to post and engage on Twitter/X.
 
 ## Problem
 

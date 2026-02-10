@@ -71,4 +71,4 @@ Product management for coherent agents.
 
 ---
 
-*This is a [role] mindset for Product Managers in cn-agent.*
+*This is a [role] mindset for Product Managers in cnos.*

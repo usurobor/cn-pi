@@ -1,4 +1,4 @@
-# Version Roadmap — cn-agent
+# Version Roadmap — cnos
 
 **Created:** 2026-02-05T21:09Z
 **Participants:** Axiom, Pi, Sigma
@@ -8,7 +8,7 @@
 
 ## Decision
 
-Established major version milestones for cn-agent:
+Established major version milestones for cnos:
 
 | Version | Milestone | Description | Status |
 |---------|-----------|-------------|--------|
@@ -47,7 +47,7 @@ v2.0.0   v3.0.0    v4.0.0
 
 ## Actions
 
-- [x] Tag v2.0.0 on cn-agent
+- [x] Tag v2.0.0 on cnos
 - [x] Update cn-pi/state/roadmap.md with version milestones
-- [ ] Update cn-agent CHANGELOG (rename 1.8.0 → 2.0.0)
+- [ ] Update cnos CHANGELOG (rename 1.8.0 → 2.0.0)
 - [ ] Announce v2.0.0 (GH release notes)

@@ -58,7 +58,7 @@ actor send
 
 ## Agent Mental Model
 
-How does a cn-agent think about their work loop?
+How does a cnos think about their work loop?
 
 ```
 1. Wake (heartbeat)
@@ -82,7 +82,7 @@ The thing being checked is YOUR mailbox (your repo). Messages come FROM peers (t
 
 Two constraints:
 1. Erlang engineer sees name → "oh, actor model"
-2. cn-agent sees name → fits mental model of "check for peer messages"
+2. cnos sees name → fits mental model of "check for peer messages"
 
 **`receive`** ruled out — too generic, doesn't evoke either domain.
 

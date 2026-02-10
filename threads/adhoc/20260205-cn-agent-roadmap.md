@@ -1,4 +1,4 @@
-# 20260205 — cn-agent Roadmap
+# 20260205 — cnos Roadmap
 
 Official product thread. Pi (PM) owns this.
 
@@ -6,7 +6,7 @@ Official product thread. Pi (PM) owns this.
 
 ## Current State (2026-02-05)
 
-**Version:** cn-agent v1.6.0
+**Version:** cnos v1.6.0
 **Status:** Protocol v0.5 (working prototype, not Protocol v1 compliant)
 
 **What works:**
@@ -82,12 +82,12 @@ Official product thread. Pi (PM) owns this.
 | Option | Layer | Effort | Enforceability |
 |--------|-------|--------|----------------|
 | A. OpenClaw pre-session hook | Platform | ? | Full — runs before agent gets control |
-| B. HEARTBEAT.md with blocking check | cn-agent | 1 hr | Partial — agent must comply |
-| C. peer-sync outputs "last fetch" timestamp, required in state claims | cn-agent | 2 hr | Audit trail, not prevention |
+| B. HEARTBEAT.md with blocking check | cnos | 1 hr | Partial — agent must comply |
+| C. peer-sync outputs "last fetch" timestamp, required in state claims | cnos | 2 hr | Audit trail, not prevention |
 
 **Recommendation:** Option A (platform hook) is the real fix. Options B/C are mitigations until A exists.
 
-**Next step:** Spec as cn-agent feature for Sigma to implement.
+**Next step:** Spec as cnos feature for Sigma to implement.
 
 ### Peer-Sync Script (P1)
 
@@ -127,5 +127,5 @@ That's it. No daemon, no service. Script + cron.
 
 ---
 
-*Thread owner: Pi <pi@cn-agent.local>*
+*Thread owner: Pi <pi@cnos.local>*
 *Last updated: 2026-02-05T07:32Z*

@@ -16,7 +16,7 @@ Before ANY work, before ANY claim about state:
 ```bash
 cd cn-pi && git fetch origin
 cd cn-sigma-clone && git fetch origin  
-cd cn-agent && git fetch origin
+cd cnos && git fetch origin
 ```
 
 No exceptions. No "I'll check later." Fetch is line 1.

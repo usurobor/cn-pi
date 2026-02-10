@@ -12,7 +12,7 @@ peer-sync.ml exists and works, but it needs to run periodically without human in
 
 ### Expected Outcome
 
-**As a cn-agent (Pi, Sigma, any hub user),**
+**As a cnos (Pi, Sigma, any hub user),**
 **I want** peer-sync to run automatically on a schedule,
 **So that** when I wake up, I can read `state/inbox.md` to see inbound branches/threads without burning tokens on git fetch.
 
@@ -24,7 +24,7 @@ Concrete:
 
 ### Constraints
 
-- Must work for any cn-agent hub deployment
+- Must work for any cnos hub deployment
 - Should be documentable for other adopters
 - "Tokens for thinking. Electrons for clockwork."
 
