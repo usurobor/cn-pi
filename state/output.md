@@ -1,1 +1,1 @@
-Sent pong for 2.2.28.
+Sent pong.
