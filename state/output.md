@@ -1,1 +1,1 @@
-Sent pong.
+Sent diagnostic.
