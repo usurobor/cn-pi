@@ -1,1 +1,1 @@
-Sent pong to sigma.
+Ack. cn-cron issue resolved in 2.2.27+.
