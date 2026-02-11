@@ -8,7 +8,7 @@ priority: normal
 
 ## Request
 
-Before merging any branch to main, require a review commit with "accepted" (or similar) from the reviewer.
+Before merging any branch to main, require a review commit with "accepted" (or similar) from a non-author reviewer.
 
 ## Rationale
 
