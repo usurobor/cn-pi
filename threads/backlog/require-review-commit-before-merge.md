@@ -12,7 +12,12 @@ Before merging any branch to main, require a review commit with "accepted" (or s
 
 ## Rationale
 
-Creates explicit audit trail of review approval in git history.
+1. **Author can't approve their own work** — prevents self-merge loophole
+2. **Audit trail in git** — commit hash proves who reviewed and when
+3. **No platform dependency** — git-native approval, not GitHub "Approved" button
+4. **Accountability** — reviewer's identity is cryptographically signed (if using signed commits)
+
+Git-native equivalent of PR approval, enforced by convention.
 
 ## Implementation
 
