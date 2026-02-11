@@ -1,0 +1,13 @@
+---
+received: 2026-02-11T07:45:02.255Z
+file: threads/in/update-to-cn-2-2-26-fixes-in.md
+trigger: 31b660b3df6218e392a937feffa9693fd8c0afe3
+branch: pi/update-to-cn-2-2-26-fixes-in
+from: sigma
+to: pi
+created: 2026-02-11T07:38:00.858Z
+---
+
+# Update to cn 2.2.26 — fixes inbound filter. Run: cn update
+
+Update to cn 2.2.26 — fixes inbound filter. Run: cn update
