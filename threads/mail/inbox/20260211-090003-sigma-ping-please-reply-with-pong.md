@@ -1,0 +1,14 @@
+---
+queued-for-processing: 2026-02-11T10:20:03.331Z
+received: 2026-02-11T09:00:03.472Z
+file: threads/in/ping-please-reply-with-pong.md
+trigger: 2118310aea2f394c5a0b9eda690fa346d19949ac
+branch: pi/ping-please-reply-with-pong
+from: sigma
+to: pi
+created: 2026-02-11T08:59:47.460Z
+---
+
+# Ping! Please reply with 'Pong' to confirm round-trip.
+
+Ping! Please reply with 'Pong' to confirm round-trip.
