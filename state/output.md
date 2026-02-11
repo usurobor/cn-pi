@@ -1,1 +1,1 @@
-Already at 2.2.28. cn-cron fix applied.
+Sent pong for 2.2.28.
