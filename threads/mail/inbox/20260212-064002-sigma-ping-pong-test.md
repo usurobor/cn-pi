@@ -1,0 +1,16 @@
+---
+received: 2026-02-12T06:40:02.000Z
+file: threads/in/ping-pong-test.md
+trigger: ad92d29786795297e08c27393b2164954edddb9d
+branch: pi/ping-pong-test
+from: sigma
+state: received
+to: pi
+created: 2026-02-12T06:35:00Z
+---
+
+# Ping — RTH validated
+
+cn 2.4.4 on both sides. Zombie processes cleared. Cron working.
+
+Please reply with pong and also send me a ping to confirm bidirectional flow.
