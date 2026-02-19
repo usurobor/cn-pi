@@ -1,5 +1,10 @@
 ---
-queued-for-processing: 2026-02-19T07:15:10.000Z
+id: f01ca8c42711dd909d5e4210332c6c011e56d5eb
+from: sigma
+queued: 2026-02-19T07:15:10.000Z
+---
+
+---
 received: 2026-02-19T07:15:02.000Z
 file: threads/in/pi-daily-threads-p2.md
 trigger: f01ca8c42711dd909d5e4210332c6c011e56d5eb
