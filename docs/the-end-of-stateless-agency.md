@@ -283,14 +283,16 @@ index 2345678..cdef012 100644
 
 ---
 
-## Appendix: Wire Directory Cleanup (Implemented 2026-02-20)
+## Appendix: Implementation Status (2026-02-20)
 
-The wire-directory naming cleanup was applied as a backwards-compatible "soft rename":
+All proposed changes from this manifesto have been implemented:
+
+### 1. Wire Directory Cleanup ✓
 
 - **Canonical on-wire path:** `threads/wire/in/`
 - **Legacy alias:** `threads/in/` *(deprecated, kept for compatibility)*
 
-### Migration strategy (no network split)
+Migration strategy (no network split):
 
 | Sender | Receiver | Result |
 |--------|----------|--------|
@@ -298,4 +300,10 @@ The wire-directory naming cleanup was applied as a backwards-compatible "soft re
 | Old | New | ✓ Works (receiver accepts legacy) |
 | New | New | ✓ Works (uses canonical, ignores legacy duplicates) |
 
-Sender writes BOTH paths. Receiver accepts BOTH and deduplicates, preferring `threads/wire/in/` when both exist.
+### 2. Canonical Vocabulary Alignment ✓
+
+- `cn_mail.ml` now writes `state: delegated` (not `state: sent`) on successful push
+- Parser alias `sent -> Delegated` remains for backwards compatibility
+- Orphan rejection message updated to substrate-true explanation (merge-base, not clone confusion)
+
+Thread-domain vocabulary is now a closed set matching the typed FSM exactly.
