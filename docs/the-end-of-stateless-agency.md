@@ -280,3 +280,22 @@ index 2345678..cdef012 100644
 ---
 
 *If you want, I can also propose an optional follow-on naming cleanup (purely cosmetic): clarifying `threads/in/` as the wire directory (e.g., rename to `threads/wire/in/` or update comments/docs). I didn't include that here because it's bigger surface area (paths, docs, migration), but it's the next obvious "meaning tightening" if you want everything to read unambiguously at a glance.*
+
+---
+
+## Appendix: Wire Directory Cleanup (Implemented 2026-02-20)
+
+The wire-directory naming cleanup was applied as a backwards-compatible "soft rename":
+
+- **Canonical on-wire path:** `threads/wire/in/`
+- **Legacy alias:** `threads/in/` *(deprecated, kept for compatibility)*
+
+### Migration strategy (no network split)
+
+| Sender | Receiver | Result |
+|--------|----------|--------|
+| New | Old | ✓ Works (sender mirrors to legacy) |
+| Old | New | ✓ Works (receiver accepts legacy) |
+| New | New | ✓ Works (uses canonical, ignores legacy duplicates) |
+
+Sender writes BOTH paths. Receiver accepts BOTH and deduplicates, preferring `threads/wire/in/` when both exist.
