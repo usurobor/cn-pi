@@ -92,7 +92,7 @@ CN mail transport is git-native and permission-minimal:
 
 - The sender pushes a branch to their own origin:
   - branch name: <recipient>/<thread>
-  - payload committed under: threads/in/<file>.md (wire format)
+  - payload committed under: threads/wire/in/<file>.md (canonical wire path)
 
 - The recipient fetches from the sender's hub clone and materializes into:
   - threads/mail/inbox/ (local inbox)
@@ -279,20 +279,22 @@ index 2345678..cdef012 100644
 
 ---
 
-*If you want, I can also propose an optional follow-on naming cleanup (purely cosmetic): clarifying `threads/in/` as the wire directory (e.g., rename to `threads/wire/in/` or update comments/docs). I didn't include that here because it's bigger surface area (paths, docs, migration), but it's the next obvious "meaning tightening" if you want everything to read unambiguously at a glance.*
+## Wire Directory Cleanup
 
----
+The on-wire payload path is renamed from `threads/in/` to `threads/wire/in/` to make transport-layer semantics visible in the path itself.
 
-## Appendix: Implementation Status (2026-02-20)
+### Why this matters
 
-All proposed changes from this manifesto have been implemented:
+`threads/in/` was ambiguous — it looked like a local inbox but was actually the wire format committed on transport branches. Renaming to `threads/wire/in/` makes the distinction mechanical:
 
-### 1. Wire Directory Cleanup ✓
+- `threads/wire/in/` — on-wire payload (transport branches)
+- `threads/mail/inbox/` — local mailbox (materialized messages)
 
-- **Canonical on-wire path:** `threads/wire/in/`
-- **Legacy alias:** `threads/in/` *(deprecated, kept for compatibility)*
+### Migration strategy (backwards-compatible)
 
-Migration strategy (no network split):
+To avoid breaking peers during migration:
+- **Sender** writes BOTH paths (new receivers see canonical, old receivers still work)
+- **Receiver** accepts BOTH paths and deduplicates, preferring canonical
 
 | Sender | Receiver | Result |
 |--------|----------|--------|
@@ -300,10 +302,84 @@ Migration strategy (no network split):
 | Old | New | ✓ Works (receiver accepts legacy) |
 | New | New | ✓ Works (uses canonical, ignores legacy duplicates) |
 
-### 2. Canonical Vocabulary Alignment ✓
+### Implementation diffs
 
-- `cn_mail.ml` now writes `state: delegated` (not `state: sent`) on successful push
-- Parser alias `sent -> Delegated` remains for backwards compatibility
-- Orphan rejection message updated to substrate-true explanation (merge-base, not clone confusion)
+**cn_hub.ml** — Add canonical path constant:
+
+```diff
++let threads_wire_in hub = Cn_ffi.Path.join hub "threads/wire/in"
+ let threads_in hub = Cn_ffi.Path.join hub "threads/in"  (* legacy wire alias (deprecated) *)
+```
+
+**cn_system.ml** — Hub init creates both directories:
+
+```diff
++  Cn_ffi.Fs.mkdir_p (Cn_ffi.Path.join hub_dir "threads/wire/in");
++  (* Legacy wire alias (deprecated, kept for compatibility) *)
+   Cn_ffi.Fs.mkdir_p (Cn_ffi.Path.join hub_dir "threads/in");
+```
+
+**cn_mail.ml** — Receiver accepts both paths, prefers canonical:
+
+```diff
+-  let files = ... |> List.filter (fun f ->
+-      String.length f > 11 &&
+-      String.sub f 0 11 = "threads/in/" &&
+-      Cn_hub.is_md_file f) in
++  let wire_prefix = "threads/wire/in/" in
++  let legacy_prefix = "threads/in/" in
++  let files_raw = ... |> List.filter (fun f ->
++      (starts_with ~prefix:wire_prefix f || starts_with ~prefix:legacy_prefix f)
++      && Cn_hub.is_md_file f) in
++
++  (* Prefer canonical wire path, drop legacy duplicates *)
++  let new_files = files_raw |> List.filter (starts_with ~prefix:wire_prefix) in
++  let old_files = files_raw |> List.filter (starts_with ~prefix:legacy_prefix) in
++  let new_basenames = new_files |> List.map Filename.basename in
++  let files = new_files @ (old_files |> List.filter (fun f ->
++      not (List.mem (Filename.basename f) new_basenames))) in
+```
+
+**cn_mail.ml** — Sender writes to both paths:
+
+```diff
+-  let thread_dir = Cn_ffi.Path.join hub_path "threads/in" in
+-  Cn_ffi.Fs.ensure_dir thread_dir;
+-  Cn_ffi.Fs.write (Cn_ffi.Path.join thread_dir file) content;
+-  let _ = ... "git add threads/in/<file>" in
++  let wire_dir = Cn_ffi.Path.join hub_path "threads/wire/in" in
++  let legacy_dir = Cn_ffi.Path.join hub_path "threads/in" in
++  Cn_ffi.Fs.ensure_dir wire_dir;
++  Cn_ffi.Fs.ensure_dir legacy_dir;
++  Cn_ffi.Fs.write (Cn_ffi.Path.join wire_dir file) content;
++  Cn_ffi.Fs.write (Cn_ffi.Path.join legacy_dir file) content;
++  let _ = ... "git add threads/wire/in/<file> threads/in/<file>" in
+```
+
+**cn_io.ml** — Transport layer accepts both paths:
+
+```diff
++let starts_with prefix s =
++  let plen = String.length prefix in
++  String.length s >= plen && String.sub s 0 plen = prefix
++
+ let get_branch_files ~hub ~branch =
++  let wire_prefix = "threads/wire/in/" in
++  let legacy_prefix = "threads/in/" in
+   Git.diff_files ~cwd:hub ~base:"main" ~head:("origin/" ^ branch)
+-  |> List.filter is_md_file
++  |> List.filter (fun f ->
++      is_md_file f && (starts_with wire_prefix f || starts_with legacy_prefix f))
+```
+
+---
+
+## Implementation Status
+
+All changes described in this document have been implemented in cnos as of 2026-02-20:
+
+- ✓ Wire directory cleanup (`threads/wire/in/` canonical, backwards-compatible)
+- ✓ Canonical vocabulary alignment (`state: delegated`, `sent → Delegated` alias)
+- ✓ Orphan rejection message (substrate-true explanation)
 
 Thread-domain vocabulary is now a closed set matching the typed FSM exactly.
