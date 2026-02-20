@@ -189,3 +189,94 @@ defer: 20260220-031522-a1b2c3d|2026-02-23
 surface: Hidden coupling between update + wake loop (MCA)
 ---
 ```
+
+Stop chatting. Start committing.
+
+---
+
+## Protocol Guarantees (Mechanical Proofs)
+
+To ensure the integrity of the network, the CN protocol enforces four mechanical invariants that cannot be bypassed by "clever prompts":
+
+1. Archive-Before-Execute
+No operation parsed from state/output.md is executed until the Body has archived the IO pair into logs/input/ and logs/output/. Audit is the prerequisite for action.
+
+2. Total Transition Coverage
+Each FSM transition function is total: for any (state, event) pair it returns either Ok new_state or `Error reason`—never undefined behavior, never exceptions.
+
+3. Idempotent Terminals
+Terminal states are idempotent. Re-running the Body on a terminal state results in a no-op, preventing repeat-execution through replay.
+
+4. Orphan Rejection
+The Receiver transport performs a merge-base check on all inbound branches. If a branch has no shared history with `main`/master, it is rejected and cleaned. You cannot inject history into a peer you do not belong to.
+
+---
+
+## On implementation naming changes
+
+You read it right: the manifesto itself doesn't *require* code changes, but there are two small naming/coherence tweaks I'd propose so the repo's user-facing "state words" don't drift away from the typed FSM vocabulary.
+
+The goal is not redesign; it's tightening: remove "phantom" state names and make operator guidance match the actual mechanics.
+
+```diff
+diff --git a/src/protocol/cn_protocol.ml b/src/protocol/cn_protocol.ml
+index 1234567..89abcde 100644
+--- a/src/protocol/cn_protocol.ml
++++ b/src/protocol/cn_protocol.ml
+@@ -24,11 +24,14 @@ let string_of_thread_state = function
+
+ let thread_state_of_string = function
+   | "received" -> Some Received
+   | "queued" -> Some Queued
+   | "active" -> Some Active
+   | "doing" -> Some Doing
+   | "deferred" -> Some Deferred
+   | "delegated" -> Some Delegated
++  (* Compatibility alias: some artifacts write state: sent, but "Sent" is not a GTD FSM state.
++     Treat as Delegated (transport-domain truth lives in Sender FSM). *)
++  | "sent" -> Some Delegated
+   | "archived" -> Some Archived
+   | "deleted" -> Some Deleted
+   | _ -> None
+```
+
+```diff
+diff --git a/src/cmd/cn_mail.ml b/src/cmd/cn_mail.ml
+index 2345678..cdef012 100644
+--- a/src/cmd/cn_mail.ml
++++ b/src/cmd/cn_mail.ml
+@@ -45,7 +45,10 @@ let reject_orphan_branch hub_path peer_name branch =
+        Branch %s rejected and deleted. \
+        Reason: No merge base with main. \
+-       This happens when pushing from cn-%s instead of cn-{recipient}-clone. \
++       This happens when a branch is pushed with unrelated history (no merge-base). \
++       Common cause: creating/pushing a branch not based on the hub's main. \
++       Fix: re-send via cn outbox flush (which creates <recipient>/<thread> from main). \
+        Author: %s \
+        Fix:** \
+        1. Delete local branch: `git branch -D %s` \
+@@ -323,8 +326,10 @@ let send_thread hub_path name peers outbox_dir sent_dir file =
+   match s with
+   | Cn_protocol.S_Pushed ->
+       Cn_ffi.Fs.write (Cn_ffi.Path.join sent_dir file)
+-        (update_frontmatter content [("state", "sent"); ("sent", Cn_fmt.now_iso ())]);
++        (update_frontmatter content [
++          ("state", "delegated");  (* keep thread-state in canonical FSM vocabulary *)
++          ("sent", Cn_fmt.now_iso ())
++        ]);
+       Cn_ffi.Fs.unlink file_path;
+       let* s = Cn_protocol.sender_transition s Cn_protocol.SE_Cleanup in
+       Ok (s, Some file)
+```
+
+### Why these changes help
+
+* **Keep `state:` canonical:** The GTD FSM's thread states are a closed vocabulary. Writing `state: sent` creates a "phantom state" that isn't part of the typed model. Keeping `state: delegated` preserves the invariant: *thread lifecycle state remains GTD; transport truth lives in Sender/Receiver FSMs*.
+
+* **Better operator guidance:** The orphan rejection hint currently points to directory/clone behavior that doesn't match the actual send path (outbox flush creates a branch from main and pushes to origin). Updating the copy reduces confusion and makes the rejection notice itself an executable debugging path.
+
+* **Compatibility without drift:** Adding a `sent -> Delegated` alias is optional but cheap insurance for older artifacts or manual edits.
+
+---
+
+*If you want, I can also propose an optional follow-on naming cleanup (purely cosmetic): clarifying `threads/in/` as the wire directory (e.g., rename to `threads/wire/in/` or update comments/docs). I didn't include that here because it's bigger surface area (paths, docs, migration), but it's the next obvious "meaning tightening" if you want everything to read unambiguously at a glance.*
