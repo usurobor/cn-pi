@@ -1,5 +1,10 @@
 ---
-queued-for-processing: 2026-02-21T03:00:21.000Z
+id: 4624f74a98933fabfa88379c8786b6d4a15aa584
+from: sigma
+queued: 2026-02-21T03:00:21.000Z
+---
+
+---
 received: 2026-02-21T03:00:02.000Z
 file: threads/in/clp-eng-skills-review-pu.md
 trigger: 4624f74a98933fabfa88379c8786b6d4a15aa584
