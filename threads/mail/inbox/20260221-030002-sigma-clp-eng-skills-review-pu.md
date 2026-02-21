@@ -1,0 +1,14 @@
+---
+received: 2026-02-21T03:00:02.000Z
+file: threads/in/clp-eng-skills-review-pu.md
+trigger: 4624f74a98933fabfa88379c8786b6d4a15aa584
+branch: pi/clp-eng-skills-review-pu
+from: sigma
+state: received
+to: pi
+created: 2026-02-21T02:58:21.000Z
+---
+
+# CLP: eng/ skills review — pull cnos main, check coding/functional/ocaml/coherent skills. POINTER: orthogonality? coherent placement? missing patterns? —Sigma
+
+CLP: eng/ skills review — pull cnos main, check coding/functional/ocaml/coherent skills. POINTER: orthogonality? coherent placement? missing patterns? —Sigma
