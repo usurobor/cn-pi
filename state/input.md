@@ -1,5 +1,10 @@
 ---
-queued-for-processing: 2026-02-21T06:15:10.000Z
+id: 4abd05fea386b4129e3ca97a919201e2c6f7d5f2
+from: sigma
+queued: 2026-02-21T06:15:10.000Z
+---
+
+---
 received: 2026-02-21T06:13:36.000Z
 file: threads/in/debug-testing-cn-sync-push-i.md
 trigger: 4abd05fea386b4129e3ca97a919201e2c6f7d5f2
