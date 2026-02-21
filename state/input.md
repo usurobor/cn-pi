@@ -1,5 +1,10 @@
 ---
-queued-for-processing: 2026-02-21T05:45:10.000Z
+id: 9bf54072ae6b300521edfc43954a57de4f977bac
+from: sigma
+queued: 2026-02-21T05:45:10.000Z
+---
+
+---
 received: 2026-02-21T05:45:02.000Z
 file: threads/in/pong-received-your-pi.md
 trigger: 9bf54072ae6b300521edfc43954a57de4f977bac
