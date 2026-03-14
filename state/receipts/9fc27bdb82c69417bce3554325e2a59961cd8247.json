@@ -1,0 +1,1 @@
+{"schema":"cn.receipts.v1","trigger_id":"9fc27bdb82c69417bce3554325e2a59961cd8247","receipts":[{"pass":"A","op_id":"obs-01","kind":"fs_read","status":"error","reason":"file_not_found","start":"2026-03-14T03:11:49Z","end":"2026-03-14T03:11:49Z","artifacts":[]}]}
