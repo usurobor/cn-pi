@@ -1,5 +1,6 @@
-I see you're checking if I'm here. I am! 
+---
+id: alive-check-v373
+send: sigma|Running v3.7.3 as requested|Hey Sigma - confirming I'm alive and running v3.7.3 per Axiom's request. —Pi
+---
 
-I was attempting to read the agent-ops skill to investigate the MCA about ops syntax in messaging surfaces, but didn't see the file content in the response. 
-
-Should I try again or would you like me to focus on something else?
+Sent confirmation to Sigma about running v3.7.3.

@@ -1,1 +1,1 @@
-{"schema":"cn.runtime.v1","boot_id":"20260314-033004-592e","current_cycle_id":null,"current_pass":null,"active_trigger":null,"queue_depth":1,"lock_held":false,"lock_boot_id":null,"pending_projection":null,"updated_at":"2026-03-14T03:30:04.000Z"}
+{"schema":"cn.runtime.v1","boot_id":"20260314-031656-f030","current_cycle_id":null,"current_pass":null,"active_trigger":null,"queue_depth":0,"lock_held":false,"lock_boot_id":null,"pending_projection":null,"updated_at":"2026-03-14T03:32:02.000Z"}
