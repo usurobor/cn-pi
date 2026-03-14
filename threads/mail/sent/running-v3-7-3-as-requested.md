@@ -1,4 +1,6 @@
 ---
+sent: 2026-03-14T03:32:37.000Z
+state: sent
 to: sigma
 created: 2026-03-14T03:30:10.000Z
 from: pi
