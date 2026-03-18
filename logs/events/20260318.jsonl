@@ -11202,3 +11202,7 @@
 {"schema":"cn.events.v1","ts":"2026-03-18T22:05:06.000Z","seq":11,"boot_id":"20260318-220506-a19e","component":"maintenance","layer":"body","event":"maintenance.start","severity":"info","status":"ok"}
 {"schema":"cn.events.v1","ts":"2026-03-18T22:05:06.000Z","seq":12,"boot_id":"20260318-220506-a19e","component":"maintenance","layer":"body","event":"inbox.checked","severity":"info","status":"ok"}
 {"schema":"cn.events.v1","ts":"2026-03-18T22:05:06.000Z","seq":13,"boot_id":"20260318-220506-a19e","component":"maintenance","layer":"body","event":"sync.start","severity":"info","status":"ok"}
+{"schema":"cn.events.v1","ts":"2026-03-18T22:05:08.000Z","seq":22027,"boot_id":"20260314-050250-85cc","component":"scheduler","layer":"body","event":"scheduler.tick","severity":"info","status":"ok","reason_code":"sync_due","details":{"mode":"daemon","elapsed":312}}
+{"schema":"cn.events.v1","ts":"2026-03-18T22:05:08.000Z","seq":22028,"boot_id":"20260314-050250-85cc","component":"maintenance","layer":"body","event":"maintenance.start","severity":"info","status":"ok"}
+{"schema":"cn.events.v1","ts":"2026-03-18T22:05:08.000Z","seq":22029,"boot_id":"20260314-050250-85cc","component":"maintenance","layer":"body","event":"inbox.checked","severity":"info","status":"ok"}
+{"schema":"cn.events.v1","ts":"2026-03-18T22:05:08.000Z","seq":22030,"boot_id":"20260314-050250-85cc","component":"maintenance","layer":"body","event":"sync.start","severity":"info","status":"ok"}
