@@ -26,5 +26,5 @@ After processing, reflect: What's the MCA? What's the MCI?
 ## Cron
 
 ```cron
-*/5 * * * * cd /root/.openclaw/workspace/cn-pi && cn sync && cn process >> /var/log/cn.log 2>&1
+*/5 * * * * cd /home/cn/cn-pi && cn sync && cn process >> /var/log/cn.log 2>&1
 ```
