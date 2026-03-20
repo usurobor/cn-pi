@@ -1,0 +1,1 @@
+{"schema":"cn.receipts.v1","trigger_id":"tg-194570515","receipts":[{"pass":"A","op_id":null,"kind":"fs_write","status":"denied","reason":"missing_op_id","start":"","end":"","artifacts":[]}]}
