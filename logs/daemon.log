@@ -1,0 +1,13 @@
+[36mUpdating cn 3.8.0 → v3.8.1...[0m
+[33m⚠ [0mSelf-update failed - continuing with current version
+[36mChecking inbox for pi...[0m
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 2 thread(s)...[0m
+[31m✗ [0mUnknown peer: axiom
+[31m✗ [0mUnknown peer: axiom
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
