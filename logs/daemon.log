@@ -938,3 +938,18 @@ From https://github.com/usurobor/cn-sigma
 [36mProcessing inbox...[0m
 [32m✓ [0mMaterialized: 20260321-013340-sigma-pong-pi-v391-operational.md
 [32m✓ [0mProcessed 1 thread(s)
+[32m✓ [0mQueued: 10e07a6fe09a731279e24d1c7f616e50460089dd (from sigma)
+[32m✓ [0mQueued 1 inbox item(s)
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (ok)
+[33m⚠ [0mThread not found for reply: pong-pi-v391-operational
+[32m✓ [0mQueued message to sigma
+[32m✓ [0mProcessed: 10e07a6fe09a731279e24d1c7f616e50460089dd (2 ops)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   fc0aa508..c405f24c  main       -> origin/main
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
