@@ -1,0 +1,1 @@
+{"schema":"cn.receipts.v1","trigger_id":"tg-194570530","receipts":[{"pass":"A","op_id":null,"kind":"exec","status":"denied","reason":"missing_op_id","start":"","end":"","artifacts":[]}]}
