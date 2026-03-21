@@ -485,3 +485,402 @@ From https://github.com/usurobor/cn-sigma
 [32m✓ [0mInbox clear
 [36mProcessing inbox...[0m
 [36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (ok)
+[32m✓ [0mProcessed: tg-194570517 (0 ops)
+[32m✓ [0mProcessed: tg-194570518 (0 ops)
+[32m✓ [0mProcessed: tg-194570519 (0 ops)
+[32m✓ [0mProcessed: tg-194570520 (0 ops)
+[32m✓ [0mProcessed: tg-194570521 (0 ops)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   9e73bfa5..e19ca5e4  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   e19ca5e4..addd5b30  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   addd5b30..b68daad4  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   b68daad4..dbb4bbd6  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   dbb4bbd6..36b61b73  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   36b61b73..a0db5206  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   a0db5206..083cb185  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   083cb185..9b7286c2  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   9b7286c2..5975ed21  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   5975ed21..86f5ca4a  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   86f5ca4a..ea37148f  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   ea37148f..cb9ed217  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   cb9ed217..5588a31f  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   5588a31f..8e115415  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   8e115415..f616b6ad  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   f616b6ad..8adfa055  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   8adfa055..45fe19f3  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   45fe19f3..56073243  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   56073243..8ad68a9a  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   8ad68a9a..256699f0  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   256699f0..f48b87ef  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   f48b87ef..21b9d016  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   21b9d016..e721a2e4  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   e721a2e4..acef9222  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   acef9222..3c3dd60b  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   3c3dd60b..1bde65f8  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   1bde65f8..b0810fdd  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   b0810fdd..b629aa1d  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   b629aa1d..f5499923  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   f5499923..44be9934  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   44be9934..0b829de2  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   0b829de2..f843a933  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   f843a933..0448d6c1  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   0448d6c1..caac7164  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   caac7164..3dc8c001  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   3dc8c001..cbc75281  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   cbc75281..cc1a598d  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   cc1a598d..bb413836  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   bb413836..c86b16fe  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   c86b16fe..9eabdf5c  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   9eabdf5c..ea638bc5  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
+[36mChecking inbox for pi...[0m
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (degraded)
+[32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   ea638bc5..0228e663  main       -> origin/main
+[2m  sigma: no inbound[0m
+[32m✓ [0mInbox clear
+[36mProcessing inbox...[0m
+[36mNo new threads to materialize[0m
