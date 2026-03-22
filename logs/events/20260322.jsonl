@@ -1,0 +1,4 @@
+{"schema":"cn.events.v1","ts":"2026-03-22T00:02:45.000Z","seq":3551,"boot_id":"20260321-034032-a40c","component":"scheduler","layer":"body","event":"scheduler.tick","severity":"info","status":"ok","reason_code":"sync_due","details":{"mode":"daemon","elapsed":312}}
+{"schema":"cn.events.v1","ts":"2026-03-22T00:02:45.000Z","seq":3552,"boot_id":"20260321-034032-a40c","component":"maintenance","layer":"body","event":"maintenance.start","severity":"info","status":"ok"}
+{"schema":"cn.events.v1","ts":"2026-03-22T00:02:46.000Z","seq":3553,"boot_id":"20260321-034032-a40c","component":"maintenance","layer":"body","event":"inbox.checked","severity":"info","status":"ok"}
+{"schema":"cn.events.v1","ts":"2026-03-22T00:02:46.000Z","seq":3554,"boot_id":"20260321-034032-a40c","component":"maintenance","layer":"body","event":"sync.start","severity":"info","status":"ok"}
