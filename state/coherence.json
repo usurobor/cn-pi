@@ -1,1 +1,1 @@
-{"schema":"cn.coherence.v1","boot_id":"20260323-143730-c894","status":"coherent","checks":{"config":"ok","lockfile":"ok","doctrine":"ok","mindsets":"ok","packages":"ok","capabilities":"ok","transport":"ok"},"updated_at":"2026-03-23T14:37:30.000Z"}
+{"schema":"cn.coherence.v1","boot_id":"20260323-144006-17f7","status":"coherent","checks":{"config":"ok","lockfile":"ok","doctrine":"ok","mindsets":"ok","packages":"ok","capabilities":"ok","transport":"missing"},"updated_at":"2026-03-23T14:40:06.000Z"}
