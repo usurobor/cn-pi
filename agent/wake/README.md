@@ -1,0 +1,1 @@
+# Hub-local wake config
