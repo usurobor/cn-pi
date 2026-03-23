@@ -1,1 +1,1 @@
-{"schema":"cn.runtime.v1","boot_id":"20260323-143730-c894","current_cycle_id":"tg-194570542","current_pass":"1","max_passes":null,"active_trigger":"tg-194570542","queue_depth":0,"lock_held":true,"lock_boot_id":"20260323-143730-c894","pending_projection":null,"updated_at":"2026-03-23T14:45:02.000Z"}
+{"schema":"cn.runtime.v1","boot_id":"20260323-144509-875f","current_cycle_id":null,"current_pass":null,"max_passes":5,"active_trigger":null,"queue_depth":0,"lock_held":false,"lock_boot_id":null,"pending_projection":null,"updated_at":"2026-03-23T14:45:09.000Z"}
