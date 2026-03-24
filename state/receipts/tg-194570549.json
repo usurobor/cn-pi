@@ -1,0 +1,1 @@
+{"schema":"cn.receipts.v1","trigger_id":"tg-194570549","receipts":[{"pass":"1","op_id":"obs-01","kind":"fs_read","status":"ok","reason":"","start":"2026-03-24T07:21:58Z","end":"2026-03-24T07:21:58Z","artifacts":[{"path":"state/artifacts/tg-194570549/obs-01.txt","hash":"sha256:35efe8dbabd4918b8e10fd47bac5d7c9d82496cb10ff0e62f73478b98f87997b","size":1967}]}]}
