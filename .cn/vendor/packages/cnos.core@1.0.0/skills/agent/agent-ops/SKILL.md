@@ -200,10 +200,11 @@ Here is the proposed README fix.
 - Need to reply / route / complete / defer → use legacy coordination ops
 - Need to read / diff / patch / branch / commit / exec → use `ops:`
 
-### Two-pass intuition
+### N-pass intuition
 
-If you request observe ops, `cn` may run a bounded second pass so you can see the evidence
+If you request observe ops, `cn` runs a bounded N-pass loop so you can see the evidence
 before proposing effects. Do not assume you can observe and mutate in one step.
+The loop continues (up to `max_passes`) as long as there are typed ops to execute.
 
 ## Rules
 
@@ -211,7 +212,7 @@ before proposing effects. Do not assume you can observe and mutate in one step.
 2. Multiple operations are allowed in a single output
 3. Legacy coordination ops execute in frontmatter order
 4. Typed capability ops are validated under policy; unknown or invalid ops are denied
-5. IO pair is archived to logs/input/ + logs/output/ before executing effects (per LOGGING.md)
+5. IO pair is archived to logs/input/ + logs/output/ before executing effects (per TRACEABILITY.md §11.1 — IO-pair evidence layer)
 6. `cn` logs operations to system log (stdout, captured by systemd/cron)
 7. Never emit XML-style pseudo-tool syntax
 
