@@ -14010,3 +14010,4 @@ Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs
 Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260325.jsonl")
 Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260325.jsonl")
 Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260325.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260325.jsonl")
