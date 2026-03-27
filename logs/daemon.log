@@ -28388,3 +28388,9 @@ cn 3.22.0 | hub=cn-pi | profile=engineer
   secrets: ANTHROPIC_KEY=.cn/secrets.env TELEGRAM_TOKEN=.cn/secrets.env
   peers: cnos, sigma
 [32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
+[36mChecking inbox for pi...[0m
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
