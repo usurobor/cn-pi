@@ -30744,3 +30744,12 @@ fatal: unpack-objects failed
 [31m✗ [0mUnknown peer: pi
 [32m✓ [0mOutbox flush complete
 [32m✓ [0mMaintenance complete (ok)
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260328.jsonl")
