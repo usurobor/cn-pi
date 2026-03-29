@@ -40046,3 +40046,30 @@ fatal: unpack-objects failed
 [33m⚠ [0mFrom sigma: 1 inbound
   ← pi/pong-pi-v391-operational
 [36mProcessing inbox...[0m
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[33m⚠ [0mVersion drift: running 3.26.0, disk has 3.26.1 — re-executing...
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+cn 3.26.1 | hub=cn-pi | profile=engineer
+  model: claude-opus-4-20250514
+  secrets: ANTHROPIC_KEY=.cn/secrets.env TELEGRAM_TOKEN=.cn/secrets.env
+  peers: cnos, sigma
+[32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
