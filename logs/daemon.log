@@ -39426,3 +39426,5 @@ cn 3.25.0 | hub=cn-pi | profile=engineer
   secrets: ANTHROPIC_KEY=.cn/secrets.env TELEGRAM_TOKEN=.cn/secrets.env
   peers: cnos, sigma
 [32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
+[32m✓ [0mProcessed: tg-194570564 (0 ops)
+[32m✓ [0mProcessed: tg-194570565 (0 ops)
