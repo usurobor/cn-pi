@@ -6,3 +6,7 @@
 {"schema":"cn.ulog.v1","ts":"2026-03-29T01:19:12.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570567","pass":1}
 {"schema":"cn.ulog.v1","ts":"2026-03-29T01:19:23.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570567","passes":1,"ops":0,"duration_ms":10863}
 {"schema":"cn.ulog.v1","ts":"2026-03-29T01:19:23.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570567","response_preview":"## Available Commands\n\n**Core Commands**\n- `/help` - Show command help\n- `/status` - Agent status and capabilities\n- `/context` - Current working context\n- `/version` - CN version (3.26.0)\n\n**Communic..."}
+{"schema":"cn.ulog.v1","ts":"2026-03-29T02:02:16.000Z","kind":"message.received","severity":"info","msg_id":"tg-194570568","source":"telegram","user_msg":"/status"}
+{"schema":"cn.ulog.v1","ts":"2026-03-29T02:02:17.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570568","pass":1}
+{"schema":"cn.ulog.v1","ts":"2026-03-29T02:02:41.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570568","passes":1,"ops":0,"duration_ms":24636}
+{"schema":"cn.ulog.v1","ts":"2026-03-29T02:02:41.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570568","response_preview":"## Agent Status\n\n**Identity**\n- Version: CN 3.26.0\n- Hub: cn-pi\n- Profile: engineer\n\n**Repository Status**\n- Clean working directory (no uncommitted changes)\n\n**Work State**\n- Unable to read state/inb..."}
