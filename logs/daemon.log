@@ -52709,3 +52709,19 @@ fatal: unpack-objects failed
 [31m✗ [0mUnknown peer: pi
 [32m✓ [0mOutbox flush complete
 [32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
