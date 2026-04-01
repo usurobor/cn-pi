@@ -61883,3 +61883,565 @@ Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs
 Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260401.jsonl")
 Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260401.jsonl")
 Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260401.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260401.jsonl")
+Fatal error: exception Unix.Unix_error(Unix.EACCES, "open", "/home/cn/cn-pi/logs/events/20260401.jsonl")
+[36mChecking inbox for pi...[0m
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+cn 3.26.1 | hub=cn-pi | profile=engineer
+  model: claude-opus-4-20250514
+  secrets: ANTHROPIC_KEY=.cn/secrets.env TELEGRAM_TOKEN=.cn/secrets.env
+  peers: cnos, sigma
+[32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
+[32m✓ [0mProcessed: tg-194570569 (0 ops)
+[32m✓ [0mProcessed: tg-194570570 (0 ops)
+[32m✓ [0mProcessed: tg-194570571 (0 ops)
+[32m✓ [0mProcessed: tg-194570572 (0 ops)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+fatal: failed to write object
+fatal: unpack-objects failed
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..c829bb049  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..c829bb049  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..6fdac0f6f  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..6fdac0f6f  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..3d6de4882  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..3d6de4882  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..228c18f18  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..228c18f18  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[32m✓ [0mProcessed: tg-194570573 (0 ops)
+[32m✓ [0mSurfaced MCA: Add URL fetch capability to CN Shell for agent web access
+[32m✓ [0mProcessed: tg-194570574 (1 ops)
+[32m✓ [0mSurfaced MCA: Add HTTP fetch capability to agent runtime for pulling web content
+[32m✓ [0mProcessed: tg-194570575 (1 ops)
+[32m✓ [0mQueued message to sigma
+[32m✓ [0mProcessed: tg-194570576 (1 ops)
+[32m✓ [0mProcessed: tg-194570577 (0 ops)
+[32m✓ [0mQueued message to sigma
+[32m✓ [0mProcessed: tg-194570578 (1 ops)
+[32m✓ [0mProcessed: tg-194570579 (0 ops)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..11836eea8  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..11836eea8  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 3 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+error: insufficient permission for adding an object to repository database .git/objects
+error: Error building trees
+remote: 
+remote: Create a pull request for 'sigma/hey-sigma-pi-here-my-human-a' on GitHub by visiting:        
+remote:      https://github.com/usurobor/cn-pi/pull/new/sigma/hey-sigma-pi-here-my-human-a        
+remote: 
+To https://github.com/usurobor/cn-pi.git
+ * [new branch]          sigma/hey-sigma-pi-here-my-human-a -> sigma/hey-sigma-pi-here-my-human-a
+[32m✓ [0mSent to sigma: hey-sigma-pi-here-my-human-a.md
+error: insufficient permission for adding an object to repository database .git/objects
+error: Error building trees
+remote: 
+remote: Create a pull request for 'sigma/where-does-a-surfaced-mca-for' on GitHub by visiting:        
+remote:      https://github.com/usurobor/cn-pi/pull/new/sigma/where-does-a-surfaced-mca-for        
+remote: 
+To https://github.com/usurobor/cn-pi.git
+ * [new branch]          sigma/where-does-a-surfaced-mca-for -> sigma/where-does-a-surfaced-mca-for
+[32m✓ [0mSent to sigma: where-does-a-surfaced-mca-for.md
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[32m✓ [0mProcessed: tg-194570580 (0 ops)
+[32m✓ [0mProcessed: tg-194570581 (0 ops)
+[32m✓ [0mProcessed: tg-194570582 (0 ops)
+[32m✓ [0mProcessed: tg-194570583 (0 ops)
+[32m✓ [0mProcessed: tg-194570584 (0 ops)
+[32m✓ [0mQueued message to sigma
+[32m✓ [0mProcessed: tg-194570585 (1 ops)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..779a0e8db  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..779a0e8db  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 2 thread(s)...[0m
+error: insufficient permission for adding an object to repository database .git/objects
+error: Error building trees
+remote: 
+remote: Create a pull request for 'sigma/bug-agents-summarize-actions' on GitHub by visiting:        
+remote:      https://github.com/usurobor/cn-pi/pull/new/sigma/bug-agents-summarize-actions        
+remote: 
+To https://github.com/usurobor/cn-pi.git
+ * [new branch]          sigma/bug-agents-summarize-actions -> sigma/bug-agents-summarize-actions
+[32m✓ [0mSent to sigma: bug-agents-summarize-actions.md
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..118e92b8e  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..118e92b8e  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
+[36mChecking inbox for pi...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..a9a06bcc6  main       -> origin/main  (unable to update local ref)
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+error: cannot update the ref 'refs/remotes/origin/main': unable to append to '.git/logs/refs/remotes/origin/main': Permission denied
+From https://github.com/usurobor/cn-sigma
+ ! 8c2b876d1..a9a06bcc6  main       -> origin/main  (unable to update local ref)
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (degraded)
