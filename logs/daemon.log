@@ -65607,3 +65607,13 @@ Try '/usr/local/bin/cn --help' for more information.
 [36mProcessing inbox...[0m
 [2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
 [36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[33m⚠ [0mVersion drift: running 3.29.0, disk has (GNU — re-executing...
+/usr/local/bin/cn: unrecognized option '--daemon'
+Try '/usr/local/bin/cn --help' for more information.
+[36mChecking inbox for pi...[0m
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
