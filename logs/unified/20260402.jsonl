@@ -14,3 +14,7 @@
 {"schema":"cn.ulog.v1","ts":"2026-04-02T10:46:00.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570589","pass":1}
 {"schema":"cn.ulog.v1","ts":"2026-04-02T10:46:04.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570589","passes":1,"ops":0,"duration_ms":4454}
 {"schema":"cn.ulog.v1","ts":"2026-04-02T10:46:04.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570589","response_preview":"I'm running **cnos.core@3.16.2** and **cnos.eng@3.16.2**.\n\nThe cn binary is version 3.27.1, and my cognitive packages (cnos) are version 3.16.2."}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T16:17:20.000Z","kind":"message.received","severity":"info","msg_id":"tg-194570590","source":"telegram","user_msg":"Your version?"}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T16:17:21.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570590","pass":1}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T16:17:25.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570590","passes":1,"ops":0,"duration_ms":4605}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T16:17:25.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570590","response_preview":"My versions:\n- **cn runtime**: 3.27.1\n- **cnos.core**: 3.16.2\n- **cnos.eng**: 3.16.2"}
