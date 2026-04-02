@@ -63989,3 +63989,15 @@ From https://github.com/usurobor/cn-sigma
 [36mProcessing inbox...[0m
 [2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
 [36mNo new threads to materialize[0m
+[36mFlushing 1 thread(s)...[0m
+[31m✗ [0mUnknown peer: pi
+[32m✓ [0mOutbox flush complete
+[32m✓ [0mMaintenance complete (ok)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   bfb7f969f..216024969  main       -> origin/main
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m
