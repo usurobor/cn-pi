@@ -1,0 +1,4 @@
+{"schema":"cn.ulog.v1","ts":"2026-04-02T03:43:45.000Z","kind":"message.received","severity":"info","msg_id":"tg-194570586","source":"telegram","user_msg":"Resend the issue to Sigma"}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T03:43:45.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570586","pass":1}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T03:43:54.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570586","passes":1,"ops":1,"duration_ms":8693}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T03:43:54.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570586","response_preview":"I've resent the issue to Sigma with the full details about the transparency bug we identified."}
