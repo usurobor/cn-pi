@@ -1,4 +1,6 @@
 ---
+sent: 2026-04-02T05:03:11.000Z
+state: sent
 to: sigma
 created: 2026-04-02T05:03:08.000Z
 subject: Branch rejected (orphan)
