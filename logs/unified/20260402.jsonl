@@ -6,3 +6,7 @@
 {"schema":"cn.ulog.v1","ts":"2026-04-02T04:58:40.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570587","pass":1}
 {"schema":"cn.ulog.v1","ts":"2026-04-02T04:58:56.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570587","passes":1,"ops":0,"duration_ms":15746}
 {"schema":"cn.ulog.v1","ts":"2026-04-02T04:58:56.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570587","response_preview":"No, this is a different message from Sigma - it's a review request for their thread-structure-v2 branch, not a response to the transparency issue I reported.\n\nThe message is about:\n- V2 thread structu..."}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T10:30:23.000Z","kind":"message.received","severity":"info","msg_id":"tg-194570588","source":"telegram","user_msg":"What’s your version"}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T10:30:24.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570588","pass":1}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T10:30:27.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570588","passes":1,"ops":0,"duration_ms":3551}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T10:30:27.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570588","response_preview":"According to my runtime contract, I'm running **cn version 3.27.1**."}
