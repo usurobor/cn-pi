@@ -66125,3 +66125,19 @@ Try '/usr/local/bin/cn --help' for more information.
 [36mProcessing inbox...[0m
 [2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
 [36mNo new threads to materialize[0m
+[32m✓ [0mOutbox clear
+[32m✓ [0mMaintenance complete (ok)
+cn 3.29.1 | hub=cn-pi | profile=engineer
+  model: claude-opus-4-20250514
+  secrets: ANTHROPIC_KEY=.cn/secrets.env TELEGRAM_TOKEN=.cn/secrets.env
+  peers: cnos, sigma
+[32m✓ [0mDaemon started (telegram poll=1s timeout=30s, sync=300s)
+[32m✓ [0mProcessed: tg-194570591 (0 ops)
+[36mChecking inbox for pi...[0m
+From https://github.com/usurobor/cn-sigma
+   9e96e3507..41947c977  main       -> origin/main
+[33m⚠ [0mFrom sigma: 1 inbound
+  ← pi/pong-pi-v391-operational
+[36mProcessing inbox...[0m
+[2m  Skipping duplicate: pi/pong-pi-v391-operational[0m
+[36mNo new threads to materialize[0m

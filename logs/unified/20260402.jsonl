@@ -18,3 +18,7 @@
 {"schema":"cn.ulog.v1","ts":"2026-04-02T16:17:21.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570590","pass":1}
 {"schema":"cn.ulog.v1","ts":"2026-04-02T16:17:25.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570590","passes":1,"ops":0,"duration_ms":4605}
 {"schema":"cn.ulog.v1","ts":"2026-04-02T16:17:25.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570590","response_preview":"My versions:\n- **cn runtime**: 3.27.1\n- **cnos.core**: 3.16.2\n- **cnos.eng**: 3.16.2"}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T18:51:55.000Z","kind":"message.received","severity":"info","msg_id":"tg-194570591","source":"telegram","user_msg":"What’s your version"}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T18:51:55.000Z","kind":"invocation.start","severity":"info","msg_id":"tg-194570591","pass":1}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T18:51:58.000Z","kind":"invocation.end","severity":"info","msg_id":"tg-194570591","passes":1,"ops":0,"duration_ms":3372}
+{"schema":"cn.ulog.v1","ts":"2026-04-02T18:51:58.000Z","kind":"message.sent","severity":"info","msg_id":"tg-194570591","response_preview":"My versions:\n- **cn runtime**: 3.29.1\n- **cnos.core**: 3.16.2\n- **cnos.eng**: 3.16.2"}
