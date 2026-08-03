@@ -1,0 +1,1 @@
+{"schema":"cn.deps.v1","profile":"engineer","packages":[{"name":"cnos.core","version":"^3.16.2"},{"name":"cnos.eng","version":"^3.16.2"}]}

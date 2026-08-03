@@ -1,0 +1,1 @@
+{"schema":"cn.deps.lock.v1","packages":[{"name":"cnos.core","version":"3.16.2","source":"https://github.com/usurobor/cnos.git","rev":"0ef3d134bbf500689a8294bffdd006bf8ab02a8b","subdir":"packages/cnos.core"},{"name":"cnos.eng","version":"3.16.2","source":"https://github.com/usurobor/cnos.git","rev":"0ef3d134bbf500689a8294bffdd006bf8ab02a8b","subdir":"packages/cnos.eng"}]}

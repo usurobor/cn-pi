@@ -1,0 +1,13 @@
+{
+  "name": "pi",
+  "version": "1.0.0",
+  "runtime": {
+    "allowed_users": [
+      498316684
+    ],
+    "model": "claude-opus-4-20250514",
+    "scheduler": {
+      "review_interval_sec": 0
+    }
+  }
+}
