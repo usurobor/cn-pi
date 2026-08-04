@@ -1,2 +1,3 @@
 .cn/secrets.env
 .cn/vendor/
+__pycache__/

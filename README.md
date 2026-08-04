@@ -86,19 +86,23 @@ is a foreign-vendoring concept only. cn-pi *is* Pi.
 
 ### Bodies, transport, dialogue
 
-ChatGPT-Pi cannot commit to git; it writes r0 to a Google Drive hot-staging area.
-**pi-host** (the first project) is the mechanical Drive→git forwarder that
-materializes each Drive box onto its writer-local orphan ref with provenance,
-after which home compacts. Execution of dispatched work runs on **the box** (a
-60-second poller), not GitHub Actions: a dispatched job is a `class: request`
-entry, and progress is `class: status` entries the box appends as it runs — job
-control *is* memory.
+ChatGPT-Pi cannot commit to git, so it temporarily writes communication events
+to a Google Drive hot-staging area. The cn-pi-owned
+[`ops/drive-ingress`](ops/drive-ingress/) adapter materializes only validated
+`cnos.agent-message.v1` dialogue events onto Pi's writer-owned Git refs. It
+explicitly ignores memory documents and exists only to compensate for
+ChatGPT's missing Git write capability. Git is canonical; Drive is replaceable
+staging. Remove the adapter when ChatGPT-Pi can sign and push Git commits
+directly.
+
+The adapter runs on **the box** as a 60-second poller, not in GitHub Actions.
 
 Inter-activation **dialogue is a separate primitive from memory**
 ([cnos#698](https://github.com/usurobor/cnos/issues/698), Agent Dialogue Protocol
 v0 — design pending): each activation writes its own single-writer *dialogue
-stream* (`refs/heads/dialogue/pi/<activation-id>`), addressed recipients read it
-by cursor, and threads are reconstructed by `thread_id`. A dialogue message is
+stream (`refs/heads/cn-pi/<locus>/gpt/chat` for the current ChatGPT-Pi
+activations), addressed recipients read it by cursor, and threads are
+reconstructed by `thread_id`. A dialogue message is
 **communication-only**; a durable lesson crosses into memory only by an explicit
 new r0 entry in the activation's own box citing the dialogue `{repo, ref, sha}` —
 never by copying the transcript. Writer identity is activation-level

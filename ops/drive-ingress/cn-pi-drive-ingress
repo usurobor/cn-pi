@@ -1,0 +1,1059 @@
+#!/usr/bin/env python3
+"""Project Pi dialogue events for CMP, TSC, and CNOS onto writer-owned Git refs.
+
+This explicitly allowlisted bridge handles three project loci only. It never
+imports memory-only documents, executes source content, or checks out an
+operational ref. A temporary Git index keeps developer worktrees untouched.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import configparser
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+from io import BytesIO
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+from typing import Mapping
+import unicodedata
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+import xml.etree.ElementTree as ET
+import zipfile
+
+
+DEFAULT_DOC_ID = "11nbk6ZncQ7iwZ8vr-Yk0v71gxXCLwtO4OQL6XBOraeE"
+DEFAULT_REMOTE = "origin"
+DEFAULT_RCLONE_CONFIG = "/root/.config/rclone/rclone.conf"
+MAX_SOURCE_BYTES = 1_048_576
+LOCK_PATH = "/run/lock/cn-pi-drive-ingress.lock"
+INCIDENT_PATH = Path("/var/lib/cn-pi-drive-ingress/source-mutations.jsonl")
+MAX_INCIDENT_LEDGER_BYTES = 8 * 1_048_576
+DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+WORD_NAMESPACE = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+
+
+@dataclass(frozen=True)
+class ProjectRoute:
+    project: str
+    activation: str
+    drive_root: str
+    repo: Path
+    expected_repo: str
+    target_ref: str
+    peer_ref: str
+
+
+PROJECT_ROUTES = {
+    project: ProjectRoute(
+        project=project,
+        activation=f"pi-{project}-chatgpt",
+        drive_root=f"gdrive:cn-pi/r0-boxes/pi-{project}",
+        repo=Path(f"/root/{project}"),
+        expected_repo=f"usurobor/{project}",
+        target_ref=f"refs/heads/cn-pi/{project}/gpt/chat",
+        peer_ref=f"refs/heads/cn-sigma/{project}/claude/chat",
+    )
+    for project in ("cmp", "tsc", "cnos")
+}
+
+SECRET_PATTERNS = {
+    "private-key": re.compile(r"-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----"),
+    "github-token": re.compile(r"(?:github_pat_|gh[opusr]_)[A-Za-z0-9_]{20,}"),
+    "google-api-key": re.compile(r"AIza[0-9A-Za-z_-]{30,}"),
+    "google-private-key-json": re.compile(r'"private_key"\s*:\s*"-----BEGIN'),
+}
+
+
+class SyncError(RuntimeError):
+    """Expected fail-closed sync error."""
+
+
+def git(repo: Path, args: list[str], *, data: bytes | None = None,
+        env: Mapping[str, str] | None = None, check: bool = True) -> subprocess.CompletedProcess[bytes]:
+    command = ["git", "-C", str(repo), *args]
+    merged_env = os.environ.copy()
+    if env:
+        merged_env.update(env)
+    result = subprocess.run(
+        command,
+        input=data,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=merged_env,
+        check=False,
+    )
+    if check and result.returncode != 0:
+        diagnostic = result.stderr.decode("utf-8", "replace").strip()
+        raise SyncError(f"git {' '.join(args[:2])} failed: {diagnostic}")
+    return result
+
+
+def fetch_public_source(doc_id: str) -> tuple[str, bytes, str, str]:
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", doc_id):
+        raise SyncError("invalid Google document ID")
+    url = f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+    request = Request(url, headers={"User-Agent": "cn-pi-drive-ingress/0.1"})
+    try:
+        with urlopen(request, timeout=20) as response:
+            if response.status != 200:
+                raise SyncError(f"Drive export returned HTTP {response.status}")
+            payload = response.read(MAX_SOURCE_BYTES + 1)
+    except (HTTPError, URLError, TimeoutError) as error:
+        raise SyncError(f"Drive export failed: {error}") from error
+    if len(payload) > MAX_SOURCE_BYTES:
+        raise SyncError("Drive export exceeds the 1 MiB pilot limit")
+    if not payload:
+        raise SyncError("Drive export is empty")
+    return doc_id, payload, url, f"public:{doc_id}"
+
+
+def rclone(config: Path, args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[bytes]:
+    command = ["rclone", "--config", str(config), *args]
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if check and result.returncode != 0:
+        diagnostic = result.stderr.decode("utf-8", "replace").strip()
+        raise SyncError(f"rclone {' '.join(args[:2])} failed: {diagnostic}")
+    return result
+
+
+def docx_paragraph_text(paragraph: ET.Element) -> str:
+    """Render the text-bearing WordprocessingML nodes in one paragraph."""
+    parts: list[str] = []
+    for element in paragraph.iter():
+        if element.tag == f"{WORD_NAMESPACE}t":
+            parts.append(element.text or "")
+        elif element.tag == f"{WORD_NAMESPACE}tab":
+            parts.append("\t")
+        elif element.tag in (f"{WORD_NAMESPACE}br", f"{WORD_NAMESPACE}cr"):
+            parts.append("\n")
+        elif element.tag == f"{WORD_NAMESPACE}noBreakHyphen":
+            parts.append("\N{NON-BREAKING HYPHEN}")
+        elif element.tag == f"{WORD_NAMESPACE}softHyphen":
+            parts.append("\N{SOFT HYPHEN}")
+    return "".join(parts)
+
+
+def extract_docx_text(payload: bytes, path: str) -> bytes:
+    """Extract deterministic plain text from a bounded DOCX container."""
+    try:
+        with zipfile.ZipFile(BytesIO(payload)) as archive:
+            try:
+                document_info = archive.getinfo("word/document.xml")
+            except KeyError as error:
+                raise SyncError(f"DOCX is missing word/document.xml: {path}") from error
+            if document_info.file_size > MAX_SOURCE_BYTES:
+                raise SyncError(f"expanded DOCX document exceeds the 1 MiB pilot limit: {path}")
+            document_xml = archive.read(document_info)
+    except (zipfile.BadZipFile, OSError) as error:
+        raise SyncError(f"Drive item is not a valid DOCX file: {path}") from error
+
+    if b"<!DOCTYPE" in document_xml or b"<!ENTITY" in document_xml:
+        raise SyncError(f"DOCX contains forbidden XML declarations: {path}")
+    try:
+        document = ET.fromstring(document_xml)
+    except ET.ParseError as error:
+        raise SyncError(f"DOCX contains invalid WordprocessingML: {path}") from error
+    body = document.find(f"{WORD_NAMESPACE}body")
+    if body is None:
+        raise SyncError(f"DOCX is missing its document body: {path}")
+
+    lines: list[str] = []
+    for block in body:
+        if block.tag == f"{WORD_NAMESPACE}p":
+            lines.append(docx_paragraph_text(block))
+        elif block.tag == f"{WORD_NAMESPACE}tbl":
+            for row in block.findall(f"{WORD_NAMESPACE}tr"):
+                cells: list[str] = []
+                for cell in row.findall(f"{WORD_NAMESPACE}tc"):
+                    paragraphs = cell.findall(f".//{WORD_NAMESPACE}p")
+                    cells.append("\n".join(docx_paragraph_text(item) for item in paragraphs))
+                lines.append("\t".join(cells))
+
+    text = ("\n".join(lines) + "\n").encode("utf-8")
+    if len(text) > MAX_SOURCE_BYTES:
+        raise SyncError(f"extracted DOCX text exceeds the 1 MiB pilot limit: {path}")
+    if not text.strip():
+        raise SyncError(f"DOCX contains no readable text: {path}")
+    return text
+
+
+def drive_text_payload(payload: bytes, path: str, mime_type: object) -> bytes:
+    """Return UTF-8 source text for a Drive item, including stored DOCX files."""
+    if mime_type == DOCX_MIME_TYPE or path.casefold().endswith(".docx"):
+        return extract_docx_text(payload, path)
+    return payload
+
+
+def rclone_remote_config(config: Path, root: str) -> tuple[str, configparser.RawConfigParser] | None:
+    remote = root.split(":", 1)[0]
+    parser = configparser.RawConfigParser()
+    try:
+        with config.open("r", encoding="utf-8") as handle:
+            parser.read_file(handle)
+    except (OSError, configparser.Error):
+        return None
+    if not parser.has_section(remote):
+        return None
+    return remote, parser
+
+
+def rclone_service_account_path(config: Path, root: str) -> Path | None:
+    parsed = rclone_remote_config(config, root)
+    if parsed is None:
+        return None
+    remote, parser = parsed
+    value = parser.get(remote, "service_account_file", fallback="").strip()
+    if not value:
+        return None
+    path = Path(os.path.expandvars(os.path.expanduser(value)))
+    return path if path.is_file() else None
+
+
+def service_account_access_token(credentials_path: Path) -> str:
+    """Mint a short-lived, read-only Drive token without exposing credentials."""
+    mode = credentials_path.stat().st_mode & 0o777
+    if mode & 0o077:
+        raise SyncError(
+            f"service-account credentials permissions must be 0600 or stricter, got {mode:04o}"
+        )
+    if credentials_path.stat().st_size > 64 * 1024:
+        raise SyncError("service-account credentials file is unexpectedly large")
+    try:
+        credentials = json.loads(credentials_path.read_text(encoding="utf-8"))
+        client_email = credentials["client_email"]
+        private_key_pem = credentials["private_key"]
+        token_uri = credentials["token_uri"]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as error:
+        raise SyncError("service-account credentials are invalid") from error
+    if not all(isinstance(value, str) and value for value in (
+        client_email, private_key_pem, token_uri
+    )):
+        raise SyncError("service-account credentials are incomplete")
+    if token_uri != "https://oauth2.googleapis.com/token":
+        raise SyncError("service-account token URI is not the expected Google endpoint")
+
+    try:
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import padding
+    except ImportError as error:
+        raise SyncError("Python cryptography support is required for service-account export") from error
+
+    def encoded(value: bytes) -> bytes:
+        return base64.urlsafe_b64encode(value).rstrip(b"=")
+
+    now = int(time.time())
+    header = encoded(b'{"alg":"RS256","typ":"JWT"}')
+    claims = encoded(json.dumps({
+        "iss": client_email,
+        "scope": "https://www.googleapis.com/auth/drive.readonly",
+        "aud": token_uri,
+        "iat": now,
+        "exp": now + 3600,
+    }, separators=(",", ":")).encode("utf-8"))
+    unsigned = header + b"." + claims
+    try:
+        private_key = serialization.load_pem_private_key(
+            private_key_pem.encode("utf-8"), password=None
+        )
+        signature = private_key.sign(unsigned, padding.PKCS1v15(), hashes.SHA256())
+    except (TypeError, ValueError) as error:
+        raise SyncError("service-account private key is invalid") from error
+    assertion = (unsigned + b"." + encoded(signature)).decode("ascii")
+    request = Request(
+        token_uri,
+        data=urlencode({
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion": assertion,
+        }).encode("ascii"),
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            result = json.load(response)
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise SyncError("service-account token exchange failed") from error
+    token = result.get("access_token") if isinstance(result, dict) else None
+    if not isinstance(token, str) or not token:
+        raise SyncError("service-account token exchange returned no access token")
+    return token
+
+
+def fetch_authenticated_text_export(file_id: str, access_token: str) -> bytes:
+    """Export editor text with the Drive API using a read-only bearer token."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", file_id):
+        raise SyncError("invalid Google Drive file ID")
+    query = urlencode({"mimeType": "text/plain"})
+    url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export?{query}"
+    request = Request(url, headers={
+        "Authorization": f"Bearer {access_token}",
+        "User-Agent": "cn-pi-drive-ingress/0.2",
+    })
+    try:
+        with urlopen(request, timeout=20) as response:
+            if response.status != 200:
+                raise SyncError(f"authenticated Drive export returned HTTP {response.status}")
+            payload = response.read(MAX_SOURCE_BYTES + 1)
+    except HTTPError as error:
+        raise SyncError(
+            f"authenticated Drive text export failed for {file_id}: HTTP {error.code}"
+        ) from error
+    except (URLError, TimeoutError) as error:
+        raise SyncError(f"authenticated Drive text export failed for {file_id}") from error
+    if len(payload) > MAX_SOURCE_BYTES:
+        raise SyncError(f"authenticated Drive export exceeds the 1 MiB pilot limit: {file_id}")
+    if not payload:
+        raise SyncError(f"authenticated Drive export is empty: {file_id}")
+    return payload
+
+
+def authenticated_sources(config: Path, root: str,
+                          activation: str = "pi-cmp-chatgpt") -> list[tuple[str, bytes, str, str]]:
+    if not config.is_file():
+        raise SyncError(f"rclone config does not exist: {config}")
+    mode = config.stat().st_mode & 0o777
+    if mode & 0o077:
+        raise SyncError(f"rclone config permissions must be 0600 or stricter, got {mode:04o}")
+    if not re.fullmatch(r"[A-Za-z0-9._-]+:[A-Za-z0-9._/ -]*", root):
+        raise SyncError("invalid rclone source root")
+
+    listing_result = rclone(config, ["lsjson", root, "--recursive", "--files-only"])
+    try:
+        listing = json.loads(listing_result.stdout)
+    except json.JSONDecodeError as error:
+        raise SyncError("rclone lsjson returned invalid JSON") from error
+    if not isinstance(listing, list):
+        raise SyncError("rclone lsjson did not return a file list")
+
+    candidates: list[dict[str, object]] = []
+    for item in listing:
+        if not isinstance(item, dict) or item.get("IsDir"):
+            continue
+        path = item.get("Path")
+        if not isinstance(path, str):
+            continue
+        name = path.rsplit("/", 1)[-1]
+        if activation not in name or not name.startswith("r0"):
+            continue
+        candidates.append(item)
+    if not candidates:
+        raise SyncError(f"no {activation} r0 documents found below {root}")
+
+    service_account_path = rclone_service_account_path(config, root)
+    service_account_token: str | None = None
+    sources: list[tuple[str, bytes, str, str]] = []
+    for item in sorted(candidates, key=lambda value: str(value["Path"])):
+        path = str(item["Path"])
+        file_id = item.get("ID")
+        if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{20,}", file_id):
+            raise SyncError(f"Drive item is missing a stable file ID: {path}")
+        mime_type = item.get("MimeType")
+        is_docx = mime_type == DOCX_MIME_TYPE or path.casefold().endswith(".docx")
+        if is_docx and service_account_path is not None:
+            if service_account_token is None:
+                service_account_token = service_account_access_token(service_account_path)
+            payload = fetch_authenticated_text_export(file_id, service_account_token)
+        else:
+            remote_path = f"{root.rstrip('/')}/{path}"
+            payload = rclone(config, ["cat", remote_path]).stdout
+        if len(payload) > MAX_SOURCE_BYTES:
+            raise SyncError(f"Drive item exceeds the 1 MiB pilot limit: {path}")
+        if not payload:
+            raise SyncError(f"Drive item is empty: {path}")
+        if not (is_docx and service_account_path is not None):
+            payload = drive_text_payload(payload, path, mime_type)
+        source_url = f"https://docs.google.com/document/d/{file_id}"
+        modified = item.get("ModTime")
+        source_label = f"rclone:{path}@{modified or 'unknown'}"
+        sources.append((file_id, payload, source_url, source_label))
+    return sources
+
+
+def rclone_credentials_present(config: Path, root: str) -> bool:
+    """Return whether the configured remote has OAuth or service-account auth."""
+    parsed = rclone_remote_config(config, root)
+    if parsed is None:
+        return False
+    remote, parser = parsed
+    token = parser.get(remote, "token", fallback="").strip()
+    inline_service_account = parser.get(
+        remote, "service_account_credentials", fallback=""
+    ).strip()
+    service_account_file = parser.get(remote, "service_account_file", fallback="").strip()
+    if token or inline_service_account:
+        return True
+    if not service_account_file:
+        return False
+    credential_path = Path(os.path.expandvars(os.path.expanduser(service_account_file)))
+    return credential_path.is_file()
+
+
+def normalize_document(payload: bytes) -> str:
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise SyncError("Drive export is not UTF-8") from error
+
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    version = re.search(r"(?m)^CNPI-DOC: (0\.[0-9]+)$", normalized[:1000])
+    if not version:
+        raise SyncError("missing or unsupported CNPI-DOC version")
+    return normalized
+
+
+def validate_dialogue_document(document: str, route: ProjectRoute) -> None:
+    markers = (
+        f"activation: {route.activation}",
+        f"project: {route.project}",
+        f"intended_git_repo: {route.expected_repo}",
+        f"intended_git_ref: {route.target_ref}",
+    )
+    for marker in markers:
+        if not re.search(rf"(?m)^{re.escape(marker)}$", document[:3000]):
+            raise SyncError(f"{route.project} dialogue document is missing marker: {marker}")
+
+
+def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES["cmp"]
+                            ) -> list[tuple[str, bytes]]:
+    starts = list(re.finditer(r"(?m)^---\nschema: cnos\.agent-message\.v1$", document))
+    if not starts:
+        return []
+
+    events: list[tuple[str, bytes]] = []
+    seen: set[str] = set()
+    for position, match in enumerate(starts):
+        content_start = match.start() + len("---\n")
+        content_end = starts[position + 1].start() if position + 1 < len(starts) else len(document)
+        event = document[content_start:content_end].rstrip() + "\n"
+        frontmatter_end = event.find("\n---\n")
+        if frontmatter_end < 0:
+            raise SyncError("dialogue event is missing its frontmatter terminator")
+        frontmatter = event[:frontmatter_end]
+        scalar_fields: dict[str, str] = {}
+        for line in frontmatter.splitlines():
+            if line.startswith(" ") or ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            scalar_fields[key.strip()] = value.strip()
+
+        event_id = scalar_fields.get("id", "")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", event_id):
+            raise SyncError(f"dialogue event has an invalid stable id: {event_id!r}")
+        if event_id in seen:
+            raise SyncError(f"duplicate dialogue event id in source: {event_id}")
+        seen.add(event_id)
+
+        required = {
+            "schema": "cnos.agent-message.v1",
+            "rank": "r0",
+            "authority": "communication-only",
+        }
+        for key, expected in required.items():
+            if scalar_fields.get(key) != expected:
+                raise SyncError(
+                    f"event {event_id} field {key!r} must be {expected!r}, "
+                    f"got {scalar_fields.get(key)!r}"
+                )
+        thread_id = scalar_fields.get("thread_id", "")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", thread_id):
+            raise SyncError(f"event {event_id} has an invalid thread_id: {thread_id!r}")
+        legacy_from = re.search(
+            rf"(?m)^from:\n  agent: pi\n  activation: {re.escape(route.project)}\n"
+            rf"  locus: {re.escape(route.project)}$",
+            frontmatter,
+        )
+        normalized_from = re.search(
+            r"(?m)^from:\n  agent: usurobor/cn-pi\n"
+            rf"  activation: gpt/chat\n  locus: {re.escape(route.expected_repo)}$",
+            frontmatter,
+        )
+        if not (legacy_from or normalized_from):
+            raise SyncError(f"event {event_id} is not from cn-pi at {route.project.upper()}")
+        legacy_to = re.search(
+            r"(?m)^to:\n  - agent: sigma\n    activation: cloud$", frontmatter
+        )
+        normalized_to = re.search(
+            r"(?m)^to:\n  - agent: usurobor/cn-sigma\n"
+            r"    activation: claude/chat$",
+            frontmatter,
+        )
+        if not (legacy_to or normalized_to):
+            raise SyncError(
+                f"event {event_id} is not addressed to cn-sigma at {route.project.upper()}"
+            )
+        if not re.search(
+            rf"(?m)^project:\n  repo: {re.escape(route.expected_repo)}$", frontmatter
+        ):
+            raise SyncError(f"event {event_id} is not scoped to {route.expected_repo}")
+        events.append((event_id, event.encode("utf-8")))
+    return events
+
+
+def scan_source(payload: bytes) -> None:
+    text = payload.decode("utf-8-sig")
+    for detector, pattern in SECRET_PATTERNS.items():
+        match = pattern.search(text)
+        if match:
+            line = text.count("\n", 0, match.start()) + 1
+            raise SyncError(f"source rejected by {detector} detector at line {line}")
+
+
+def canonical_event_bytes(payload: bytes) -> bytes:
+    """Normalize only transport-insignificant differences for comparison."""
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise SyncError("dialogue event is not UTF-8") from error
+    text = unicodedata.normalize("NFC", text.replace("\r\n", "\n").replace("\r", "\n"))
+    lines = text.splitlines()
+    return ("\n".join(line.rstrip(" \t") for line in lines) + "\n").encode("utf-8")
+
+
+def sha256_label(payload: bytes) -> str:
+    return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def first_difference(published: bytes, current: bytes) -> dict[str, object]:
+    common = min(len(published), len(current))
+    offset = 0
+    while offset < common and published[offset] == current[offset]:
+        offset += 1
+    line = published.count(b"\n", 0, offset) + 1
+    previous_newline = published.rfind(b"\n", 0, offset)
+    column = offset + 1 if previous_newline < 0 else offset - previous_newline
+
+    def byte_label(value: bytes, position: int) -> str:
+        return "EOF" if position >= len(value) else f"0x{value[position]:02x}"
+
+    return {
+        "byte_offset": offset,
+        "published_line": line,
+        "published_column": column,
+        "published_byte": byte_label(published, offset),
+        "current_source_byte": byte_label(current, offset),
+        "published_bytes": len(published),
+        "current_source_bytes": len(current),
+    }
+
+
+def published_file_commit(repo: Path, parent: str, path: str) -> str:
+    commit = git(repo, ["log", "-1", "--format=%H", parent, "--", path]).stdout.decode().strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise SyncError(f"cannot locate the publishing commit for {path}")
+    return commit
+
+
+def source_mutation_incident(repo: Path, parent: str, destination: str,
+                             event_id: str, published: bytes, current: bytes,
+                             doc_id: str, source_revision: str) -> dict[str, object]:
+    published_canonical = canonical_event_bytes(published)
+    current_canonical = canonical_event_bytes(current)
+    incident: dict[str, object] = {
+        "kind": "source_mutation",
+        "event_id": event_id,
+        "published_digest": sha256_label(published_canonical),
+        "current_source_digest": sha256_label(current_canonical),
+        "published_git_commit": published_file_commit(repo, parent, destination),
+        "source_document_id": doc_id,
+        "source_revision": source_revision,
+        "first_difference": first_difference(published_canonical, current_canonical),
+        "observed_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "action": "published_event_preserved",
+    }
+    identity = {
+        key: incident[key]
+        for key in (
+            "kind",
+            "event_id",
+            "published_digest",
+            "current_source_digest",
+            "source_document_id",
+        )
+    }
+    incident["incident_id"] = hashlib.sha256(
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return incident
+
+
+def persist_incidents(incidents: list[dict[str, object]], path: Path = INCIDENT_PATH) -> str | None:
+    """Append new incidents once; return an error for journaling without blocking imports."""
+    if not incidents:
+        return None
+    try:
+        known: set[str] = set()
+        if path.exists():
+            file_stat = path.lstat()
+            if not stat.S_ISREG(file_stat.st_mode):
+                raise OSError("incident ledger is not a regular file")
+            if file_stat.st_size > MAX_INCIDENT_LEDGER_BYTES:
+                raise OSError("incident ledger exceeds its 8 MiB safety limit")
+            with path.open("r", encoding="utf-8") as handle:
+                for line_number, line in enumerate(handle, 1):
+                    if not line.strip():
+                        continue
+                    entry = json.loads(line)
+                    incident_id = entry.get("incident_id")
+                    if not isinstance(incident_id, str):
+                        raise OSError(f"incident ledger line {line_number} has no incident_id")
+                    known.add(incident_id)
+        new_entries = [entry for entry in incidents if str(entry["incident_id"]) not in known]
+        if not new_entries:
+            return None
+        flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, flags, 0o600)
+        with os.fdopen(descriptor, "a", encoding="utf-8") as handle:
+            os.fchmod(handle.fileno(), 0o600)
+            for entry in new_entries:
+                handle.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        return None
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as error:
+        return str(error)
+
+
+def validate_ref(repo: Path, target_ref: str) -> None:
+    if not target_ref.startswith("refs/heads/"):
+        raise SyncError("target must be a heads ref")
+    git(repo, ["check-ref-format", target_ref])
+
+
+def validate_repo(repo: Path, remote: str, expected_repo: str | None) -> None:
+    if not repo.is_dir() or not (repo / ".git").is_dir():
+        raise SyncError(f"not a Git worktree: {repo}")
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", remote):
+        raise SyncError("invalid remote name")
+    inside = git(repo, ["rev-parse", "--is-inside-work-tree"]).stdout.strip()
+    if inside != b"true":
+        raise SyncError(f"not inside a Git worktree: {repo}")
+    remote_url = git(repo, ["remote", "get-url", remote]).stdout.decode().strip()
+    if expected_repo:
+        accepted = {
+            f"https://github.com/{expected_repo}",
+            f"https://github.com/{expected_repo}.git",
+            f"git@github.com:{expected_repo}.git",
+        }
+        if remote_url not in accepted:
+            raise SyncError(f"remote URL is outside the configured repository: {remote_url}")
+
+
+def remote_head(repo: Path, remote: str, target_ref: str) -> str | None:
+    output = git(repo, ["ls-remote", "--heads", remote, target_ref]).stdout.decode().strip()
+    if not output:
+        return None
+    lines = output.splitlines()
+    if len(lines) != 1:
+        raise SyncError("target ref resolved ambiguously")
+    sha, ref = lines[0].split("\t", 1)
+    if ref != target_ref or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise SyncError("target ref returned an invalid object ID")
+    return sha
+
+
+def fetch_parent(repo: Path, remote: str, target_ref: str, expected: str | None) -> str | None:
+    if expected is None:
+        return None
+    git(repo, ["fetch", "--no-tags", remote, target_ref])
+    fetched = git(repo, ["rev-parse", "FETCH_HEAD"]).stdout.decode().strip()
+    if fetched != expected:
+        raise SyncError("target ref changed while it was being fetched; retry later")
+    return fetched
+
+
+def existing_file(repo: Path, parent: str | None, path: str) -> bytes | None:
+    if parent is None:
+        return None
+    result = git(repo, ["show", f"{parent}:{path}"], check=False)
+    if result.returncode == 0:
+        return result.stdout
+    diagnostic = result.stderr.decode("utf-8", "replace")
+    if "does not exist" in diagnostic or "exists on disk, but not in" in diagnostic:
+        return None
+    raise SyncError(f"cannot inspect existing source projection: {diagnostic.strip()}")
+
+
+def readme_bytes(route: ProjectRoute, doc_id: str, source_url: str) -> bytes:
+    if doc_id and source_url:
+        source = (
+            f"Source document: {source_url}\n"
+            f"Source file ID: `{doc_id}`\n"
+        )
+    else:
+        source = (
+            f"Drive staging route: `{route.drive_root}`\n"
+            "No memory document or dialogue event was imported during stream initialization.\n"
+        )
+    text = f"""# cn-pi @ {route.project} — gpt/chat activation (r0 stream)
+
+Writer-owned append-only r0 dialogue stream, following the normalized
+activation naming established by the CNOS dialogue protocol.
+
+- agent (home repo): `usurobor/cn-pi`
+- locus (project): `{route.expected_repo}`
+- activation: `gpt/chat`
+- handle: `cn-pi@{route.project}:gpt/chat`
+- ref: `{route.target_ref}`
+- reads Sigma at: `{route.peer_ref}`
+
+Communication is not memory and is not project authority. Consequential
+results require separate promotion into a project-native artifact.
+
+{source}
+Writer: `{route.activation}` through the mechanical Pi Drive bridge
+
+Files under `events/` contain normalized-LF, otherwise verbatim
+`cnos.agent-message.v1` blocks extracted from the mixed Drive staging document.
+Legacy Pi/Sigma identity fields are accepted during this naming transition but
+are never rewritten by the bridge. Event IDs are immutable and the branch
+advances by fast-forward commits only.
+"""
+    return text.encode("utf-8")
+
+
+def project(repo: Path, remote: str, target_ref: str, doc_id: str,
+            payload: bytes, source_url: str, events: list[tuple[str, bytes]],
+            *, route: ProjectRoute = PROJECT_ROUTES["cmp"], dry_run: bool,
+            initialize_if_empty: bool = False) -> dict[str, object]:
+    digest = hashlib.sha256(payload).hexdigest()
+    source_revision = f"export-sha256:{digest}"
+    expected = remote_head(repo, remote, target_ref)
+    parent = fetch_parent(repo, remote, target_ref, expected)
+    additions: list[tuple[str, bytes]] = []
+    incidents: list[dict[str, object]] = []
+    for event_id, event_bytes in events:
+        destination = f"events/{event_id}.md"
+        previous = existing_file(repo, parent, destination)
+        if previous is None:
+            additions.append((destination, event_bytes))
+        elif canonical_event_bytes(previous) != canonical_event_bytes(event_bytes):
+            if parent is None:
+                raise SyncError("an existing event cannot exist without a parent commit")
+            incidents.append(
+                source_mutation_incident(
+                    repo,
+                    parent,
+                    destination,
+                    event_id,
+                    previous,
+                    event_bytes,
+                    doc_id,
+                    source_revision,
+                )
+            )
+
+    incident_ledger_error = None if dry_run else persist_incidents(incidents)
+
+    if not additions and not (initialize_if_empty and parent is None):
+        result: dict[str, object] = {
+            "status": "source_mutation_preserved" if incidents else "no_change",
+            "target_ref": target_ref,
+            "source_digest": f"sha256:{digest}",
+            "events_seen": [event_id for event_id, _ in events],
+            "head": parent,
+        }
+        if incidents:
+            result["incidents"] = incidents
+        if incident_ledger_error:
+            result["incident_ledger_error"] = incident_ledger_error
+        return result
+
+    if dry_run:
+        if not additions:
+            return {
+                "status": "would_initialize",
+                "target_ref": target_ref,
+                "source_digest": f"sha256:{digest}",
+                "parent": parent,
+            }
+        result = {
+            "status": "would_update",
+            "target_ref": target_ref,
+            "source_digest": f"sha256:{digest}",
+            "events_to_add": [path.removeprefix("events/").removesuffix(".md") for path, _ in additions],
+            "parent": parent,
+            "source_bytes": len(payload),
+        }
+        if incidents:
+            result["incidents"] = incidents
+        return result
+
+    index_handle = tempfile.NamedTemporaryFile(prefix="cmp-pi-sync-index-", delete=False)
+    index_path = Path(index_handle.name)
+    index_handle.close()
+    index_path.unlink()
+    index_env = {"GIT_INDEX_FILE": str(index_path)}
+    try:
+        if parent:
+            git(repo, ["read-tree", parent], env=index_env)
+        else:
+            git(repo, ["read-tree", "--empty"], env=index_env)
+
+        for destination, event_bytes in additions:
+            source_blob = git(
+                repo, ["hash-object", "-w", "--stdin"], data=event_bytes
+            ).stdout.decode().strip()
+            git(
+                repo,
+                ["update-index", "--add", "--cacheinfo", "100644", source_blob, destination],
+                env=index_env,
+            )
+
+        if parent is None:
+            readme = readme_bytes(route, doc_id, source_url)
+            readme_blob = git(repo, ["hash-object", "-w", "--stdin"], data=readme).stdout.decode().strip()
+            git(repo, ["update-index", "--add", "--cacheinfo", "100644", readme_blob, "README.md"], env=index_env)
+
+        tree = git(repo, ["write-tree"], env=index_env).stdout.decode().strip()
+        if parent:
+            old_tree = git(repo, ["rev-parse", f"{parent}^{{tree}}"]).stdout.decode().strip()
+            if tree == old_tree:
+                result = {
+                    "status": "no_change",
+                    "target_ref": target_ref,
+                    "source_digest": f"sha256:{digest}",
+                    "events_seen": [event_id for event_id, _ in events],
+                    "head": parent,
+                }
+                if incidents:
+                    result["incidents"] = incidents
+                if incident_ledger_error:
+                    result["incident_ledger_error"] = incident_ledger_error
+                return result
+
+        short_digest = digest[:12]
+        event_ids = [path.removeprefix("events/").removesuffix(".md") for path, _ in additions]
+        event_trailers = "".join(f"Pi-Event-ID: {event_id}\n" for event_id in event_ids)
+        if additions:
+            subject = (
+                f"dialogue(r0): import {len(additions)} Pi "
+                f"{route.project.upper()} event(s) @ {short_digest}"
+            )
+        else:
+            subject = f"dialogue(r0): initialize cn-pi {route.project.upper()} stream"
+        source_trailers = ""
+        if additions:
+            source_trailers = (
+                "Pi-Source: google-drive-export\n"
+                f"Pi-Doc-ID: {doc_id}\n"
+                f"Pi-Doc-Revision: export-sha256:{digest}\n"
+                f"Pi-Source-Digest: sha256:{digest}\n"
+            )
+        commit_message = (
+            f"{subject}\n\n"
+            f"{source_trailers}"
+            f"{event_trailers}"
+            "Pi-Protocol: CNOS-698-dialogue-pilot\n"
+        ).encode("utf-8")
+        commit_args = ["commit-tree", tree]
+        if parent:
+            commit_args += ["-p", parent]
+        identity_env = {
+            "GIT_AUTHOR_NAME": "Pi Drive Bridge",
+            "GIT_AUTHOR_EMAIL": "pi-host@local",
+            "GIT_COMMITTER_NAME": "Pi Drive Bridge",
+            "GIT_COMMITTER_EMAIL": "pi-host@local",
+        }
+        commit = git(repo, commit_args, data=commit_message, env=identity_env).stdout.decode().strip()
+
+        git(repo, ["push", remote, f"{commit}:{target_ref}"])
+        published = remote_head(repo, remote, target_ref)
+        if published != commit:
+            raise SyncError("post-push verification did not resolve the created commit")
+        result = {
+            "status": "updated" if additions else "initialized",
+            "target_ref": target_ref,
+            "source_digest": f"sha256:{digest}",
+            "events_added": event_ids,
+            "commit": commit,
+            "source_bytes": len(payload),
+        }
+        if incidents:
+            result["incidents"] = incidents
+        if incident_ledger_error:
+            result["incident_ledger_error"] = incident_ledger_error
+        return result
+    finally:
+        try:
+            index_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--doc-id", default=os.getenv("CN_PI_INGRESS_DOC_ID", DEFAULT_DOC_ID))
+    parser.add_argument(
+        "--project",
+        choices=("all", *PROJECT_ROUTES),
+        default=os.getenv("CN_PI_INGRESS_PROJECT", "all"),
+        help="sync one explicitly allowed project or all configured projects",
+    )
+    parser.add_argument(
+        "--source-mode",
+        choices=("auto", "rclone", "public"),
+        default=os.getenv("CN_PI_INGRESS_SOURCE_MODE", "auto"),
+        help="auto uses authenticated folder mode when OAuth or service-account credentials exist",
+    )
+    parser.add_argument(
+        "--rclone-config",
+        default=os.getenv("CN_PI_INGRESS_RCLONE_CONFIG", DEFAULT_RCLONE_CONFIG),
+    )
+    parser.add_argument("--remote", default=os.getenv("CN_PI_INGRESS_REMOTE", DEFAULT_REMOTE))
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--discover", action="store_true", help="list matched Drive sources without Git writes")
+    return parser.parse_args()
+
+
+def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
+                       source_mode: str) -> dict[str, object]:
+    repo = route.repo.resolve()
+    validate_repo(repo, args.remote, route.expected_repo)
+    validate_ref(repo, route.target_ref)
+    if source_mode == "public":
+        if route.project != "cmp":
+            raise SyncError("public fallback is available only for the CMP pilot")
+        sources = [fetch_public_source(args.doc_id)]
+    else:
+        sources = authenticated_sources(
+            Path(args.rclone_config), route.drive_root, route.activation
+        )
+
+    if args.discover:
+        return {
+            "project": route.project,
+            "repo": route.expected_repo,
+            "target_ref": route.target_ref,
+            "sources": [
+                {"file_id": file_id, "source": label, "bytes": len(payload)}
+                for file_id, payload, _url, label in sources
+            ],
+        }
+
+    results: list[dict[str, object]] = []
+    saw_dialogue = False
+    for file_id, payload, source_url, source_label in sources:
+        document = normalize_document(payload)
+        scan_source(payload)
+        events = extract_dialogue_events(document, route)
+        if not events:
+            results.append({
+                "status": "ignored_no_dialogue_events",
+                "file_id": file_id,
+                "source": source_label,
+            })
+            continue
+        saw_dialogue = True
+        validate_dialogue_document(document, route)
+        result = project(
+            repo,
+            args.remote,
+            route.target_ref,
+            file_id,
+            payload,
+            source_url,
+            events,
+            route=route,
+            dry_run=args.dry_run,
+        )
+        result["source"] = source_label
+        results.append(result)
+
+    if not saw_dialogue and sources:
+        initialization = project(
+            repo,
+            args.remote,
+            route.target_ref,
+            "",
+            b"",
+            "",
+            [],
+            route=route,
+            dry_run=args.dry_run,
+            initialize_if_empty=True,
+        )
+        if initialization["status"] in ("initialized", "would_initialize"):
+            initialization["source"] = f"route:{route.drive_root}"
+            results.append(initialization)
+
+    return {
+        "project": route.project,
+        "repo": route.expected_repo,
+        "target_ref": route.target_ref,
+        "documents": results,
+    }
+
+
+def main() -> int:
+    args = parse_args()
+    routes = (
+        list(PROJECT_ROUTES.values())
+        if args.project == "all"
+        else [PROJECT_ROUTES[args.project]]
+    )
+    lock_fd = os.open(LOCK_PATH, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print(json.dumps({"status": "busy", "message": "another sync is active"}))
+        return 0
+
+    try:
+        source_mode = args.source_mode
+        if source_mode == "auto":
+            probe_route = routes[0]
+            source_mode = (
+                "rclone"
+                if rclone_credentials_present(
+                    Path(args.rclone_config), probe_route.drive_root
+                )
+                else "public"
+            )
+        if source_mode == "public" and len(routes) != 1:
+            raise SyncError(
+                "service-account credentials are required for multi-project Drive sync"
+            )
+
+        project_results: list[dict[str, object]] = []
+        failures = False
+        for route in routes:
+            try:
+                project_results.append(sync_project_route(route, args, source_mode))
+            except SyncError as error:
+                failures = True
+                project_results.append({
+                    "project": route.project,
+                    "repo": route.expected_repo,
+                    "target_ref": route.target_ref,
+                    "status": "error",
+                    "message": str(error),
+                })
+        status = "partial" if failures else "ok"
+        print(json.dumps({"status": status, "projects": project_results}, sort_keys=True))
+        return 1 if failures else 0
+    except SyncError as error:
+        print(json.dumps({"status": "error", "message": str(error)}, sort_keys=True), file=sys.stderr)
+        return 1
+    finally:
+        os.close(lock_fd)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
