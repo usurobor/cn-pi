@@ -71,7 +71,7 @@ class ProjectRoutingTests(unittest.TestCase):
             self.assertEqual(route.drive_root, f"gdrive:cn-pi/r0-boxes/pi-{project}")
         self.assertEqual(
             bridge.PROJECT_ROUTES["cmp"].memory_ref,
-            "refs/heads/pi/cmp/gpt/memory",
+            "refs/heads/cn-pi/cmp/gpt/memory",
         )
         self.assertIsNone(bridge.PROJECT_ROUTES["tsc"].memory_ref)
         self.assertIsNone(bridge.PROJECT_ROUTES["cnos"].memory_ref)

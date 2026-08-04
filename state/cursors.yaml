@@ -31,7 +31,7 @@ boxes:
 
   - activation: pi-cmp-chatgpt
     repo: usurobor/cmp
-    ref: refs/heads/pi/cmp/gpt/memory
+    ref: refs/heads/cn-pi/cmp/gpt/memory
     last_read_sha: pending
     drive_doc: 1ZJcX461PHKjYeR-IlkDLDBKkGxaG81E-c4E-KVA5anE
 

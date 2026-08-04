@@ -29,7 +29,7 @@ envelope completion is the only rewrite; the ID is stable across retries and
 source-body edits and is never derived from a Git commit SHA.
 
 CMP also recognizes closed-day, memory-only r0 documents and materializes them
-to `refs/heads/pi/cmp/gpt/memory`. It never imports the active UTC day, canonical
+to `refs/heads/cn-pi/cmp/gpt/memory`. It never imports the active UTC day, canonical
 r1, or a document containing dialogue events into memory. Published daily
 snapshots are immutable. This deliberately excludes the current mixed
 dialogue/memory staging doc instead of copying a transcript into memory.

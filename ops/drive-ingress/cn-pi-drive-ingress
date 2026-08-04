@@ -66,7 +66,7 @@ PROJECT_ROUTES = {
         expected_repo=f"usurobor/{project}",
         target_ref=f"refs/heads/cn-pi/{project}/gpt/chat",
         peer_ref=f"refs/heads/cn-sigma/{project}/claude/chat",
-        memory_ref=("refs/heads/pi/cmp/gpt/memory" if project == "cmp" else None),
+        memory_ref=("refs/heads/cn-pi/cmp/gpt/memory" if project == "cmp" else None),
     )
     for project in ("cmp", "tsc", "cnos")
 }
