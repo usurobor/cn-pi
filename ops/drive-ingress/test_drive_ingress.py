@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.machinery
 import importlib.util
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 import subprocess
@@ -68,6 +69,62 @@ class ProjectRoutingTests(unittest.TestCase):
             self.assertEqual(route.expected_repo, f"usurobor/{project}")
             self.assertEqual(route.target_ref, f"refs/heads/cn-pi/{project}/gpt/chat")
             self.assertEqual(route.drive_root, f"gdrive:cn-pi/r0-boxes/pi-{project}")
+        self.assertEqual(
+            bridge.PROJECT_ROUTES["cmp"].memory_ref,
+            "refs/heads/pi/cmp/gpt/memory",
+        )
+        self.assertIsNone(bridge.PROJECT_ROUTES["tsc"].memory_ref)
+        self.assertIsNone(bridge.PROJECT_ROUTES["cnos"].memory_ref)
+
+    def test_missing_id_is_minted_stably_from_drive_identity_and_ordinal(self) -> None:
+        document = """CNPI-DOC: 0.2
+activation: pi-cmp-chatgpt
+project: cmp
+intended_git_repo: usurobor/cmp
+intended_git_ref: refs/heads/cn-pi/cmp/gpt/chat
+
+---
+schema: cnos.agent-message.v1
+rank: r0
+authority: communication-only
+thread_id: cmp-test
+from:
+  agent: usurobor/cn-pi
+  activation: gpt/chat
+  locus: usurobor/cmp
+to:
+  - agent: usurobor/cn-sigma
+    activation: claude/chat
+project:
+  repo: usurobor/cmp
+---
+test
+"""
+        source_id = "11nbk6ZncQ7iwZ8vr-Yk0v71gxXCLwtO4OQL6XBOraeE"
+        first = bridge.extract_dialogue_events(
+            document, bridge.PROJECT_ROUTES["cmp"], source_id
+        )
+        changed = bridge.extract_dialogue_events(
+            document.replace("test\n", "changed\n"),
+            bridge.PROJECT_ROUTES["cmp"],
+            source_id,
+        )
+        self.assertEqual(first[0][0], changed[0][0])
+        self.assertRegex(first[0][0], r"^msg-cn-pi-cmp-drive-[0-9a-f]{24}$")
+        self.assertIn(f"id: {first[0][0]}\n".encode(), first[0][1])
+
+    def test_missing_id_without_drive_identity_is_rejected(self) -> None:
+        document = """CNPI-DOC: 0.2
+---
+schema: cnos.agent-message.v1
+rank: r0
+authority: communication-only
+thread_id: cmp-test
+---
+test
+"""
+        with self.assertRaisesRegex(bridge.SyncError, "stable Drive file ID"):
+            bridge.extract_dialogue_events(document)
 
     def test_tsc_event_is_accepted_only_on_tsc_route(self) -> None:
         document = """CNPI-DOC: 0.2
@@ -113,6 +170,55 @@ memory notes only
         self.assertEqual(
             bridge.extract_dialogue_events(document, bridge.PROJECT_ROUTES["cnos"]),
             [],
+        )
+
+    def test_only_closed_memory_only_cmp_documents_materialize(self) -> None:
+        document = """CNPI-DOC: 0.3
+kind: cnos-memory-box
+activation: pi-cmp-chatgpt
+project: cmp
+rank: r0
+date: 2026-08-03
+intended_git_repo: usurobor/cmp
+canonical_status: drive-staging
+
+memory evidence
+"""
+        snapshot = bridge.extract_closed_memory_snapshot(
+            document,
+            document.encode(),
+            bridge.PROJECT_ROUTES["cmp"],
+            today=date(2026, 8, 4),
+        )
+        self.assertEqual(snapshot, ("posts/20260803.md", document.encode()))
+        self.assertIsNone(
+            bridge.extract_closed_memory_snapshot(
+                document.replace("2026-08-03", "2026-08-04"),
+                document.encode(),
+                bridge.PROJECT_ROUTES["cmp"],
+                today=date(2026, 8, 4),
+            )
+        )
+
+    def test_mixed_dialogue_document_is_not_copied_into_memory(self) -> None:
+        document = """CNPI-DOC: 0.3
+kind: cnos-memory-box
+activation: pi-cmp-chatgpt
+project: cmp
+rank: r0
+date: 2026-08-03
+intended_git_repo: usurobor/cmp
+canonical_status: drive-staging
+
+schema: cnos.agent-message.v1
+"""
+        self.assertIsNone(
+            bridge.extract_closed_memory_snapshot(
+                document,
+                document.encode(),
+                bridge.PROJECT_ROUTES["cmp"],
+                today=date(2026, 8, 4),
+            )
         )
 
     def test_empty_stream_readme_does_not_import_memory_source(self) -> None:

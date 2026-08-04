@@ -5,12 +5,10 @@
 # If this file ever grows a notes:/history: field carrying walk prose, it has
 # become the thing #690 exists to prevent.
 #
-# STATUS 2026-08-03: the r0 boxes below are NOT yet materialized in git. They
-# exist today only as Google Drive hot-staging documents (see drive_doc). The
-# pi-host bridge will commit each to its writer-owned orphan ref; until then
-# last_read_sha is `pending` and the first rollup (reflections/r1/r1-20260803.md)
-# is provisional — it cites Drive revisions, not SHAs, and must be regenerated
-# once the boxes land in git.
+# STATUS 2026-08-04: CMP r0 is now materialized at its provisional #698 ref.
+# Its reader-owned cursor remains `pending` until Pi home successfully loads it.
+# The other boxes remain Drive-staged. The first rollup is still provisional
+# and must be regenerated from exact Git SHAs by home.
 
 boxes:
   - activation: pi-home-chatgpt
@@ -33,7 +31,7 @@ boxes:
 
   - activation: pi-cmp-chatgpt
     repo: usurobor/cmp
-    ref: refs/heads/pi/chatgpt
+    ref: refs/heads/pi/cmp/gpt/memory
     last_read_sha: pending
     drive_doc: 1ZJcX461PHKjYeR-IlkDLDBKkGxaG81E-c4E-KVA5anE
 

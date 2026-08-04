@@ -1,5 +1,5 @@
 [Unit]
-Description=Sync Pi CMP/TSC/CNOS dialogue events from Drive to writer-owned Git refs
+Description=Sync Pi CMP/TSC/CNOS Drive staging to writer-owned Git refs
 After=network-online.target
 Wants=network-online.target
 

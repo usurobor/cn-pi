@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Project Pi dialogue events for CMP, TSC, and CNOS onto writer-owned Git refs.
+"""Project Pi Drive staging onto writer-owned Git refs at CMP, TSC, and CNOS.
 
 This explicitly allowlisted bridge handles three project loci only. It never
-imports memory-only documents, executes source content, or checks out an
-operational ref. A temporary Git index keeps developer worktrees untouched.
+imports canonical r1, executes source content, or checks out an operational
+ref. A temporary Git index keeps developer worktrees untouched.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import argparse
 import base64
 import configparser
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import fcntl
 import hashlib
 from io import BytesIO
@@ -54,6 +54,7 @@ class ProjectRoute:
     expected_repo: str
     target_ref: str
     peer_ref: str
+    memory_ref: str | None
 
 
 PROJECT_ROUTES = {
@@ -65,6 +66,7 @@ PROJECT_ROUTES = {
         expected_repo=f"usurobor/{project}",
         target_ref=f"refs/heads/cn-pi/{project}/gpt/chat",
         peer_ref=f"refs/heads/cn-sigma/{project}/claude/chat",
+        memory_ref=("refs/heads/pi/cmp/gpt/memory" if project == "cmp" else None),
     )
     for project in ("cmp", "tsc", "cnos")
 }
@@ -430,7 +432,17 @@ def validate_dialogue_document(document: str, route: ProjectRoute) -> None:
             raise SyncError(f"{route.project} dialogue document is missing marker: {marker}")
 
 
-def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES["cmp"]
+def minted_event_id(source_document_id: str, ordinal: int, project: str) -> str:
+    """Mint a replay-stable ID from source identity, never from Git identity."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", source_document_id):
+        raise SyncError("cannot mint a stable event id without a stable Drive file ID")
+    identity = f"{source_document_id}\0{ordinal}".encode("utf-8")
+    suffix = hashlib.sha256(identity).hexdigest()[:24]
+    return f"msg-cn-pi-{project}-drive-{suffix}"
+
+
+def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES["cmp"],
+                            source_document_id: str = ""
                             ) -> list[tuple[str, bytes]]:
     starts = list(re.finditer(r"(?m)^---\nschema: cnos\.agent-message\.v1$", document))
     if not starts:
@@ -454,6 +466,16 @@ def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES[
             scalar_fields[key.strip()] = value.strip()
 
         event_id = scalar_fields.get("id", "")
+        if not event_id:
+            event_id = minted_event_id(source_document_id, position, route.project)
+            event = event.replace(
+                "schema: cnos.agent-message.v1\n",
+                f"schema: cnos.agent-message.v1\nid: {event_id}\n",
+                1,
+            )
+            frontmatter_end = event.find("\n---\n")
+            frontmatter = event[:frontmatter_end]
+            scalar_fields["id"] = event_id
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", event_id):
             raise SyncError(f"dialogue event has an invalid stable id: {event_id!r}")
         if event_id in seen:
@@ -504,6 +526,43 @@ def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES[
             raise SyncError(f"event {event_id} is not scoped to {route.expected_repo}")
         events.append((event_id, event.encode("utf-8")))
     return events
+
+
+def extract_closed_memory_snapshot(
+    document: str,
+    payload: bytes,
+    route: ProjectRoute,
+    *,
+    today: date | None = None,
+) -> tuple[str, bytes] | None:
+    """Return one immutable, closed-day r0 snapshot; never treat dialogue as memory."""
+    if route.memory_ref is None:
+        return None
+    header = document[:3000]
+    required = (
+        "kind: cnos-memory-box",
+        f"activation: {route.activation}",
+        f"project: {route.project}",
+        "rank: r0",
+        f"intended_git_repo: {route.expected_repo}",
+        "canonical_status: drive-staging",
+    )
+    if any(not re.search(rf"(?m)^{re.escape(marker)}$", header) for marker in required):
+        return None
+    # The current 2026-08-04 staging doc mixes dialogue and memory. Importing it
+    # as a memory snapshot would copy a transcript across the protocol boundary.
+    if re.search(r"(?m)^schema: cnos\.agent-message\.v1$", document):
+        return None
+    date_match = re.search(r"(?m)^date: (\d{4}-\d{2}-\d{2})$", header)
+    if date_match is None:
+        raise SyncError(f"{route.project} r0 memory document is missing a valid date")
+    try:
+        snapshot_date = date.fromisoformat(date_match.group(1))
+    except ValueError as error:
+        raise SyncError(f"{route.project} r0 memory document has an invalid date") from error
+    if snapshot_date >= (today or datetime.now(timezone.utc).date()):
+        return None
+    return f"posts/{snapshot_date.strftime('%Y%m%d')}.md", payload
 
 
 def scan_source(payload: bytes) -> None:
@@ -897,6 +956,144 @@ def project(repo: Path, remote: str, target_ref: str, doc_id: str,
             pass
 
 
+def memory_readme_bytes(route: ProjectRoute) -> bytes:
+    if route.memory_ref is None:
+        raise SyncError("memory projection requested for a route without a memory ref")
+    return f"""# Pi @ {route.project} — gpt memory r0
+
+Writer-owned, append-only r0 evidence for Pi's GPT activation at
+`{route.expected_repo}`.
+
+- ref: `{route.memory_ref}`
+- home is the sole cross-box reader/compactor
+- Drive r1 is provisional and is never materialized here
+
+Only closed-day, memory-only Drive documents are accepted. Mixed documents
+containing `cnos.agent-message.v1` dialogue are excluded to preserve the
+dialogue != memory boundary. A published daily snapshot is immutable; a later
+source difference is quarantined rather than replacing Git bytes.
+""".encode("utf-8")
+
+
+def project_memory_snapshot(
+    repo: Path,
+    remote: str,
+    route: ProjectRoute,
+    doc_id: str,
+    source_url: str,
+    destination: str,
+    payload: bytes,
+    *,
+    dry_run: bool,
+) -> dict[str, object]:
+    if route.memory_ref is None:
+        raise SyncError("memory projection requested for a route without a memory ref")
+    digest = hashlib.sha256(payload).hexdigest()
+    source_revision = f"export-sha256:{digest}"
+    expected = remote_head(repo, remote, route.memory_ref)
+    parent = fetch_parent(repo, remote, route.memory_ref, expected)
+    previous = existing_file(repo, parent, destination)
+    incidents: list[dict[str, object]] = []
+    if previous is not None:
+        if canonical_event_bytes(previous) != canonical_event_bytes(payload):
+            if parent is None:
+                raise SyncError("an existing memory snapshot cannot exist without a parent")
+            incidents.append(
+                source_mutation_incident(
+                    repo,
+                    parent,
+                    destination,
+                    f"memory-r0-{Path(destination).stem}",
+                    previous,
+                    payload,
+                    doc_id,
+                    source_revision,
+                )
+            )
+        incident_ledger_error = None if dry_run else persist_incidents(incidents)
+        result: dict[str, object] = {
+            "status": "source_mutation_preserved" if incidents else "no_change",
+            "target_ref": route.memory_ref,
+            "source_digest": f"sha256:{digest}",
+            "snapshot": destination,
+            "head": parent,
+        }
+        if incidents:
+            result["incidents"] = incidents
+        if incident_ledger_error:
+            result["incident_ledger_error"] = incident_ledger_error
+        return result
+
+    if dry_run:
+        return {
+            "status": "would_update",
+            "target_ref": route.memory_ref,
+            "source_digest": f"sha256:{digest}",
+            "snapshot": destination,
+            "parent": parent,
+            "source_bytes": len(payload),
+        }
+
+    index_handle = tempfile.NamedTemporaryFile(prefix="cn-pi-memory-index-", delete=False)
+    index_path = Path(index_handle.name)
+    index_handle.close()
+    index_path.unlink()
+    index_env = {"GIT_INDEX_FILE": str(index_path)}
+    try:
+        git(repo, ["read-tree", parent] if parent else ["read-tree", "--empty"], env=index_env)
+        source_blob = git(repo, ["hash-object", "-w", "--stdin"], data=payload).stdout.decode().strip()
+        git(
+            repo,
+            ["update-index", "--add", "--cacheinfo", "100644", source_blob, destination],
+            env=index_env,
+        )
+        if parent is None:
+            readme = memory_readme_bytes(route)
+            readme_blob = git(repo, ["hash-object", "-w", "--stdin"], data=readme).stdout.decode().strip()
+            git(
+                repo,
+                ["update-index", "--add", "--cacheinfo", "100644", readme_blob, "README.md"],
+                env=index_env,
+            )
+        tree = git(repo, ["write-tree"], env=index_env).stdout.decode().strip()
+        subject = f"memory(r0): import Pi {route.project.upper()} snapshot {Path(destination).stem}"
+        commit_message = (
+            f"{subject}\n\n"
+            "Pi-Source: google-drive-export\n"
+            f"Pi-Doc-ID: {doc_id}\n"
+            f"Pi-Doc-Revision: {source_revision}\n"
+            f"Pi-Source-Digest: sha256:{digest}\n"
+            "Pi-Protocol: CNOS-690/CNOS-698-r0\n"
+        ).encode("utf-8")
+        commit_args = ["commit-tree", tree]
+        if parent:
+            commit_args += ["-p", parent]
+        identity_env = {
+            "GIT_AUTHOR_NAME": "Pi Drive Bridge",
+            "GIT_AUTHOR_EMAIL": "pi-host@local",
+            "GIT_COMMITTER_NAME": "Pi Drive Bridge",
+            "GIT_COMMITTER_EMAIL": "pi-host@local",
+        }
+        commit = git(repo, commit_args, data=commit_message, env=identity_env).stdout.decode().strip()
+        git(repo, ["push", remote, f"{commit}:{route.memory_ref}"])
+        if remote_head(repo, remote, route.memory_ref) != commit:
+            raise SyncError("post-push verification did not resolve the memory commit")
+        return {
+            "status": "updated",
+            "target_ref": route.memory_ref,
+            "source_digest": f"sha256:{digest}",
+            "snapshot": destination,
+            "commit": commit,
+            "source_bytes": len(payload),
+            "source": source_url,
+        }
+    finally:
+        try:
+            index_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--doc-id", default=os.getenv("CN_PI_INGRESS_DOC_ID", DEFAULT_DOC_ID))
@@ -952,13 +1149,29 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
     for file_id, payload, source_url, source_label in sources:
         document = normalize_document(payload)
         scan_source(payload)
-        events = extract_dialogue_events(document, route)
+        events = extract_dialogue_events(document, route, file_id)
+        memory_snapshot = extract_closed_memory_snapshot(document, payload, route)
         if not events:
-            results.append({
-                "status": "ignored_no_dialogue_events",
-                "file_id": file_id,
-                "source": source_label,
-            })
+            if memory_snapshot is None:
+                results.append({
+                    "status": "ignored_no_materializable_events",
+                    "file_id": file_id,
+                    "source": source_label,
+                })
+            else:
+                destination, memory_payload = memory_snapshot
+                memory_result = project_memory_snapshot(
+                    repo,
+                    args.remote,
+                    route,
+                    file_id,
+                    source_url,
+                    destination,
+                    memory_payload,
+                    dry_run=args.dry_run,
+                )
+                memory_result["source"] = source_label
+                results.append(memory_result)
             continue
         saw_dialogue = True
         validate_dialogue_document(document, route)

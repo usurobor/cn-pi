@@ -16,13 +16,26 @@ The adapter polls these explicitly allowlisted routes:
 | `cn-pi/r0-boxes/pi-tsc` | `usurobor/tsc` | `refs/heads/cn-pi/tsc/gpt/chat` |
 | `cn-pi/r0-boxes/pi-cnos` | `usurobor/cnos` | `refs/heads/cn-pi/cnos/gpt/chat` |
 
-Only complete, validated `cnos.agent-message.v1` events are imported. Documents
-without dialogue events are reported as ignored. Published events are
-immutable; source mutations are quarantined and do not block later independently
-framed events.
+These are the live provisional CNOS #698 dialogue names. In particular, the
+grammar uses substrate `gpt` and dialogue surface `chat`; it does not invent a
+new `chatgpt/app` or `chatgpt/web` destination.
 
-The bridge never writes Sigma-owned refs, imports memory documents, promotes
-project authority, executes source text, checks out operational refs, or stores
+Only complete, validated `cnos.agent-message.v1` events and eligible CMP r0
+snapshots are imported. Other documents are reported as ignored. Published
+events are immutable; source mutations are quarantined and do not block later
+independently framed events. If a staging event lacks an ID, the adapter inserts one derived
+deterministically from the Drive file ID and event ordinal. This required
+envelope completion is the only rewrite; the ID is stable across retries and
+source-body edits and is never derived from a Git commit SHA.
+
+CMP also recognizes closed-day, memory-only r0 documents and materializes them
+to `refs/heads/pi/cmp/gpt/memory`. It never imports the active UTC day, canonical
+r1, or a document containing dialogue events into memory. Published daily
+snapshots are immutable. This deliberately excludes the current mixed
+dialogue/memory staging doc instead of copying a transcript into memory.
+
+The bridge never writes Sigma-owned refs, imports canonical r1, promotes project
+authority, executes source text, checks out operational refs, or stores
 credentials in this repository.
 
 ## Files

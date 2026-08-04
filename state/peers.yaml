@@ -1,0 +1,7 @@
+# Operational peer bindings for cn-pi. Registration is not a cryptographic
+# identity claim. Readers own and advance only their own cursors separately.
+
+peers:
+  - agent: usurobor/cn-sigma
+    home_repo: https://github.com/usurobor/cn-sigma
+    trust: registered-repo
