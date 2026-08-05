@@ -1143,6 +1143,69 @@ def google_docs_document(document_id: str, access_token: str) -> dict[str, objec
     return document
 
 
+def google_docs_structural_text(content: object) -> str:
+    if not isinstance(content, list):
+        raise SyncError("Google Docs inbox content is malformed")
+    chunks: list[str] = []
+    for structural in content:
+        if not isinstance(structural, dict):
+            raise SyncError("Google Docs inbox structural element is malformed")
+        paragraph = structural.get("paragraph")
+        if isinstance(paragraph, dict):
+            elements = paragraph.get("elements", [])
+            if not isinstance(elements, list):
+                raise SyncError("Google Docs inbox paragraph is malformed")
+            for element in elements:
+                if not isinstance(element, dict):
+                    raise SyncError("Google Docs inbox paragraph element is malformed")
+                text_run = element.get("textRun")
+                if isinstance(text_run, dict):
+                    text = text_run.get("content")
+                    if not isinstance(text, str):
+                        raise SyncError("Google Docs inbox text run is malformed")
+                    chunks.append(text)
+            continue
+        table = structural.get("table")
+        if isinstance(table, dict):
+            rows = table.get("tableRows", [])
+            if not isinstance(rows, list):
+                raise SyncError("Google Docs inbox table is malformed")
+            for row in rows:
+                if not isinstance(row, dict):
+                    raise SyncError("Google Docs inbox table row is malformed")
+                cells = row.get("tableCells", [])
+                if not isinstance(cells, list):
+                    raise SyncError("Google Docs inbox table cells are malformed")
+                for cell in cells:
+                    if not isinstance(cell, dict):
+                        raise SyncError("Google Docs inbox table cell is malformed")
+                    chunks.append(google_docs_structural_text(cell.get("content")))
+            continue
+        table_of_contents = structural.get("tableOfContents")
+        if isinstance(table_of_contents, dict):
+            chunks.append(
+                google_docs_structural_text(table_of_contents.get("content"))
+            )
+    return "".join(chunks)
+
+
+def google_docs_document_text(document: Mapping[str, object]) -> bytes:
+    tabs = document.get("tabs")
+    if isinstance(tabs, list) and tabs:
+        tab = tabs[0]
+        if not isinstance(tab, dict):
+            raise SyncError("Google Docs inbox has an invalid first tab")
+        document_tab = tab.get("documentTab")
+        if not isinstance(document_tab, dict):
+            raise SyncError("Google Docs inbox first tab is incomplete")
+        body = document_tab.get("body")
+    else:
+        body = document.get("body")
+    if not isinstance(body, dict):
+        raise SyncError("Google Docs inbox lacks a document body")
+    return google_docs_structural_text(body.get("content")).encode("utf-8")
+
+
 def google_docs_append_location(document: Mapping[str, object]) -> tuple[int, str | None]:
     tabs = document.get("tabs")
     if isinstance(tabs, list) and tabs:
@@ -1176,7 +1239,8 @@ def append_google_docs_inbox(
     access_token: str,
     records: Mapping[str, bytes],
 ) -> dict[str, str]:
-    before = fetch_authenticated_text_export(document_id, access_token)
+    document = google_docs_document(document_id, access_token)
+    before = google_docs_document_text(document)
     statuses: dict[str, str] = {}
     missing: list[bytes] = []
     for event_id, record in records.items():
@@ -1191,7 +1255,6 @@ def append_google_docs_inbox(
     if not missing:
         return statuses
 
-    document = google_docs_document(document_id, access_token)
     revision = document.get("revisionId")
     if not isinstance(revision, str) or not revision:
         raise SyncError("Google Docs inbox lacks a revision ID")
@@ -1228,7 +1291,9 @@ def append_google_docs_inbox(
     except (URLError, TimeoutError, json.JSONDecodeError) as error:
         raise SyncError("Google Docs inbox append failed") from error
 
-    after = fetch_authenticated_text_export(document_id, access_token)
+    after = google_docs_document_text(
+        google_docs_document(document_id, access_token)
+    )
     if not after.startswith(before.rstrip(b"\n")):
         raise SyncError("Google Docs inbox historical prefix changed during append")
     for event_id, record in records.items():

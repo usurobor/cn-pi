@@ -71,8 +71,11 @@ The destination is the existing user-owned Google Doc
 `CN_PI_INGRESS_INBOX_DOC_ID`). A service account has no personal Drive storage
 quota, so it cannot create per-event files in an ordinary shared folder. The
 bridge instead appends one explicitly framed record to this existing document.
-Each record contains the exact Git event bytes plus a deterministic receipt
-with source repository, source ref, publishing commit, and content SHA-256.
+Each record contains the exact Git event text plus a deterministic receipt with
+source repository, source ref, publishing commit, and the SHA-256 of the exact
+Git bytes. Verification reads the Google Docs structured text model rather
+than its CRLF-transforming plain-text export, so the inserted text must match
+exactly before the cursor advances.
 
 The append uses the Google Docs `requiredRevisionId` guard, rereads the file,
 and verifies the historical prefix and exact new record before advancing the

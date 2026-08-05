@@ -158,22 +158,42 @@ body bytes stay exact
             1,
         )
 
+    def test_google_docs_structural_text_preserves_inserted_text_exactly(self) -> None:
+        document = {
+            "body": {
+                "content": [
+                    {
+                        "paragraph": {
+                            "elements": [
+                                {"textRun": {"content": "one\ntwo\n"}}
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+        self.assertEqual(bridge.google_docs_document_text(document), b"one\ntwo\n")
+
     def test_google_doc_retry_recognizes_an_exact_existing_record(self) -> None:
         event_id = "msg-cn-omega-home-test-01"
         record = bridge.inbox_record(event_id, self.event, b"{}\n")
         with (
             mock.patch.object(
                 bridge,
-                "fetch_authenticated_text_export",
-                return_value=b"protocol\n" + record,
-            ),
-            mock.patch.object(bridge, "google_docs_document") as read_structure,
+                "google_docs_document",
+                return_value={
+                    "revisionId": "revision-1",
+                    "body": {
+                        "content": [{"paragraph": {"elements": [{"textRun": {"content": (b"protocol\n" + record).decode()}}]}}]
+                    },
+                },
+            ) as read_structure,
         ):
             statuses = bridge.append_google_docs_inbox(
                 "drive-doc-id-1234567890", "token", {event_id: record}
             )
         self.assertEqual(statuses, {event_id: "exists"})
-        read_structure.assert_not_called()
+        read_structure.assert_called_once()
 
     def test_google_doc_append_is_revision_guarded_and_verified(self) -> None:
         event_id = "msg-cn-omega-home-test-01"
@@ -184,16 +204,37 @@ body bytes stay exact
         with (
             mock.patch.object(
                 bridge,
-                "fetch_authenticated_text_export",
-                side_effect=(before, b"protocol" + record),
-            ),
-            mock.patch.object(
-                bridge,
                 "google_docs_document",
-                return_value={
-                    "revisionId": "revision-1",
-                    "body": {"content": [{"endIndex": 10}]},
-                },
+                side_effect=(
+                    {
+                        "revisionId": "revision-1",
+                        "body": {
+                            "content": [
+                                {
+                                    "paragraph": {
+                                        "elements": [{"textRun": {"content": before.decode()}}]
+                                    },
+                                    "endIndex": 10,
+                                }
+                            ]
+                        },
+                    },
+                    {
+                        "revisionId": "revision-2",
+                        "body": {
+                            "content": [
+                                {
+                                    "paragraph": {
+                                        "elements": [
+                                            {"textRun": {"content": (b"protocol" + record).decode()}}
+                                        ]
+                                    },
+                                    "endIndex": 10 + len(record.decode()),
+                                }
+                            ]
+                        },
+                    },
+                ),
             ),
             mock.patch.object(bridge, "urlopen", return_value=response) as request,
         ):
