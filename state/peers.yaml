@@ -4,6 +4,10 @@ peers:
     home: https://github.com/usurobor/cn-sigma
     trust: registered-repo
     activations:
+      - handle: cn-sigma@home
+        locus: usurobor/cn-sigma
+        locus_token: home
+        dialogue: {repo: usurobor/cn-sigma, ref: refs/heads/cn-sigma/home/dialogue}
       - handle: cn-sigma@cnos
         locus: usurobor/cnos
         runtime: {engine: claude}
@@ -16,3 +20,11 @@ peers:
         locus: usurobor/tsc
         runtime: {engine: claude}
         dialogue: {repo: usurobor/tsc, ref: refs/heads/cn-sigma/tsc/dialogue}
+  - agent: usurobor/cn-omega
+    home: https://github.com/usurobor/cn-omega
+    trust: registered-repo
+    activations:
+      - handle: cn-omega@home
+        locus: usurobor/cn-omega
+        locus_token: home
+        dialogue: {repo: usurobor/cn-omega, ref: refs/heads/cn-omega/home/dialogue}
