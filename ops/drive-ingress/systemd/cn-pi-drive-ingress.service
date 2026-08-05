@@ -1,5 +1,5 @@
 [Unit]
-Description=Sync Pi CMP/TSC/CNOS Drive staging to writer-owned Git refs
+Description=Sync Pi home/CMP/TSC/CNOS Drive staging to writer-owned Git refs
 After=network-online.target
 Wants=network-online.target
 
@@ -27,7 +27,7 @@ ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/root/cmp/.git /root/tsc/.git /root/cnos/.git /run/lock /var/lib/cn-pi-drive-ingress
+ReadWritePaths=/root/cn-pi-clone/.git /root/cmp/.git /root/tsc/.git /root/cnos/.git /run/lock /var/lib/cn-pi-drive-ingress
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictSUIDSGID=true
 LockPersonality=true

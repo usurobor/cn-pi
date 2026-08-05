@@ -63,12 +63,21 @@ class AuthenticatedDriveTests(unittest.TestCase):
 
 
 class ProjectRoutingTests(unittest.TestCase):
-    def test_three_routes_are_explicit_and_writer_owned(self) -> None:
-        self.assertEqual(set(bridge.PROJECT_ROUTES), {"cmp", "tsc", "cnos"})
+    def test_four_routes_are_explicit_and_writer_owned(self) -> None:
+        self.assertEqual(set(bridge.PROJECT_ROUTES), {"home", "cmp", "tsc", "cnos"})
         for project, route in bridge.PROJECT_ROUTES.items():
-            self.assertEqual(route.expected_repo, f"usurobor/{project}")
+            expected_repo = "usurobor/cn-pi" if project == "home" else f"usurobor/{project}"
+            self.assertEqual(route.expected_repo, expected_repo)
             self.assertEqual(route.target_ref, f"refs/heads/cn-pi/{project}/dialogue")
             self.assertEqual(route.drive_root, f"gdrive:cn-pi/r0-boxes/pi-{project}")
+        self.assertEqual(
+            bridge.PROJECT_ROUTES["home"].repo,
+            Path("/root/cn-pi-clone"),
+        )
+        self.assertEqual(
+            bridge.PROJECT_ROUTES["home"].memory_ref,
+            "refs/heads/cn-pi/home/memory",
+        )
         self.assertEqual(
             bridge.PROJECT_ROUTES["cmp"].memory_ref,
             "refs/heads/cn-pi/cmp/memory",
@@ -206,6 +215,27 @@ memory notes only
             bridge.extract_dialogue_events(document, bridge.PROJECT_ROUTES["cnos"]),
             [],
         )
+
+    def test_home_memory_uses_home_activation_and_final_ref(self) -> None:
+        document = """CNPI-DOC: 0.3
+kind: cnos-memory-box
+activation: cn-pi@home
+project: home
+rank: r0
+date: 2026-08-03
+intended_git_repo: usurobor/cn-pi
+intended_git_ref: refs/heads/cn-pi/home/memory
+canonical_status: drive-staging
+
+home evidence
+"""
+        snapshot = bridge.extract_closed_memory_snapshot(
+            document,
+            document.encode(),
+            bridge.PROJECT_ROUTES["home"],
+            today=date(2026, 8, 4),
+        )
+        self.assertEqual(snapshot, ("posts/20260803.md", document.encode()))
 
     def test_only_closed_memory_only_cmp_documents_materialize(self) -> None:
         document = """CNPI-DOC: 0.3

@@ -22,7 +22,7 @@ One Pi identity → many writer-local r0 boxes → one home rollup tower.
 
 | repo | ref | box |
 |---|---|---|
-| `usurobor/cn-pi` | `refs/heads/pi/home` | Pi home r0 |
+| `usurobor/cn-pi` | `refs/heads/cn-pi/home/memory` | Pi home r0 |
 | `usurobor/cnos` | `refs/heads/cn-pi/cnos/memory` | Pi at cnos |
 | `usurobor/tsc` | `refs/heads/cn-pi/tsc/memory` | Pi at tsc |
 | `usurobor/cmp` | `refs/heads/cn-pi/cmp/memory` | Pi at cmp |
@@ -35,9 +35,10 @@ fast-forward-only · no force-push · no-delete-while-registered · no mirror in
 `main` · no activation reads or compacts another's box.
 
 Home (cn-pi `main`) holds: this contract and the rest of `spec/`; the
-`reflections/r1|r2|r3/` tower; `state/cursors.yaml`; other current non-memory
-state; `scripts/`. Home has its own r0 box off HEAD at `refs/heads/pi/home`;
-home does not write raw daily notes into `main`.
+`memory/r1|r2|r3/` tower; and promoted activation/peer registries. Home's own
+r0 lives at `refs/heads/cn-pi/home/memory`; reader-owned cursors live at
+`refs/heads/cn-pi/home/state`. Raw notes and operational cursors never enter
+`main`.
 
 Cadence↔rank for v0: r1 daily over r0, r2 weekly over r1, r3 monthly over r2.
 
@@ -67,10 +68,10 @@ home regenerates it from synchronized r0 git SHAs. The bridge never invents SHAs
 
 ## Cursors
 
-`state/cursors.yaml` records only how far home has read each box —
-`{repo, ref, last_read_sha}`. A no-op poll advances / confirms the cursor and
-writes **no** memory entry; the "nothing happened" heartbeat class is
-structurally unreachable.
+The home state ref's `state/cursors.yaml` records only how far home has read
+each box — `{repo, ref, last_read_sha}`. A no-op poll advances / confirms the
+cursor and writes **no** memory entry; the "nothing happened" heartbeat class
+is structurally unreachable. Cursor state never promotes to `main`.
 
 ## Transport and bodies
 

@@ -41,14 +41,14 @@ Load order (load-bearing):
 2. **CA skills** — `agent/cap/SKILL.md` (UIE) and `agent/clp/SKILL.md`.
 3. **Persona** — [`spec/PERSONA.md`](spec/PERSONA.md). Which agent this is.
 4. **Operator** — [`spec/OPERATOR.md`](spec/OPERATOR.md). Whom it serves, and the gates.
-5. **Hub state** — this file, `state/cursors.yaml`, the newest r1 in
-   `reflections/r1/`, then the tail of the relevant r0 boxes if more detail is
-   needed.
+5. **Hub state** — this file, the promoted registries under `state/`, the newest
+   r1 in `memory/r1/`, then the tail of the relevant r0 boxes if more detail is
+   needed. Reader cursors live only on the reader's `state` ref.
 6. **Confirm identity** — state which agent, which operator, which hub, and what
    is currently in motion, grounded in the files just read.
 
 **Fastest orientation for a fresh body:** read the newest rollup in
-`reflections/r1/` — it compacts everything that happened, with pointers back to
+`memory/r1/` — it compacts everything that happened, with pointers back to
 raw evidence.
 
 ---
@@ -72,11 +72,11 @@ reader-across and the only compactor. **r0 fans out; rN funnels in.**
 
 | repo | ref | box |
 |---|---|---|
-| `usurobor/cn-pi` | `refs/heads/pi/home` | r0 — Pi home |
+| `usurobor/cn-pi` | `refs/heads/cn-pi/home/memory` | r0 — Pi home |
 | `usurobor/cnos` | `refs/heads/cn-pi/cnos/memory` | r0 — Pi at cnos |
 | `usurobor/tsc` | `refs/heads/cn-pi/tsc/memory` | r0 — Pi at tsc |
 | `usurobor/cmp` | `refs/heads/cn-pi/cmp/memory` | r0 — Pi at cmp |
-| `usurobor/cn-pi` | `main` → `reflections/` | rN tower (r1 daily, r2 weekly, r3 monthly) |
+| `usurobor/cn-pi` | `main` → `memory/` | rN tower (r1 daily, r2 weekly, r3 monthly) |
 
 Box invariants: orphan (no `main` ancestry) · single writer · fast-forward-only
 · no force-push · no-delete-while-registered · no mirror in `main`.
@@ -126,8 +126,9 @@ README.md            identity, activation router, memory contract
 spec/PERSONA.md      who Pi is
 spec/OPERATOR.md     whom Pi serves; autonomy and gates
 spec/MEMORY.md       Pi's #690 memory contract
-state/cursors.yaml   how far home has read per r0 box — an index, never a log
-reflections/         the rN rollup tower (r1/ r2/ r3/); newest r1 orients fastest
+state/activations.yaml promoted activation registry and ref bindings
+state/peers.yaml       promoted peer-home and dialogue endpoint registry
+memory/                the canonical rN tower (r1/ r2/ r3/); newest r1 orients fastest
 ```
 
 ---

@@ -1,5 +1,5 @@
 [Unit]
-Description=Poll Pi CMP/TSC/CNOS dialogue staging folders once per minute
+Description=Poll Pi home/CMP/TSC/CNOS staging folders once per minute
 
 [Timer]
 OnBootSec=30s

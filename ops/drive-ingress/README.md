@@ -12,6 +12,7 @@ The adapter polls these explicitly allowlisted routes:
 
 | Drive folder | Git repository | Writer-owned dialogue ref |
 |---|---|---|
+| `cn-pi/r0-boxes/pi-home` | `usurobor/cn-pi` | `refs/heads/cn-pi/home/dialogue` |
 | `cn-pi/r0-boxes/pi-cmp` | `usurobor/cmp` | `refs/heads/cn-pi/cmp/dialogue` |
 | `cn-pi/r0-boxes/pi-tsc` | `usurobor/tsc` | `refs/heads/cn-pi/tsc/dialogue` |
 | `cn-pi/r0-boxes/pi-cnos` | `usurobor/cnos` | `refs/heads/cn-pi/cnos/dialogue` |
@@ -21,7 +22,7 @@ instance are optional message provenance and never ref identity. The final
 stream classes are `dialogue`, `memory`, and `state`. This is a hard cutover:
 documents declaring superseded target refs are ignored, not translated.
 
-Only complete, validated `cnos.agent-message.v1` events and eligible CMP r0
+Only complete, validated `cnos.agent-message.v1` events and eligible closed r0
 snapshots are imported. Other documents are reported as ignored. Published
 events are immutable; source mutations are quarantined and do not block later
 independently framed events. If a staging event lacks an ID, the adapter inserts one derived
@@ -29,7 +30,7 @@ deterministically from the Drive file ID and event ordinal. This required
 envelope completion is the only rewrite; the ID is stable across retries and
 source-body edits and is never derived from a Git commit SHA.
 
-Each locus also recognizes closed-day, memory-only r0 documents and materializes
+Each locus, including `home`, recognizes closed-day, memory-only r0 documents and materializes
 them to `refs/heads/cn-pi/<locus>/memory`. It never imports the active UTC day,
 canonical r1, or a document containing dialogue events into memory. Published daily
 snapshots are immutable. This deliberately excludes the current mixed
