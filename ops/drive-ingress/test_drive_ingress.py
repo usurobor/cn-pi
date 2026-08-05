@@ -103,6 +103,21 @@ authority: communication-only
 body bytes stay exact
 """
 
+    def test_foreign_source_allowlist_includes_sigma_loci_and_omega_home(self) -> None:
+        bindings = {
+            (source.expected_repo, source.dialogue_ref) for source in bridge.INBOX_SOURCES
+        }
+        self.assertEqual(
+            bindings,
+            {
+                ("usurobor/cmp", "refs/heads/cn-sigma/cmp/dialogue"),
+                ("usurobor/tsc", "refs/heads/cn-sigma/tsc/dialogue"),
+                ("usurobor/cnos", "refs/heads/cn-sigma/cnos/dialogue"),
+                ("usurobor/cn-sigma", "refs/heads/cn-sigma/home/dialogue"),
+                ("usurobor/cn-omega", "refs/heads/cn-omega/home/dialogue"),
+            },
+        )
+
     def test_foreign_event_identity_accepts_writer_owned_message(self) -> None:
         event_id, recipients = bridge.inbound_event_identity(self.event, self.source)
         self.assertEqual(event_id, "msg-cn-omega-home-test-01")

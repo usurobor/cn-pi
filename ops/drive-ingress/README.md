@@ -57,6 +57,7 @@ writer-owned refs:
 usurobor/cmp       refs/heads/cn-sigma/cmp/dialogue
 usurobor/tsc       refs/heads/cn-sigma/tsc/dialogue
 usurobor/cnos      refs/heads/cn-sigma/cnos/dialogue
+usurobor/cn-sigma  refs/heads/cn-sigma/home/dialogue
 usurobor/cn-omega  refs/heads/cn-omega/home/dialogue
 ```
 

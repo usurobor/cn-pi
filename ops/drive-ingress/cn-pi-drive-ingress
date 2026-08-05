@@ -111,6 +111,13 @@ INBOX_SOURCES = (
         for project in ("cmp", "tsc", "cnos")
     ),
     InboxSource(
+        repo=Path("/root/cn-sigma"),
+        expected_repo="usurobor/cn-sigma",
+        owner_agent="usurobor/cn-sigma",
+        owner_locus="usurobor/cn-sigma",
+        dialogue_ref="refs/heads/cn-sigma/home/dialogue",
+    ),
+    InboxSource(
         repo=Path("/root/cn-omega"),
         expected_repo="usurobor/cn-omega",
         owner_agent="usurobor/cn-omega",
