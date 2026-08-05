@@ -3,7 +3,7 @@ Description=Poll Pi Drive and foreign dialogue refs once per minute
 
 [Timer]
 OnBootSec=30s
-OnUnitActiveSec=60s
+OnUnitInactiveSec=60s
 AccuracySec=10s
 RandomizedDelaySec=5s
 Persistent=true
