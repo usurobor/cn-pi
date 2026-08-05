@@ -99,7 +99,8 @@ The adapter runs on **the box** as a 60-second poller, not in GitHub Actions.
 
 Inter-activation **dialogue is a separate primitive from memory**
 ([cnos#698](https://github.com/usurobor/cnos/issues/698), Agent Dialogue Protocol
-v0 — design pending): each activation writes its own single-writer *dialogue
+v0 — design ratified 2026-08-05; canonical doc transcription pending): each
+activation writes its own single-writer *dialogue
 stream (`refs/heads/cn-pi/<locus>/dialogue`), addressed recipients read it by
 cursor, and threads are
 reconstructed by `thread_id`. A dialogue message is

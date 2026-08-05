@@ -57,6 +57,12 @@ class ProjectRoute:
     memory_ref: str | None
 
 
+@dataclass(frozen=True)
+class DialogueExtraction:
+    events: list[tuple[str, bytes]]
+    incidents: list[dict[str, object]]
+
+
 PROJECT_ROUTES = {
     project: ProjectRoute(
         project=project,
@@ -453,83 +459,247 @@ def minted_event_id(source_document_id: str, ordinal: int, project: str) -> str:
     return f"msg-cn-pi-{project}-drive-{suffix}"
 
 
+def invalid_source_event_incident(
+    event: str,
+    ordinal: int,
+    source_document_id: str,
+    reason: str,
+) -> dict[str, object]:
+    ids = re.findall(r"(?m)^id:\s*([^\s]+)\s*$", event)
+    event_id = ids[0] if len(ids) == 1 else None
+    digest = sha256_label(canonical_event_bytes(event.encode("utf-8")))
+    incident: dict[str, object] = {
+        "kind": "invalid_source_event",
+        "event_id": event_id,
+        "source_ordinal": ordinal,
+        "current_source_digest": digest,
+        "source_document_id": source_document_id,
+        "reason": reason,
+        "observed_at": datetime.now(timezone.utc)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
+        "action": "source_event_quarantined",
+    }
+    identity = {
+        key: incident[key]
+        for key in (
+            "kind",
+            "source_ordinal",
+            "current_source_digest",
+            "source_document_id",
+            "reason",
+        )
+    }
+    incident["incident_id"] = hashlib.sha256(
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return incident
+
+
+def parse_dialogue_frontmatter(frontmatter: str, event_label: str) -> tuple[
+    dict[str, str], dict[str, dict[str, str]], list[dict[str, str]]
+]:
+    """Parse the bounded v1 envelope subset and reject ambiguous keys."""
+    scalar_fields: dict[str, str] = {}
+    mappings: dict[str, dict[str, str]] = {"from": {}, "project": {}}
+    recipients: list[dict[str, str]] = []
+    current_top = ""
+    current_recipient: dict[str, str] | None = None
+    key_pattern = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(?:\s*(.*))?$")
+
+    for line_number, line in enumerate(frontmatter.splitlines(), 1):
+        if not line.strip():
+            raise SyncError(f"{event_label} frontmatter contains a blank line")
+        indent = len(line) - len(line.lstrip(" "))
+        stripped = line[indent:]
+        if indent == 0:
+            match = key_pattern.fullmatch(stripped)
+            if match is None:
+                raise SyncError(
+                    f"{event_label} frontmatter line {line_number} is not a field"
+                )
+            key, value = match.group(1), (match.group(2) or "").strip()
+            if key in scalar_fields:
+                raise SyncError(f"{event_label} has duplicate top-level field {key!r}")
+            scalar_fields[key] = value
+            current_top = key
+            current_recipient = None
+            continue
+
+        if current_top in mappings and indent == 2:
+            match = key_pattern.fullmatch(stripped)
+            if match is None:
+                raise SyncError(
+                    f"{event_label} field {current_top!r} has malformed mapping syntax"
+                )
+            key, value = match.group(1), (match.group(2) or "").strip()
+            if key in mappings[current_top]:
+                raise SyncError(
+                    f"{event_label} field {current_top!r} has duplicate key {key!r}"
+                )
+            mappings[current_top][key] = value
+            continue
+
+        if current_top == "to" and indent == 2 and stripped.startswith("- "):
+            match = key_pattern.fullmatch(stripped[2:])
+            if match is None:
+                raise SyncError(f"{event_label} field 'to' has malformed recipient syntax")
+            current_recipient = {}
+            recipients.append(current_recipient)
+            key, value = match.group(1), (match.group(2) or "").strip()
+            current_recipient[key] = value
+            continue
+
+        if current_top == "to" and indent == 4 and current_recipient is not None:
+            match = key_pattern.fullmatch(stripped)
+            if match is None:
+                raise SyncError(f"{event_label} field 'to' has malformed recipient syntax")
+            key, value = match.group(1), (match.group(2) or "").strip()
+            if key in current_recipient:
+                raise SyncError(
+                    f"{event_label} field 'to' has duplicate recipient key {key!r}"
+                )
+            current_recipient[key] = value
+            continue
+
+        # Optional extension fields such as reads/causal_parents may contain
+        # nested YAML. Their top-level key is still duplicate-checked above;
+        # they are opaque to this transport's routing grammar.
+        if current_top not in {"from", "to", "project"} and indent >= 2:
+            continue
+        # Optional nested runtime provenance is not identity or routing data.
+        if current_top in {"from", "to"} and indent >= 4:
+            continue
+        raise SyncError(
+            f"{event_label} field {current_top!r} has invalid indentation at line {line_number}"
+        )
+
+    return scalar_fields, mappings, recipients
+
+
+def validate_dialogue_event(
+    event: str,
+    route: ProjectRoute,
+    source_document_id: str,
+    ordinal: int,
+) -> tuple[str, bytes]:
+    frontmatter_end = event.find("\n---\n")
+    if frontmatter_end < 0:
+        raise SyncError("dialogue event is missing its frontmatter terminator")
+    frontmatter = event[:frontmatter_end]
+    label = f"dialogue event {ordinal}"
+    scalar_fields, mappings, recipients = parse_dialogue_frontmatter(frontmatter, label)
+
+    event_id = scalar_fields.get("id", "")
+    if not event_id:
+        event_id = minted_event_id(source_document_id, ordinal, route.project)
+        event = event.replace(
+            "schema: cnos.agent-message.v1\n",
+            f"schema: cnos.agent-message.v1\nid: {event_id}\n",
+            1,
+        )
+        scalar_fields["id"] = event_id
+        label = f"event {event_id}"
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", event_id):
+        raise SyncError(f"dialogue event has an invalid stable id: {event_id!r}")
+
+    required_scalars = {
+        "schema": "cnos.agent-message.v1",
+        "rank": "r0",
+        "authority": "communication-only",
+    }
+    for key, expected in required_scalars.items():
+        if scalar_fields.get(key) != expected:
+            raise SyncError(
+                f"{label} field {key!r} must be {expected!r}, "
+                f"got {scalar_fields.get(key)!r}"
+            )
+    timestamp = scalar_fields.get("ts", "")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", timestamp):
+        raise SyncError(f"{label} has a missing or invalid RFC3339 UTC ts")
+    try:
+        datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as error:
+        raise SyncError(f"{label} has a missing or invalid RFC3339 UTC ts") from error
+    allowed_classes = {"note", "decision", "request", "ack", "review", "handoff", "status"}
+    if scalar_fields.get("class") not in allowed_classes:
+        raise SyncError(f"{label} has a missing or invalid class")
+    thread_id = scalar_fields.get("thread_id", "")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", thread_id):
+        raise SyncError(f"{label} has an invalid thread_id: {thread_id!r}")
+    if "in_reply_to" not in scalar_fields:
+        raise SyncError(f"{label} is missing required field 'in_reply_to'")
+    reply_to = scalar_fields["in_reply_to"]
+    if reply_to not in {"null", "~"} and not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", reply_to
+    ):
+        raise SyncError(f"{label} has an invalid in_reply_to: {reply_to!r}")
+    if not scalar_fields.get("subject"):
+        raise SyncError(f"{label} is missing required field 'subject'")
+    if scalar_fields.get("requires_response") not in {"true", "false"}:
+        raise SyncError(f"{label} has a missing or invalid requires_response")
+
+    sender = mappings["from"]
+    if sender.get("agent") != "usurobor/cn-pi" or sender.get("locus") != route.expected_repo:
+        raise SyncError(f"{label} is not from cn-pi at {route.project.upper()}")
+    if not recipients:
+        raise SyncError(f"{label} is missing required field 'to'")
+    for recipient in recipients:
+        if not re.fullmatch(r"usurobor/[A-Za-z0-9._-]+", recipient.get("agent", "")):
+            raise SyncError(f"{label} has a recipient with an invalid agent")
+        if not re.fullmatch(r"usurobor/[A-Za-z0-9._-]+", recipient.get("locus", "")):
+            raise SyncError(f"{label} has a recipient with an invalid locus")
+    if not any(recipient.get("agent") == "usurobor/cn-sigma" for recipient in recipients):
+        raise SyncError(f"{label} is not addressed to cn-sigma")
+    if mappings["project"].get("repo") != route.expected_repo:
+        raise SyncError(f"{label} is not scoped to {route.expected_repo}")
+    return event_id, event.encode("utf-8")
+
+
 def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES["cmp"],
                             source_document_id: str = ""
-                            ) -> list[tuple[str, bytes]]:
+                            ) -> DialogueExtraction:
     starts = list(re.finditer(r"(?m)^---\nschema: cnos\.agent-message\.v1$", document))
     if not starts:
-        return []
+        return DialogueExtraction(events=[], incidents=[])
 
     events: list[tuple[str, bytes]] = []
+    incidents: list[dict[str, object]] = []
     seen: set[str] = set()
     for position, match in enumerate(starts):
         content_start = match.start() + len("---\n")
         content_end = starts[position + 1].start() if position + 1 < len(starts) else len(document)
         event = document[content_start:content_end].rstrip() + "\n"
-        frontmatter_end = event.find("\n---\n")
-        if frontmatter_end < 0:
-            raise SyncError("dialogue event is missing its frontmatter terminator")
-        frontmatter = event[:frontmatter_end]
-        scalar_fields: dict[str, str] = {}
-        for line in frontmatter.splitlines():
-            if line.startswith(" ") or ":" not in line:
-                continue
-            key, value = line.split(":", 1)
-            scalar_fields[key.strip()] = value.strip()
-
-        event_id = scalar_fields.get("id", "")
-        if not event_id:
-            event_id = minted_event_id(source_document_id, position, route.project)
-            event = event.replace(
-                "schema: cnos.agent-message.v1\n",
-                f"schema: cnos.agent-message.v1\nid: {event_id}\n",
-                1,
-            )
-            frontmatter_end = event.find("\n---\n")
-            frontmatter = event[:frontmatter_end]
-            scalar_fields["id"] = event_id
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", event_id):
-            raise SyncError(f"dialogue event has an invalid stable id: {event_id!r}")
-        if event_id in seen:
-            raise SyncError(f"duplicate dialogue event id in source: {event_id}")
-        seen.add(event_id)
-
-        required = {
-            "schema": "cnos.agent-message.v1",
-            "rank": "r0",
-            "authority": "communication-only",
-        }
-        for key, expected in required.items():
-            if scalar_fields.get(key) != expected:
-                raise SyncError(
-                    f"event {event_id} field {key!r} must be {expected!r}, "
-                    f"got {scalar_fields.get(key)!r}"
+        if "\n---\n" not in event:
+            if position + 1 == len(starts):
+                raise SyncError("dialogue event is missing its frontmatter terminator")
+            incidents.append(
+                invalid_source_event_incident(
+                    event,
+                    position,
+                    source_document_id,
+                    "dialogue event is missing its frontmatter terminator",
                 )
-        thread_id = scalar_fields.get("thread_id", "")
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", thread_id):
-            raise SyncError(f"event {event_id} has an invalid thread_id: {thread_id!r}")
-        normalized_from = re.search(
-            r"(?m)^from:\n  agent: usurobor/cn-pi\n"
-            rf"  locus: {re.escape(route.expected_repo)}$",
-            frontmatter,
-        )
-        if not normalized_from:
-            raise SyncError(f"event {event_id} is not from cn-pi at {route.project.upper()}")
-        normalized_to = re.search(
-            r"(?m)^to:\n  - agent: usurobor/cn-sigma\n"
-            r"    locus: usurobor/[A-Za-z0-9._-]+$",
-            frontmatter,
-        )
-        if not normalized_to:
-            raise SyncError(
-                f"event {event_id} is not addressed to cn-sigma at {route.project.upper()}"
             )
-        if not re.search(
-            rf"(?m)^project:\n  repo: {re.escape(route.expected_repo)}$", frontmatter
-        ):
-            raise SyncError(f"event {event_id} is not scoped to {route.expected_repo}")
-        events.append((event_id, event.encode("utf-8")))
-    return events
+            continue
+        try:
+            event_id, event_bytes = validate_dialogue_event(
+                event, route, source_document_id, position
+            )
+            if event_id in seen:
+                raise SyncError(f"duplicate dialogue event id in source: {event_id}")
+        except SyncError as error:
+            if "stable Drive file ID" in str(error):
+                raise
+            incidents.append(
+                invalid_source_event_incident(
+                    event, position, source_document_id, str(error)
+                )
+            )
+            continue
+        seen.add(event_id)
+        events.append((event_id, event_bytes))
+    return DialogueExtraction(events=events, incidents=incidents)
 
 
 def extract_closed_memory_snapshot(
@@ -1164,15 +1334,31 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
                 "source": source_label,
             })
             continue
-        events = extract_dialogue_events(document, route, file_id)
+        extraction = extract_dialogue_events(document, route, file_id)
+        events = extraction.events
+        invalid_incidents = extraction.incidents
+        invalid_ledger_error = (
+            None if args.dry_run else persist_incidents(invalid_incidents)
+        )
+        if events or invalid_incidents:
+            saw_dialogue = True
         memory_snapshot = extract_closed_memory_snapshot(document, payload, route)
         if not events:
             if memory_snapshot is None:
-                results.append({
-                    "status": "ignored_no_materializable_events",
+                ignored_result: dict[str, object] = {
+                    "status": (
+                        "invalid_events_quarantined"
+                        if invalid_incidents
+                        else "ignored_no_materializable_events"
+                    ),
                     "file_id": file_id,
                     "source": source_label,
-                })
+                }
+                if invalid_incidents:
+                    ignored_result["incidents"] = invalid_incidents
+                if invalid_ledger_error:
+                    ignored_result["incident_ledger_error"] = invalid_ledger_error
+                results.append(ignored_result)
             else:
                 destination, memory_payload = memory_snapshot
                 memory_result = project_memory_snapshot(
@@ -1188,7 +1374,6 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
                 memory_result["source"] = source_label
                 results.append(memory_result)
             continue
-        saw_dialogue = True
         validate_dialogue_document(document, route)
         result = project(
             repo,
@@ -1202,6 +1387,14 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
             dry_run=args.dry_run,
         )
         result["source"] = source_label
+        if invalid_incidents:
+            result["incidents"] = [
+                *invalid_incidents,
+                *list(result.get("incidents", [])),
+            ]
+            result["quarantined_event_count"] = len(invalid_incidents)
+        if invalid_ledger_error:
+            result["incident_ledger_error"] = invalid_ledger_error
         results.append(result)
 
     if not saw_dialogue and sources:

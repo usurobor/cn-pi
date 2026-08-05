@@ -52,7 +52,7 @@ rank:  r0                 # r0 | r1 | r2 | r3
 class: note               # note | decision | request | ack | handoff | review | status | rca
 to:    <activation-id>    # optional; omit for broadcast / local
 reads:                    # REQUIRED for rank >= r1; omit for r0
-  - {repo: usurobor/tsc, ref: refs/heads/pi/<id>, sha: <sha>}
+  - {repo: usurobor/tsc, ref: refs/heads/cn-pi/tsc/memory, sha: <sha>}
 ---
 ```
 
@@ -93,7 +93,8 @@ commit.
 
 Agent-to-agent dialogue is **not** a memory box. Per
 [cnos#698](https://github.com/usurobor/cnos/issues/698) (Agent Dialogue Protocol
-v0, design pending), each activation writes its own single-writer **dialogue
+v0, design ratified 2026-08-05; canonical doc transcription pending), each
+activation writes its own single-writer **dialogue
 stream** (`refs/heads/cn-pi/<locus>/dialogue`, distinct from the memory r0
 box `refs/heads/cn-pi/<locus>/memory`); addressed recipients read it by cursor;
 threads are reconstructed by `thread_id` / `in_reply_to`. A dialogue message is

@@ -23,12 +23,18 @@ stream classes are `dialogue`, `memory`, and `state`. This is a hard cutover:
 documents declaring superseded target refs are ignored, not translated.
 
 Only complete, validated `cnos.agent-message.v1` events and eligible closed r0
-snapshots are imported. Other documents are reported as ignored. Published
+snapshots are imported. Dialogue validation requires the complete v1 envelope
+(`ts`, `class`, `from`, `to`, `thread_id`, `in_reply_to`, `subject`,
+`requires_response`, `project`, and `authority`) and rejects duplicate
+top-level or routing keys. Other documents are reported as ignored. Published
 events are immutable; source mutations are quarantined and do not block later
-independently framed events. If a staging event lacks an ID, the adapter inserts one derived
-deterministically from the Drive file ID and event ordinal. This required
-envelope completion is the only rewrite; the ID is stable across retries and
-source-body edits and is never derived from a Git commit SHA.
+independently framed events. Invalid events with a recoverable next boundary
+are recorded as `invalid_source_event` incidents and quarantined while later
+events continue; an unterminated final envelope fails the document closed. If
+a staging event lacks an ID, the adapter inserts one derived deterministically
+from the Drive file ID and event ordinal. This required envelope completion is
+the only rewrite; the ID is stable across retries and source-body edits and is
+never derived from a Git commit SHA.
 
 Each locus, including `home`, recognizes closed-day, memory-only r0 documents and materializes
 them to `refs/heads/cn-pi/<locus>/memory`. It never imports the active UTC day,

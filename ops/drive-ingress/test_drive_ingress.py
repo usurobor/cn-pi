@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 import zipfile
@@ -100,7 +101,9 @@ intended_git_ref: refs/heads/cn-pi/cmp/dialogue
 
 ---
 schema: cnos.agent-message.v1
+ts: 2026-08-05T12:00:00Z
 rank: r0
+class: request
 authority: communication-only
 thread_id: cmp-test
 from:
@@ -111,6 +114,9 @@ to:
     locus: usurobor/cmp
 project:
   repo: usurobor/cmp
+in_reply_to: null
+subject: parser completion proof
+requires_response: true
 ---
 test
 """
@@ -123,15 +129,25 @@ test
             bridge.PROJECT_ROUTES["cmp"],
             source_id,
         )
-        self.assertEqual(first[0][0], changed[0][0])
-        self.assertRegex(first[0][0], r"^msg-cn-pi-cmp-drive-[0-9a-f]{24}$")
-        self.assertIn(f"id: {first[0][0]}\n".encode(), first[0][1])
+        self.assertEqual(first.events[0][0], changed.events[0][0])
+        self.assertRegex(first.events[0][0], r"^msg-cn-pi-cmp-drive-[0-9a-f]{24}$")
+        self.assertIn(f"id: {first.events[0][0]}\n".encode(), first.events[0][1])
+        expected = document.split("\n---\n", 1)[1].encode()
+        self.assertEqual(
+            first.events[0][1].replace(
+                f"id: {first.events[0][0]}\n".encode(), b"", 1
+            ),
+            expected,
+        )
+        self.assertEqual(first.incidents, [])
 
     def test_missing_id_without_drive_identity_is_rejected(self) -> None:
         document = """CNPI-DOC: 0.2
 ---
 schema: cnos.agent-message.v1
+ts: 2026-08-05T12:00:00Z
 rank: r0
+class: request
 authority: communication-only
 thread_id: cmp-test
 ---
@@ -150,7 +166,9 @@ intended_git_ref: refs/heads/cn-pi/tsc/dialogue
 ---
 schema: cnos.agent-message.v1
 id: msg-cn-pi-tsc-test-01
+ts: 2026-08-05T12:00:00Z
 rank: r0
+class: review
 authority: communication-only
 thread_id: tsc-test
 from:
@@ -161,15 +179,24 @@ to:
     locus: usurobor/tsc
 project:
   repo: usurobor/tsc
+in_reply_to: null
+subject: tsc route proof
+requires_response: false
 ---
 test
 """
         route = bridge.PROJECT_ROUTES["tsc"]
         bridge.validate_dialogue_document(document, route)
-        events = bridge.extract_dialogue_events(document, route)
-        self.assertEqual([event_id for event_id, _ in events], ["msg-cn-pi-tsc-test-01"])
-        with self.assertRaisesRegex(bridge.SyncError, "not from cn-pi at CNOS"):
-            bridge.extract_dialogue_events(document, bridge.PROJECT_ROUTES["cnos"])
+        extraction = bridge.extract_dialogue_events(document, route)
+        self.assertEqual(
+            [event_id for event_id, _ in extraction.events],
+            ["msg-cn-pi-tsc-test-01"],
+        )
+        wrong_route = bridge.extract_dialogue_events(
+            document, bridge.PROJECT_ROUTES["cnos"]
+        )
+        self.assertEqual(wrong_route.events, [])
+        self.assertRegex(wrong_route.incidents[0]["reason"], "not from cn-pi at CNOS")
 
     def test_final_envelope_does_not_require_runtime_as_activation_identity(self) -> None:
         document = """CNPI-DOC: 0.2
@@ -181,7 +208,9 @@ intended_git_ref: refs/heads/cn-pi/cmp/dialogue
 ---
 schema: cnos.agent-message.v1
 id: msg-cn-pi-cmp-final-envelope-01
+ts: 2026-08-05T12:00:00Z
 rank: r0
+class: request
 authority: communication-only
 thread_id: cmp-test
 from:
@@ -192,15 +221,284 @@ to:
     locus: usurobor/cnos
 project:
   repo: usurobor/cmp
+in_reply_to: null
+subject: cross-locus delivery proof
+requires_response: true
 ---
 test
 """
         route = bridge.PROJECT_ROUTES["cmp"]
         bridge.validate_dialogue_document(document, route)
         self.assertEqual(
-            [event_id for event_id, _ in bridge.extract_dialogue_events(document, route)],
+            [
+                event_id
+                for event_id, _ in bridge.extract_dialogue_events(document, route).events
+            ],
             ["msg-cn-pi-cmp-final-envelope-01"],
         )
+
+    def test_ambiguous_or_incomplete_envelopes_are_quarantined(self) -> None:
+        header = """CNPI-DOC: 0.2
+activation: cn-pi@cmp
+project: cmp
+intended_git_repo: usurobor/cmp
+intended_git_ref: refs/heads/cn-pi/cmp/dialogue
+
+"""
+        complete = """---
+schema: cnos.agent-message.v1
+id: msg-complete
+ts: 2026-08-05T12:00:00Z
+rank: r0
+class: request
+from:
+  agent: usurobor/cn-pi
+  locus: usurobor/cmp
+to:
+  - agent: usurobor/cn-sigma
+    locus: usurobor/cmp
+thread_id: parser-negative
+in_reply_to: null
+subject: complete
+requires_response: true
+project:
+  repo: usurobor/cmp
+authority: communication-only
+---
+body
+"""
+        cases = {
+            "duplicate id": complete.replace(
+                "id: msg-complete\n", "id: msg-first\nid: msg-second\n"
+            ),
+            "duplicate routing key": complete.replace(
+                "  agent: usurobor/cn-pi\n",
+                "  agent: usurobor/cn-pi\n  agent: usurobor/cn-omega\n",
+                1,
+            ),
+            "missing ts and class": complete.replace(
+                "ts: 2026-08-05T12:00:00Z\n", ""
+            ).replace("class: request\n", ""),
+        }
+        for label, event in cases.items():
+            with self.subTest(label=label):
+                extraction = bridge.extract_dialogue_events(
+                    header + event,
+                    bridge.PROJECT_ROUTES["cmp"],
+                    "document-id-1234567890",
+                )
+                self.assertEqual(extraction.events, [])
+                self.assertEqual(len(extraction.incidents), 1)
+                self.assertEqual(
+                    extraction.incidents[0]["action"], "source_event_quarantined"
+                )
+
+    def test_invalid_envelope_does_not_initialize_or_advance_target_ref(self) -> None:
+        document = """CNPI-DOC: 0.2
+activation: cn-pi@cmp
+project: cmp
+intended_git_repo: usurobor/cmp
+intended_git_ref: refs/heads/cn-pi/cmp/dialogue
+
+---
+schema: cnos.agent-message.v1
+id: msg-first
+id: msg-second
+ts: 2026-08-05T12:00:00Z
+rank: r0
+class: request
+from:
+  agent: usurobor/cn-pi
+  locus: usurobor/cmp
+to:
+  - agent: usurobor/cn-sigma
+    locus: usurobor/cmp
+thread_id: parser-negative
+in_reply_to: null
+subject: ambiguous identity
+requires_response: true
+project:
+  repo: usurobor/cmp
+authority: communication-only
+---
+body
+"""
+        args = SimpleNamespace(
+            remote="origin",
+            rclone_config="/unused/rclone.conf",
+            discover=False,
+            dry_run=False,
+        )
+        with (
+            mock.patch.object(bridge, "validate_repo"),
+            mock.patch.object(bridge, "validate_ref"),
+            mock.patch.object(
+                bridge,
+                "authenticated_sources",
+                return_value=[
+                    (
+                        "document-id-1234567890",
+                        document.encode(),
+                        "https://example.invalid/source",
+                        "source-doc",
+                    )
+                ],
+            ),
+            mock.patch.object(bridge, "persist_incidents", return_value=None),
+            mock.patch.object(bridge, "project") as project_mock,
+        ):
+            result = bridge.sync_project_route(
+                bridge.PROJECT_ROUTES["cmp"], args, "rclone"
+            )
+        project_mock.assert_not_called()
+        self.assertEqual(
+            result["documents"][0]["status"], "invalid_events_quarantined"
+        )
+
+    def test_malformed_bounded_event_does_not_block_later_valid_event(self) -> None:
+        document = """CNPI-DOC: 0.2
+activation: cn-pi@cmp
+project: cmp
+intended_git_repo: usurobor/cmp
+intended_git_ref: refs/heads/cn-pi/cmp/dialogue
+
+---
+schema: cnos.agent-message.v1
+id: msg-malformed
+body without a frontmatter terminator
+---
+schema: cnos.agent-message.v1
+id: msg-later-valid
+ts: 2026-08-05T12:01:00Z
+rank: r0
+class: ack
+from:
+  agent: usurobor/cn-pi
+  locus: usurobor/cmp
+to:
+  - agent: usurobor/cn-sigma
+    locus: usurobor/cnos
+thread_id: parser-isolation
+in_reply_to: msg-source
+subject: later event survives
+requires_response: false
+project:
+  repo: usurobor/cmp
+authority: communication-only
+---
+body
+"""
+        extraction = bridge.extract_dialogue_events(
+            document,
+            bridge.PROJECT_ROUTES["cmp"],
+            "document-id-1234567890",
+        )
+        self.assertEqual(
+            [event_id for event_id, _ in extraction.events], ["msg-later-valid"]
+        )
+        self.assertEqual(len(extraction.incidents), 1)
+        self.assertEqual(extraction.incidents[0]["event_id"], "msg-malformed")
+        self.assertRegex(extraction.incidents[0]["reason"], "frontmatter terminator")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            remote = root / "remote.git"
+            repo.mkdir()
+            subprocess.run(["git", "init", "--quiet", str(repo)], check=True)
+            subprocess.run(["git", "init", "--quiet", "--bare", str(remote)], check=True)
+            subprocess.run(["git", "-C", str(repo), "remote", "add", "origin", str(remote)], check=True)
+            route = bridge.ProjectRoute(
+                project="cmp",
+                activation="cn-pi@cmp",
+                drive_root="gdrive:cn-pi/r0-boxes/pi-cmp",
+                repo=repo,
+                expected_repo="usurobor/cmp",
+                target_ref="refs/heads/cn-pi/cmp/dialogue",
+                peer_ref="refs/heads/cn-sigma/cmp/dialogue",
+                memory_ref="refs/heads/cn-pi/cmp/memory",
+            )
+            args = SimpleNamespace(
+                remote="origin",
+                rclone_config="/unused/rclone.conf",
+                discover=False,
+                dry_run=False,
+            )
+            with (
+                mock.patch.object(bridge, "validate_repo"),
+                mock.patch.object(bridge, "validate_ref"),
+                mock.patch.object(
+                    bridge,
+                    "authenticated_sources",
+                    return_value=[
+                        (
+                            "document-id-1234567890",
+                            document.encode(),
+                            "https://example.invalid/source",
+                            "source-doc",
+                        )
+                    ],
+                ),
+                mock.patch.object(bridge, "persist_incidents", return_value=None),
+            ):
+                result = bridge.sync_project_route(route, args, "rclone")
+            imported = subprocess.run(
+                [
+                    "git",
+                    f"--git-dir={remote}",
+                    "show",
+                    "refs/heads/cn-pi/cmp/dialogue:events/msg-later-valid.md",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+            ).stdout
+            malformed = subprocess.run(
+                [
+                    "git",
+                    f"--git-dir={remote}",
+                    "cat-file",
+                    "-e",
+                    "refs/heads/cn-pi/cmp/dialogue:events/msg-malformed.md",
+                ],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            import_commits = subprocess.run(
+                [
+                    "git",
+                    f"--git-dir={remote}",
+                    "log",
+                    "--format=%H",
+                    "refs/heads/cn-pi/cmp/dialogue",
+                    "--",
+                    "events/msg-later-valid.md",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                text=True,
+            ).stdout.splitlines()
+
+        self.assertEqual(result["documents"][0]["status"], "updated")
+        self.assertEqual(result["documents"][0]["events_added"], ["msg-later-valid"])
+        self.assertEqual(result["documents"][0]["quarantined_event_count"], 1)
+        self.assertIn(b"id: msg-later-valid\n", imported)
+        self.assertNotEqual(malformed.returncode, 0)
+        self.assertEqual(len(import_commits), 1)
+
+    def test_unrecoverable_final_framing_loss_fails_closed(self) -> None:
+        document = """CNPI-DOC: 0.2
+---
+schema: cnos.agent-message.v1
+id: msg-unterminated
+body without a recoverable boundary
+"""
+        with self.assertRaisesRegex(bridge.SyncError, "frontmatter terminator"):
+            bridge.extract_dialogue_events(
+                document,
+                bridge.PROJECT_ROUTES["cmp"],
+                "document-id-1234567890",
+            )
 
     def test_memory_only_document_has_no_dialogue_events(self) -> None:
         document = """CNPI-DOC: 0.3
@@ -212,7 +510,9 @@ intended_git_ref: refs/heads/cn-pi/cnos/memory
 memory notes only
 """
         self.assertEqual(
-            bridge.extract_dialogue_events(document, bridge.PROJECT_ROUTES["cnos"]),
+            bridge.extract_dialogue_events(
+                document, bridge.PROJECT_ROUTES["cnos"]
+            ).events,
             [],
         )
 
