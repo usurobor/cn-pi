@@ -1,39 +1,19 @@
-# How far Pi home has read per r0 box. An INDEX, never a log.
-#
-# cnos#690 §4: one record each {repo, ref, last_read_sha}, nothing else.
-# A poll that finds nothing new updates last_read_sha and writes NOTHING else.
-# If this file ever grows a notes:/history: field carrying walk prose, it has
-# become the thing #690 exists to prevent.
-#
-# STATUS 2026-08-05: project memory uses the final activation-level #698 refs.
-# Reader-owned cursors remain `pending` until Pi home successfully loads them.
-# Drive remains staging only; canonical rollups must be regenerated from exact
-# Git SHAs by home.
-
-boxes:
-  - activation: pi-home-chatgpt
-    repo: usurobor/cn-pi
-    ref: refs/heads/pi/home
-    last_read_sha: pending
-    drive_doc: 1PtvGUDABHRJ189wovT9v6iBD7WGLLjowaOmeXXbxYVY
-
-  - activation: cn-pi@cnos
-    repo: usurobor/cnos
-    ref: refs/heads/cn-pi/cnos/memory
-    last_read_sha: pending
-    drive_doc: 11x2NkELBNIpWP8n3qHz-fGulraIMv9iIdvO5aTHNDUU
-
-  - activation: cn-pi@tsc
-    repo: usurobor/tsc
-    ref: refs/heads/cn-pi/tsc/memory
-    last_read_sha: pending
-    drive_doc: 1itw0_4kY_zPoQtr8aUgGkVUy5iOoFcqOYfxW_YaA1Jk
-
-  - activation: cn-pi@cmp
-    repo: usurobor/cmp
-    ref: refs/heads/cn-pi/cmp/memory
-    last_read_sha: pending
-    drive_doc: 1ZJcX461PHKjYeR-IlkDLDBKkGxaG81E-c4E-KVA5anE
-
-# Coming loci (no box yet): pi/claude (Claude-side activation),
-# pi/box (the box-hosted home runner). Register each when it first writes.
+schema: cnos.cursors.v0
+reader: cn-pi@home
+cursors:
+  - source: {repo: usurobor/cn-pi, ref: refs/heads/cn-pi/home/memory}
+    last_read_sha: null
+    last_event_id: null
+    updated_at: 2026-08-05T00:00:00Z
+  - source: {repo: usurobor/cnos, ref: refs/heads/cn-pi/cnos/memory}
+    last_read_sha: null
+    last_event_id: null
+    updated_at: 2026-08-05T00:00:00Z
+  - source: {repo: usurobor/cmp, ref: refs/heads/cn-pi/cmp/memory}
+    last_read_sha: null
+    last_event_id: null
+    updated_at: 2026-08-05T00:00:00Z
+  - source: {repo: usurobor/tsc, ref: refs/heads/cn-pi/tsc/memory}
+    last_read_sha: null
+    last_event_id: null
+    updated_at: 2026-08-05T00:00:00Z
