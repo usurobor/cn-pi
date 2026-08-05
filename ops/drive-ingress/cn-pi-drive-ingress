@@ -521,6 +521,10 @@ def parse_dialogue_frontmatter(frontmatter: str, event_label: str) -> tuple[
             key, value = match.group(1), (match.group(2) or "").strip()
             if key in scalar_fields:
                 raise SyncError(f"{event_label} has duplicate top-level field {key!r}")
+            if key in {"from", "to", "project"} and value:
+                raise SyncError(
+                    f"{event_label} field {key!r} must use block container syntax"
+                )
             scalar_fields[key] = value
             current_top = key
             current_recipient = None

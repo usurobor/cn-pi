@@ -276,6 +276,11 @@ body
                 "  agent: usurobor/cn-pi\n  agent: usurobor/cn-omega\n",
                 1,
             ),
+            "from scalar plus mapping": complete.replace("from:\n", "from: scalar\n"),
+            "to scalar plus sequence": complete.replace("to:\n", "to: scalar\n"),
+            "project scalar plus mapping": complete.replace(
+                "project:\n", "project: scalar\n"
+            ),
             "missing ts and class": complete.replace(
                 "ts: 2026-08-05T12:00:00Z\n", ""
             ).replace("class: request\n", ""),
@@ -302,12 +307,11 @@ intended_git_ref: refs/heads/cn-pi/cmp/dialogue
 
 ---
 schema: cnos.agent-message.v1
-id: msg-first
-id: msg-second
+id: msg-invalid-container
 ts: 2026-08-05T12:00:00Z
 rank: r0
 class: request
-from:
+from: scalar
   agent: usurobor/cn-pi
   locus: usurobor/cmp
 to:
