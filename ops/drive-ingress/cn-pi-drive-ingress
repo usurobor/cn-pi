@@ -60,13 +60,13 @@ class ProjectRoute:
 PROJECT_ROUTES = {
     project: ProjectRoute(
         project=project,
-        activation=f"pi-{project}-chatgpt",
+        activation=f"cn-pi@{project}",
         drive_root=f"gdrive:cn-pi/r0-boxes/pi-{project}",
         repo=Path(f"/root/{project}"),
         expected_repo=f"usurobor/{project}",
-        target_ref=f"refs/heads/cn-pi/{project}/gpt/chat",
-        peer_ref=f"refs/heads/cn-sigma/{project}/claude/chat",
-        memory_ref=("refs/heads/cn-pi/cmp/gpt/memory" if project == "cmp" else None),
+        target_ref=f"refs/heads/cn-pi/{project}/dialogue",
+        peer_ref=f"refs/heads/cn-sigma/{project}/dialogue",
+        memory_ref=f"refs/heads/cn-pi/{project}/memory",
     )
     for project in ("cmp", "tsc", "cnos")
 }
@@ -326,8 +326,7 @@ def fetch_authenticated_text_export(file_id: str, access_token: str) -> bytes:
     return payload
 
 
-def authenticated_sources(config: Path, root: str,
-                          activation: str = "pi-cmp-chatgpt") -> list[tuple[str, bytes, str, str]]:
+def authenticated_sources(config: Path, root: str) -> list[tuple[str, bytes, str, str]]:
     if not config.is_file():
         raise SyncError(f"rclone config does not exist: {config}")
     mode = config.stat().st_mode & 0o777
@@ -352,11 +351,11 @@ def authenticated_sources(config: Path, root: str,
         if not isinstance(path, str):
             continue
         name = path.rsplit("/", 1)[-1]
-        if activation not in name or not name.startswith("r0"):
+        if not name.startswith("r0"):
             continue
         candidates.append(item)
     if not candidates:
-        raise SyncError(f"no {activation} r0 documents found below {root}")
+        raise SyncError(f"no r0 documents found below {root}")
 
     service_account_path = rclone_service_account_path(config, root)
     service_account_token: str | None = None
@@ -425,11 +424,14 @@ def validate_dialogue_document(document: str, route: ProjectRoute) -> None:
         f"activation: {route.activation}",
         f"project: {route.project}",
         f"intended_git_repo: {route.expected_repo}",
-        f"intended_git_ref: {route.target_ref}",
     )
     for marker in markers:
         if not re.search(rf"(?m)^{re.escape(marker)}$", document[:3000]):
             raise SyncError(f"{route.project} dialogue document is missing marker: {marker}")
+    if not re.search(
+        rf"(?m)^intended_git_ref: {re.escape(route.target_ref)}$", document[:3000]
+    ):
+        raise SyncError(f"{route.project} dialogue document does not target its final ref")
 
 
 def minted_event_id(source_document_id: str, ordinal: int, project: str) -> str:
@@ -496,27 +498,19 @@ def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES[
         thread_id = scalar_fields.get("thread_id", "")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", thread_id):
             raise SyncError(f"event {event_id} has an invalid thread_id: {thread_id!r}")
-        legacy_from = re.search(
-            rf"(?m)^from:\n  agent: pi\n  activation: {re.escape(route.project)}\n"
-            rf"  locus: {re.escape(route.project)}$",
-            frontmatter,
-        )
         normalized_from = re.search(
             r"(?m)^from:\n  agent: usurobor/cn-pi\n"
-            rf"  activation: gpt/chat\n  locus: {re.escape(route.expected_repo)}$",
+            rf"  locus: {re.escape(route.expected_repo)}$",
             frontmatter,
         )
-        if not (legacy_from or normalized_from):
+        if not normalized_from:
             raise SyncError(f"event {event_id} is not from cn-pi at {route.project.upper()}")
-        legacy_to = re.search(
-            r"(?m)^to:\n  - agent: sigma\n    activation: cloud$", frontmatter
-        )
         normalized_to = re.search(
             r"(?m)^to:\n  - agent: usurobor/cn-sigma\n"
-            r"    activation: claude/chat$",
+            r"    locus: usurobor/[A-Za-z0-9._-]+$",
             frontmatter,
         )
-        if not (legacy_to or normalized_to):
+        if not normalized_to:
             raise SyncError(
                 f"event {event_id} is not addressed to cn-sigma at {route.project.upper()}"
             )
@@ -545,6 +539,7 @@ def extract_closed_memory_snapshot(
         f"project: {route.project}",
         "rank: r0",
         f"intended_git_repo: {route.expected_repo}",
+        f"intended_git_ref: {route.memory_ref}",
         "canonical_status: drive-staging",
     )
     if any(not re.search(rf"(?m)^{re.escape(marker)}$", header) for marker in required):
@@ -760,15 +755,16 @@ def readme_bytes(route: ProjectRoute, doc_id: str, source_url: str) -> bytes:
             f"Drive staging route: `{route.drive_root}`\n"
             "No memory document or dialogue event was imported during stream initialization.\n"
         )
-    text = f"""# cn-pi @ {route.project} — gpt/chat activation (r0 stream)
+    text = f"""# cn-pi @ {route.project} — dialogue stream
 
-Writer-owned append-only r0 dialogue stream, following the normalized
-activation naming established by the CNOS dialogue protocol.
+Writer-owned append-only r0 dialogue stream for the durable activation formed
+by agent `cn-pi` at locus `{route.project}`.
 
 - agent (home repo): `usurobor/cn-pi`
 - locus (project): `{route.expected_repo}`
-- activation: `gpt/chat`
-- handle: `cn-pi@{route.project}:gpt/chat`
+- activation: `cn-pi@{route.project}`
+- runtime: `gpt` (informational, not part of ref identity)
+- handle: `cn-pi@{route.project}`
 - ref: `{route.target_ref}`
 - reads Sigma at: `{route.peer_ref}`
 
@@ -1129,9 +1125,7 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
             raise SyncError("public fallback is available only for the CMP pilot")
         sources = [fetch_public_source(args.doc_id)]
     else:
-        sources = authenticated_sources(
-            Path(args.rclone_config), route.drive_root, route.activation
-        )
+        sources = authenticated_sources(Path(args.rclone_config), route.drive_root)
 
     if args.discover:
         return {
@@ -1149,6 +1143,19 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
     for file_id, payload, source_url, source_label in sources:
         document = normalize_document(payload)
         scan_source(payload)
+        declared_ref = re.search(
+            r"(?m)^intended_git_ref: (refs/heads/[^\s]+)$", document[:3000]
+        )
+        allowed_refs = {route.target_ref}
+        if route.memory_ref is not None:
+            allowed_refs.add(route.memory_ref)
+        if declared_ref is None or declared_ref.group(1) not in allowed_refs:
+            results.append({
+                "status": "ignored_retired_staging_ref",
+                "file_id": file_id,
+                "source": source_label,
+            })
+            continue
         events = extract_dialogue_events(document, route, file_id)
         memory_snapshot = extract_closed_memory_snapshot(document, payload, route)
         if not events:

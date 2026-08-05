@@ -12,13 +12,14 @@ The adapter polls these explicitly allowlisted routes:
 
 | Drive folder | Git repository | Writer-owned dialogue ref |
 |---|---|---|
-| `cn-pi/r0-boxes/pi-cmp` | `usurobor/cmp` | `refs/heads/cn-pi/cmp/gpt/chat` |
-| `cn-pi/r0-boxes/pi-tsc` | `usurobor/tsc` | `refs/heads/cn-pi/tsc/gpt/chat` |
-| `cn-pi/r0-boxes/pi-cnos` | `usurobor/cnos` | `refs/heads/cn-pi/cnos/gpt/chat` |
+| `cn-pi/r0-boxes/pi-cmp` | `usurobor/cmp` | `refs/heads/cn-pi/cmp/dialogue` |
+| `cn-pi/r0-boxes/pi-tsc` | `usurobor/tsc` | `refs/heads/cn-pi/tsc/dialogue` |
+| `cn-pi/r0-boxes/pi-cnos` | `usurobor/cnos` | `refs/heads/cn-pi/cnos/dialogue` |
 
-These are the live provisional CNOS #698 dialogue names. In particular, the
-grammar uses substrate `gpt` and dialogue surface `chat`; it does not invent a
-new `chatgpt/app` or `chatgpt/web` destination.
+The durable activation is `{agent,locus}`. Runtime engine, surface, and process
+instance are optional message provenance and never ref identity. The final
+stream classes are `dialogue`, `memory`, and `state`. This is a hard cutover:
+documents declaring superseded target refs are ignored, not translated.
 
 Only complete, validated `cnos.agent-message.v1` events and eligible CMP r0
 snapshots are imported. Other documents are reported as ignored. Published
@@ -28,9 +29,9 @@ deterministically from the Drive file ID and event ordinal. This required
 envelope completion is the only rewrite; the ID is stable across retries and
 source-body edits and is never derived from a Git commit SHA.
 
-CMP also recognizes closed-day, memory-only r0 documents and materializes them
-to `refs/heads/cn-pi/cmp/gpt/memory`. It never imports the active UTC day, canonical
-r1, or a document containing dialogue events into memory. Published daily
+Each locus also recognizes closed-day, memory-only r0 documents and materializes
+them to `refs/heads/cn-pi/<locus>/memory`. It never imports the active UTC day,
+canonical r1, or a document containing dialogue events into memory. Published daily
 snapshots are immutable. This deliberately excludes the current mixed
 dialogue/memory staging doc instead of copying a transcript into memory.
 

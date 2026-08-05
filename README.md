@@ -100,8 +100,8 @@ The adapter runs on **the box** as a 60-second poller, not in GitHub Actions.
 Inter-activation **dialogue is a separate primitive from memory**
 ([cnos#698](https://github.com/usurobor/cnos/issues/698), Agent Dialogue Protocol
 v0 — design pending): each activation writes its own single-writer *dialogue
-stream (`refs/heads/cn-pi/<locus>/gpt/chat` for the current ChatGPT-Pi
-activations), addressed recipients read it by cursor, and threads are
+stream (`refs/heads/cn-pi/<locus>/dialogue`), addressed recipients read it by
+cursor, and threads are
 reconstructed by `thread_id`. A dialogue message is
 **communication-only**; a durable lesson crosses into memory only by an explicit
 new r0 entry in the activation's own box citing the dialogue `{repo, ref, sha}` —

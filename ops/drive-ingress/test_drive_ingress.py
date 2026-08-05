@@ -67,21 +67,27 @@ class ProjectRoutingTests(unittest.TestCase):
         self.assertEqual(set(bridge.PROJECT_ROUTES), {"cmp", "tsc", "cnos"})
         for project, route in bridge.PROJECT_ROUTES.items():
             self.assertEqual(route.expected_repo, f"usurobor/{project}")
-            self.assertEqual(route.target_ref, f"refs/heads/cn-pi/{project}/gpt/chat")
+            self.assertEqual(route.target_ref, f"refs/heads/cn-pi/{project}/dialogue")
             self.assertEqual(route.drive_root, f"gdrive:cn-pi/r0-boxes/pi-{project}")
         self.assertEqual(
             bridge.PROJECT_ROUTES["cmp"].memory_ref,
-            "refs/heads/cn-pi/cmp/gpt/memory",
+            "refs/heads/cn-pi/cmp/memory",
         )
-        self.assertIsNone(bridge.PROJECT_ROUTES["tsc"].memory_ref)
-        self.assertIsNone(bridge.PROJECT_ROUTES["cnos"].memory_ref)
+        self.assertEqual(
+            bridge.PROJECT_ROUTES["tsc"].memory_ref,
+            "refs/heads/cn-pi/tsc/memory",
+        )
+        self.assertEqual(
+            bridge.PROJECT_ROUTES["cnos"].memory_ref,
+            "refs/heads/cn-pi/cnos/memory",
+        )
 
     def test_missing_id_is_minted_stably_from_drive_identity_and_ordinal(self) -> None:
         document = """CNPI-DOC: 0.2
-activation: pi-cmp-chatgpt
+activation: cn-pi@cmp
 project: cmp
 intended_git_repo: usurobor/cmp
-intended_git_ref: refs/heads/cn-pi/cmp/gpt/chat
+intended_git_ref: refs/heads/cn-pi/cmp/dialogue
 
 ---
 schema: cnos.agent-message.v1
@@ -90,11 +96,10 @@ authority: communication-only
 thread_id: cmp-test
 from:
   agent: usurobor/cn-pi
-  activation: gpt/chat
   locus: usurobor/cmp
 to:
   - agent: usurobor/cn-sigma
-    activation: claude/chat
+    locus: usurobor/cmp
 project:
   repo: usurobor/cmp
 ---
@@ -128,10 +133,10 @@ test
 
     def test_tsc_event_is_accepted_only_on_tsc_route(self) -> None:
         document = """CNPI-DOC: 0.2
-activation: pi-tsc-chatgpt
+activation: cn-pi@tsc
 project: tsc
 intended_git_repo: usurobor/tsc
-intended_git_ref: refs/heads/cn-pi/tsc/gpt/chat
+intended_git_ref: refs/heads/cn-pi/tsc/dialogue
 
 ---
 schema: cnos.agent-message.v1
@@ -141,11 +146,10 @@ authority: communication-only
 thread_id: tsc-test
 from:
   agent: usurobor/cn-pi
-  activation: gpt/chat
   locus: usurobor/tsc
 to:
   - agent: usurobor/cn-sigma
-    activation: claude/chat
+    locus: usurobor/tsc
 project:
   repo: usurobor/tsc
 ---
@@ -158,12 +162,43 @@ test
         with self.assertRaisesRegex(bridge.SyncError, "not from cn-pi at CNOS"):
             bridge.extract_dialogue_events(document, bridge.PROJECT_ROUTES["cnos"])
 
+    def test_final_envelope_does_not_require_runtime_as_activation_identity(self) -> None:
+        document = """CNPI-DOC: 0.2
+activation: cn-pi@cmp
+project: cmp
+intended_git_repo: usurobor/cmp
+intended_git_ref: refs/heads/cn-pi/cmp/dialogue
+
+---
+schema: cnos.agent-message.v1
+id: msg-cn-pi-cmp-final-envelope-01
+rank: r0
+authority: communication-only
+thread_id: cmp-test
+from:
+  agent: usurobor/cn-pi
+  locus: usurobor/cmp
+to:
+  - agent: usurobor/cn-sigma
+    locus: usurobor/cnos
+project:
+  repo: usurobor/cmp
+---
+test
+"""
+        route = bridge.PROJECT_ROUTES["cmp"]
+        bridge.validate_dialogue_document(document, route)
+        self.assertEqual(
+            [event_id for event_id, _ in bridge.extract_dialogue_events(document, route)],
+            ["msg-cn-pi-cmp-final-envelope-01"],
+        )
+
     def test_memory_only_document_has_no_dialogue_events(self) -> None:
         document = """CNPI-DOC: 0.3
-activation: pi-cnos-chatgpt
+activation: cn-pi@cnos
 project: cnos
 intended_git_repo: usurobor/cnos
-intended_git_ref: refs/heads/pi/pi-cnos-chatgpt
+intended_git_ref: refs/heads/cn-pi/cnos/memory
 
 memory notes only
 """
@@ -175,11 +210,12 @@ memory notes only
     def test_only_closed_memory_only_cmp_documents_materialize(self) -> None:
         document = """CNPI-DOC: 0.3
 kind: cnos-memory-box
-activation: pi-cmp-chatgpt
+activation: cn-pi@cmp
 project: cmp
 rank: r0
 date: 2026-08-03
 intended_git_repo: usurobor/cmp
+intended_git_ref: refs/heads/cn-pi/cmp/memory
 canonical_status: drive-staging
 
 memory evidence
@@ -203,11 +239,12 @@ memory evidence
     def test_mixed_dialogue_document_is_not_copied_into_memory(self) -> None:
         document = """CNPI-DOC: 0.3
 kind: cnos-memory-box
-activation: pi-cmp-chatgpt
+activation: cn-pi@cmp
 project: cmp
 rank: r0
 date: 2026-08-03
 intended_git_repo: usurobor/cmp
+intended_git_ref: refs/heads/cn-pi/cmp/memory
 canonical_status: drive-staging
 
 schema: cnos.agent-message.v1
@@ -269,7 +306,7 @@ class MutationIsolationTests(unittest.TestCase):
             result = bridge.project(
                 Path("/unused"),
                 "origin",
-                "refs/heads/cn-pi/cmp/gpt/chat",
+                "refs/heads/cn-pi/cmp/dialogue",
                 "document-id-1234567890",
                 b"source revision",
                 "https://docs.google.com/document/d/document-id-1234567890",
@@ -312,7 +349,7 @@ class MutationIsolationTests(unittest.TestCase):
                     "push",
                     "--quiet",
                     "origin",
-                    "HEAD:refs/heads/cn-pi/cmp/gpt/chat",
+                    "HEAD:refs/heads/cn-pi/cmp/dialogue",
                 ],
                 check=True,
             )
@@ -321,7 +358,7 @@ class MutationIsolationTests(unittest.TestCase):
                 result = bridge.project(
                     repo,
                     "origin",
-                    "refs/heads/cn-pi/cmp/gpt/chat",
+                    "refs/heads/cn-pi/cmp/dialogue",
                     "document-id-1234567890",
                     b"source revision",
                     "https://docs.google.com/document/d/document-id-1234567890",
@@ -334,7 +371,7 @@ class MutationIsolationTests(unittest.TestCase):
                     "git",
                     f"--git-dir={remote}",
                     "show",
-                    "refs/heads/cn-pi/cmp/gpt/chat:events/msg-003.md",
+                    "refs/heads/cn-pi/cmp/dialogue:events/msg-003.md",
                 ],
                 check=True,
                 stdout=subprocess.PIPE,
@@ -344,7 +381,7 @@ class MutationIsolationTests(unittest.TestCase):
                     "git",
                     f"--git-dir={remote}",
                     "show",
-                    "refs/heads/cn-pi/cmp/gpt/chat:events/msg-004.md",
+                    "refs/heads/cn-pi/cmp/dialogue:events/msg-004.md",
                 ],
                 check=True,
                 stdout=subprocess.PIPE,
