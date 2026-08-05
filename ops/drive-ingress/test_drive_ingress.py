@@ -25,6 +25,12 @@ loader.exec_module(bridge)
 
 
 class AuthenticatedDriveTests(unittest.TestCase):
+    def test_current_outbox_and_legacy_r0_titles_are_discovered(self) -> None:
+        self.assertTrue(bridge.staging_source_name("r0 — pi-tsc-chatgpt — 2026-08-03.docx"))
+        self.assertTrue(bridge.staging_source_name("Pi — Outbox — TSC Sigma.docx"))
+        self.assertTrue(bridge.staging_source_name("PI — OUTBOX — CMP SIGMA.docx"))
+        self.assertFalse(bridge.staging_source_name("pi-host — Activation Dialogue Protocol.docx"))
+
     def test_service_account_credentials_are_detected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -342,6 +342,12 @@ def fetch_authenticated_text_export(file_id: str, access_token: str) -> bytes:
     return payload
 
 
+def staging_source_name(name: str) -> bool:
+    """Recognize the legacy r0 title and the current explicit outbox title."""
+    folded = name.casefold()
+    return folded.startswith("r0") or folded.startswith("pi — outbox —")
+
+
 def authenticated_sources(config: Path, root: str) -> list[tuple[str, bytes, str, str]]:
     if not config.is_file():
         raise SyncError(f"rclone config does not exist: {config}")
@@ -367,11 +373,11 @@ def authenticated_sources(config: Path, root: str) -> list[tuple[str, bytes, str
         if not isinstance(path, str):
             continue
         name = path.rsplit("/", 1)[-1]
-        if not name.startswith("r0"):
+        if not staging_source_name(name):
             continue
         candidates.append(item)
     if not candidates:
-        raise SyncError(f"no r0 documents found below {root}")
+        raise SyncError(f"no Pi staging documents found below {root}")
 
     service_account_path = rclone_service_account_path(config, root)
     service_account_token: str | None = None
