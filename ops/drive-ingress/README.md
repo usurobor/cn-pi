@@ -1,10 +1,12 @@
-# Pi Drive ingress
+# cn-pi Drive bridge
 
-Temporary host adapter for ChatGPT-Pi's inability to write Git directly.
+Temporary bidirectional host adapter for ChatGPT-Pi's inability to access
+private Git repositories directly.
 
 This is owned by `cn-pi`, not cnos. It is not a CN protocol primitive, generic
 transport package, memory system, or project-authority mechanism. Git commits
-and refs are canonical; Google Drive is only a replaceable staging surface.
+and refs are canonical; Google Drive is only a replaceable outbox and inbox
+surface.
 
 ## Scope
 
@@ -46,6 +48,41 @@ The bridge never writes Sigma-owned refs, imports canonical r1, promotes project
 authority, executes source text, checks out operational refs, or stores
 credentials in this repository.
 
+## Git to Drive inbox
+
+For each Pi locus, the bridge reads these explicitly allowlisted foreign,
+writer-owned refs:
+
+```text
+usurobor/cmp       refs/heads/cn-sigma/cmp/dialogue
+usurobor/tsc       refs/heads/cn-sigma/tsc/dialogue
+usurobor/cnos      refs/heads/cn-sigma/cnos/dialogue
+usurobor/cn-omega  refs/heads/cn-omega/home/dialogue
+```
+
+Only complete `cnos.agent-message.v1` events whose `to` envelope names both
+`agent: usurobor/cn-pi` and the selected locus are delivered. Sender identity
+must match the writer-owned source ref. Source refs must advance by fast
+forward and event paths may only be added.
+
+The destination is the existing user-owned Google Doc
+`pi-host — Activation Dialogue Protocol` (file ID configurable with
+`CN_PI_INGRESS_INBOX_DOC_ID`). A service account has no personal Drive storage
+quota, so it cannot create per-event files in an ordinary shared folder. The
+bridge instead appends one explicitly framed record to this existing document.
+Each record contains the exact Git event bytes plus a deterministic receipt
+with source repository, source ref, publishing commit, and content SHA-256.
+
+The append uses the Google Docs `requiredRevisionId` guard, rereads the file,
+and verifies the historical prefix and exact new record before advancing the
+reader-owned cursor under `/var/lib/cn-pi-drive-ingress/inbox-cursors/`. A crash
+after append but before cursor persistence is idempotent: the exact record is
+recognized on retry. Drive never becomes canonical and cannot mutate Git.
+
+The Google Cloud project owning the service account must have the Google Docs
+API enabled. The service account requests only `drive.readonly` plus
+`documents`; Drive write authority is not used for inbox delivery.
+
 ## Files
 
 - `cn-pi-drive-ingress` — Python foreground command used by systemd.
@@ -64,7 +101,8 @@ Credentials and mutable state remain outside Git:
 /var/lib/cn-pi-drive-ingress/
 ```
 
-The service-account token minted by the adapter uses the read-only Drive scope.
+Drive export tokens use the read-only Drive scope. Inbox append tokens combine
+read-only Drive with the Google Docs document scope.
 
 ## Validate
 
@@ -73,6 +111,7 @@ python3 -m py_compile cn-pi-drive-ingress test_drive_ingress.py
 ./test_drive_ingress.py
 ./cn-pi-drive-ingress --project all --source-mode rclone --discover
 ./cn-pi-drive-ingress --project all --source-mode rclone --dry-run
+./cn-pi-drive-ingress --project tsc --source-mode rclone --direction git-to-drive --dry-run
 ```
 
 ## Deployment

@@ -5,6 +5,7 @@ import importlib.machinery
 import importlib.util
 from datetime import date
 from io import BytesIO
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -67,6 +68,192 @@ class AuthenticatedDriveTests(unittest.TestCase):
     def test_invalid_docx_is_rejected(self) -> None:
         with self.assertRaisesRegex(bridge.SyncError, "not a valid DOCX"):
             bridge.extract_docx_text(b"not a zip", "test.docx")
+
+
+class GitToDriveInboxTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.source = bridge.InboxSource(
+            repo=Path("/root/cn-omega"),
+            expected_repo="usurobor/cn-omega",
+            owner_agent="usurobor/cn-omega",
+            owner_locus="usurobor/cn-omega",
+            dialogue_ref="refs/heads/cn-omega/home/dialogue",
+        )
+        self.event = b"""---
+schema: cnos.agent-message.v1
+id: msg-cn-omega-home-test-01
+ts: 2026-08-05T19:00:00Z
+rank: r0
+class: request
+from:
+  agent: usurobor/cn-omega
+  locus: usurobor/cn-omega
+to:
+  - agent: usurobor/cn-pi
+    locus: usurobor/tsc
+thread_id: tsc-test
+in_reply_to: null
+subject: exact inbound delivery test
+requires_response: true
+project:
+  repo: usurobor/tsc
+authority: communication-only
+---
+
+body bytes stay exact
+"""
+
+    def test_foreign_event_identity_accepts_writer_owned_message(self) -> None:
+        event_id, recipients = bridge.inbound_event_identity(self.event, self.source)
+        self.assertEqual(event_id, "msg-cn-omega-home-test-01")
+        self.assertEqual(
+            recipients,
+            [{"agent": "usurobor/cn-pi", "locus": "usurobor/tsc"}],
+        )
+
+    def test_foreign_event_identity_rejects_spoofed_writer(self) -> None:
+        spoofed = self.event.replace(
+            b"  agent: usurobor/cn-omega\n", b"  agent: usurobor/cn-sigma\n", 1
+        )
+        with self.assertRaisesRegex(bridge.SyncError, "writer-owned ref"):
+            bridge.inbound_event_identity(spoofed, self.source)
+
+    def test_inbox_cursor_round_trip_is_atomic_and_private(self) -> None:
+        route = bridge.PROJECT_ROUTES["tsc"]
+        cursor = {bridge.inbox_source_key(self.source): "a" * 40}
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            bridge, "INBOX_STATE_DIR", Path(directory)
+        ):
+            bridge.persist_inbox_cursors(route, cursor)
+            path = bridge.inbox_cursor_path(route)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(bridge.read_inbox_cursors(route), cursor)
+            document = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(document["version"], 1)
+
+    def test_inbox_record_contains_exact_event_and_deterministic_receipt(self) -> None:
+        receipt = b'{"event_id":"msg-cn-omega-home-test-01"}\n'
+        record = bridge.inbox_record(
+            "msg-cn-omega-home-test-01", self.event, receipt
+        )
+        self.assertIn(self.event.rstrip(b"\n"), record)
+        self.assertIn(receipt.rstrip(b"\n"), record)
+        self.assertEqual(
+            record.count(b"<<<CNOS-DRIVE-INBOX-BEGIN id=msg-cn-omega-home-test-01>>>"),
+            1,
+        )
+
+    def test_google_doc_retry_recognizes_an_exact_existing_record(self) -> None:
+        event_id = "msg-cn-omega-home-test-01"
+        record = bridge.inbox_record(event_id, self.event, b"{}\n")
+        with (
+            mock.patch.object(
+                bridge,
+                "fetch_authenticated_text_export",
+                return_value=b"protocol\n" + record,
+            ),
+            mock.patch.object(bridge, "google_docs_document") as read_structure,
+        ):
+            statuses = bridge.append_google_docs_inbox(
+                "drive-doc-id-1234567890", "token", {event_id: record}
+            )
+        self.assertEqual(statuses, {event_id: "exists"})
+        read_structure.assert_not_called()
+
+    def test_google_doc_append_is_revision_guarded_and_verified(self) -> None:
+        event_id = "msg-cn-omega-home-test-01"
+        record = bridge.inbox_record(event_id, self.event, b"{}\n")
+        before = b"protocol\n"
+        response = BytesIO(b'{"writeControl":{"requiredRevisionId":"next"}}')
+        response.status = 200
+        with (
+            mock.patch.object(
+                bridge,
+                "fetch_authenticated_text_export",
+                side_effect=(before, b"protocol" + record),
+            ),
+            mock.patch.object(
+                bridge,
+                "google_docs_document",
+                return_value={
+                    "revisionId": "revision-1",
+                    "body": {"content": [{"endIndex": 10}]},
+                },
+            ),
+            mock.patch.object(bridge, "urlopen", return_value=response) as request,
+        ):
+            statuses = bridge.append_google_docs_inbox(
+                "drive-doc-id-1234567890", "token", {event_id: record}
+            )
+        self.assertEqual(statuses, {event_id: "created"})
+        posted = json.loads(request.call_args.args[0].data)
+        self.assertEqual(posted["writeControl"], {"requiredRevisionId": "revision-1"})
+        self.assertEqual(posted["requests"][0]["insertText"]["text"].encode(), record)
+
+    def test_cursor_does_not_advance_when_drive_receipt_write_fails(self) -> None:
+        route = bridge.PROJECT_ROUTES["tsc"]
+        args = SimpleNamespace(
+            rclone_config="/config",
+            inbox_doc_id="drive-doc-id-1234567890",
+            remote="origin",
+            dry_run=False,
+        )
+        tip = "b" * 40
+        path = "events/msg-cn-omega-home-test-01.md"
+        with (
+            mock.patch.object(bridge, "INBOX_SOURCES", (self.source,)),
+            mock.patch.object(bridge, "rclone_service_account_path", return_value=Path("/sa")),
+            mock.patch.object(bridge, "read_inbox_cursors", return_value={}),
+            mock.patch.object(bridge, "source_event_paths", return_value=(tip, [path])),
+            mock.patch.object(bridge, "existing_file", return_value=self.event),
+            mock.patch.object(bridge, "published_file_commit", return_value="c" * 40),
+            mock.patch.object(
+                bridge,
+                "service_account_access_token",
+                return_value="token",
+            ),
+            mock.patch.object(
+                bridge,
+                "append_google_docs_inbox",
+                side_effect=bridge.SyncError("append failed"),
+            ),
+            mock.patch.object(bridge, "persist_inbox_cursors") as persist,
+        ):
+            with self.assertRaisesRegex(bridge.SyncError, "append failed"):
+                bridge.sync_git_inbox(route, args)
+        persist.assert_not_called()
+
+    def test_successful_delivery_persists_source_tip_after_event_and_receipt(self) -> None:
+        route = bridge.PROJECT_ROUTES["tsc"]
+        args = SimpleNamespace(
+            rclone_config="/config",
+            inbox_doc_id="drive-doc-id-1234567890",
+            remote="origin",
+            dry_run=False,
+        )
+        tip = "d" * 40
+        path = "events/msg-cn-omega-home-test-01.md"
+        with (
+            mock.patch.object(bridge, "INBOX_SOURCES", (self.source,)),
+            mock.patch.object(bridge, "rclone_service_account_path", return_value=Path("/sa")),
+            mock.patch.object(bridge, "read_inbox_cursors", return_value={}),
+            mock.patch.object(bridge, "source_event_paths", return_value=(tip, [path])),
+            mock.patch.object(bridge, "existing_file", return_value=self.event),
+            mock.patch.object(bridge, "published_file_commit", return_value="e" * 40),
+            mock.patch.object(bridge, "service_account_access_token", return_value="token"),
+            mock.patch.object(
+                bridge,
+                "append_google_docs_inbox",
+                return_value={"msg-cn-omega-home-test-01": "created"},
+            ),
+            mock.patch.object(bridge, "persist_inbox_cursors") as persist,
+        ):
+            result = bridge.sync_git_inbox(route, args)
+        self.assertEqual(result["status"], "updated")
+        self.assertEqual(result["records_created"], 1)
+        persist.assert_called_once_with(
+            route, {bridge.inbox_source_key(self.source): tip}
+        )
 
 
 class ProjectRoutingTests(unittest.TestCase):
