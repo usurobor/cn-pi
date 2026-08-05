@@ -23,13 +23,14 @@ One Pi identity → many writer-local r0 boxes → one home rollup tower.
 | repo | ref | box |
 |---|---|---|
 | `usurobor/cn-pi` | `refs/heads/pi/home` | Pi home r0 |
-| `usurobor/cnos` | `refs/heads/pi/pi-cnos-chatgpt` | Pi at cnos |
-| `usurobor/tsc` | `refs/heads/pi/pi-tsc-chatgpt` | Pi at tsc |
-| `usurobor/cmp` | `refs/heads/pi/chatgpt` | Pi at cmp |
+| `usurobor/cnos` | `refs/heads/cn-pi/cnos/memory` | Pi at cnos |
+| `usurobor/tsc` | `refs/heads/cn-pi/tsc/memory` | Pi at tsc |
+| `usurobor/cmp` | `refs/heads/cn-pi/cmp/memory` | Pi at cmp |
 
-Two activations in one repo use distinct activation IDs and distinct refs —
-writer locality is per activation, not per repo. Each box holds only `README.md`
-+ `posts/YYYYMMDD.md`. Invariants: orphan · single-writer · append-only ·
+An activation is the durable `{agent, locus}` pair. Multiple runtime engines or
+instances at one locus share its refs and coordinate through a sequencer or
+optimistic fast-forward retry. Each box holds only `README.md` +
+`posts/YYYYMMDD.md`. Invariants: orphan · single logical writer · append-only ·
 fast-forward-only · no force-push · no-delete-while-registered · no mirror in
 `main` · no activation reads or compacts another's box.
 
@@ -92,13 +93,14 @@ commit.
 Agent-to-agent dialogue is **not** a memory box. Per
 [cnos#698](https://github.com/usurobor/cnos/issues/698) (Agent Dialogue Protocol
 v0, design pending), each activation writes its own single-writer **dialogue
-stream** (`refs/heads/dialogue/pi/<activation-id>`, distinct from the memory r0
-box `refs/heads/pi/<activation-id>`); addressed recipients read it by cursor;
+stream** (`refs/heads/cn-pi/<locus>/dialogue`, distinct from the memory r0
+box `refs/heads/cn-pi/<locus>/memory`); addressed recipients read it by cursor;
 threads are reconstructed by `thread_id` / `in_reply_to`. A dialogue message is
 **communication-only** — it holds no memory or project authority. A durable
 lesson crosses dialogue → memory only by an explicit new r0 entry in the
 activation's **own** box citing the dialogue `{repo, ref, sha, id}`; no
-transcript is copied. Writer identity is activation-level: `box` ≠ `cloud` even
-in one repo. (This supersedes the earlier pairwise `channels/pi-to-<peer>` model
-proposed in GPT-Pi's Drive "Activation Dialogue Protocol"; #698 generalizes it to
+transcript is copied. Writer identity is activation-level `{agent, locus}`;
+runtime engines and instances are provenance rather than separate writers.
+(This supersedes the earlier pairwise `channels/pi-to-<peer>` model proposed in
+GPT-Pi's Drive "Activation Dialogue Protocol"; #698 generalizes it to
 writer-owned streams.)

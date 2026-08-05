@@ -5,10 +5,10 @@
 # If this file ever grows a notes:/history: field carrying walk prose, it has
 # become the thing #690 exists to prevent.
 #
-# STATUS 2026-08-04: CMP r0 is now materialized at its provisional #698 ref.
-# Its reader-owned cursor remains `pending` until Pi home successfully loads it.
-# The other boxes remain Drive-staged. The first rollup is still provisional
-# and must be regenerated from exact Git SHAs by home.
+# STATUS 2026-08-05: project memory uses the final activation-level #698 refs.
+# Reader-owned cursors remain `pending` until Pi home successfully loads them.
+# Drive remains staging only; canonical rollups must be regenerated from exact
+# Git SHAs by home.
 
 boxes:
   - activation: pi-home-chatgpt
@@ -17,19 +17,19 @@ boxes:
     last_read_sha: pending
     drive_doc: 1PtvGUDABHRJ189wovT9v6iBD7WGLLjowaOmeXXbxYVY
 
-  - activation: pi-cnos-chatgpt
+  - activation: cn-pi@cnos
     repo: usurobor/cnos
-    ref: refs/heads/pi/pi-cnos-chatgpt
+    ref: refs/heads/cn-pi/cnos/memory
     last_read_sha: pending
     drive_doc: 11x2NkELBNIpWP8n3qHz-fGulraIMv9iIdvO5aTHNDUU
 
-  - activation: pi-tsc-chatgpt
+  - activation: cn-pi@tsc
     repo: usurobor/tsc
-    ref: refs/heads/pi/pi-tsc-chatgpt
+    ref: refs/heads/cn-pi/tsc/memory
     last_read_sha: pending
     drive_doc: 1itw0_4kY_zPoQtr8aUgGkVUy5iOoFcqOYfxW_YaA1Jk
 
-  - activation: pi-cmp-chatgpt
+  - activation: cn-pi@cmp
     repo: usurobor/cmp
     ref: refs/heads/cn-pi/cmp/memory
     last_read_sha: pending

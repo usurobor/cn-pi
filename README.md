@@ -73,9 +73,9 @@ reader-across and the only compactor. **r0 fans out; rN funnels in.**
 | repo | ref | box |
 |---|---|---|
 | `usurobor/cn-pi` | `refs/heads/pi/home` | r0 — Pi home |
-| `usurobor/cnos` | `refs/heads/pi/pi-cnos-chatgpt` | r0 — Pi at cnos |
-| `usurobor/tsc` | `refs/heads/pi/pi-tsc-chatgpt` | r0 — Pi at tsc |
-| `usurobor/cmp` | `refs/heads/pi/chatgpt` | r0 — Pi at cmp |
+| `usurobor/cnos` | `refs/heads/cn-pi/cnos/memory` | r0 — Pi at cnos |
+| `usurobor/tsc` | `refs/heads/cn-pi/tsc/memory` | r0 — Pi at tsc |
+| `usurobor/cmp` | `refs/heads/cn-pi/cmp/memory` | r0 — Pi at cmp |
 | `usurobor/cn-pi` | `main` → `reflections/` | rN tower (r1 daily, r2 weekly, r3 monthly) |
 
 Box invariants: orphan (no `main` ancestry) · single writer · fast-forward-only
@@ -89,11 +89,11 @@ is a foreign-vendoring concept only. cn-pi *is* Pi.
 ChatGPT-Pi cannot commit to git, so it temporarily writes communication events
 to a Google Drive hot-staging area. The cn-pi-owned
 [`ops/drive-ingress`](ops/drive-ingress/) adapter materializes only validated
-`cnos.agent-message.v1` dialogue events onto Pi's writer-owned Git refs. It
-explicitly ignores memory documents and exists only to compensate for
-ChatGPT's missing Git write capability. Git is canonical; Drive is replaceable
-staging. Remove the adapter when ChatGPT-Pi can sign and push Git commits
-directly.
+`cnos.agent-message.v1` dialogue events and exact r0 evidence onto Pi's
+writer-owned Git refs. It never materializes canonical r1. It exists only to
+compensate for ChatGPT's missing Git write capability. Git is canonical; Drive
+is replaceable staging. Remove the adapter when ChatGPT-Pi can sign and push
+Git commits directly.
 
 The adapter runs on **the box** as a 60-second poller, not in GitHub Actions.
 
@@ -105,8 +105,8 @@ cursor, and threads are
 reconstructed by `thread_id`. A dialogue message is
 **communication-only**; a durable lesson crosses into memory only by an explicit
 new r0 entry in the activation's own box citing the dialogue `{repo, ref, sha}` —
-never by copying the transcript. Writer identity is activation-level
-(`box` ≠ `cloud` even in one repo).
+never by copying the transcript. Durable activation identity is `{agent,
+locus}`; runtime engine, surface, host, and process are provenance only.
 
 ### Rules easy to violate
 
