@@ -936,19 +936,22 @@ body
         self.assertNotEqual(malformed.returncode, 0)
         self.assertEqual(len(import_commits), 1)
 
-    def test_unrecoverable_final_framing_loss_fails_closed(self) -> None:
+    def test_final_framing_loss_is_quarantined_with_stable_identity(self) -> None:
         document = """CNPI-DOC: 0.2
 ---
 schema: cnos.agent-message.v1
 id: msg-unterminated
 body without a recoverable boundary
 """
-        with self.assertRaisesRegex(bridge.SyncError, "frontmatter terminator"):
-            bridge.extract_dialogue_events(
-                document,
-                bridge.PROJECT_ROUTES["cmp"],
-                "document-id-1234567890",
-            )
+        extraction = bridge.extract_dialogue_events(
+            document,
+            bridge.PROJECT_ROUTES["cmp"],
+            "document-id-1234567890",
+        )
+        self.assertEqual(extraction.events, [])
+        self.assertEqual(len(extraction.incidents), 1)
+        self.assertEqual(extraction.incidents[0]["event_id"], "msg-unterminated")
+        self.assertRegex(extraction.incidents[0]["reason"], "frontmatter terminator")
 
     def test_memory_only_document_has_no_dialogue_events(self) -> None:
         document = """CNPI-DOC: 0.3

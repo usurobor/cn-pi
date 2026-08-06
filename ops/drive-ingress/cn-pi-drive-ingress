@@ -819,8 +819,6 @@ def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES[
         content_end = starts[position + 1] if position + 1 < len(starts) else len(document)
         event = document[content_start:content_end].rstrip() + "\n"
         if "\n---\n" not in event:
-            if position + 1 == len(starts):
-                raise SyncError("dialogue event is missing its frontmatter terminator")
             incidents.append(
                 invalid_source_event_incident(
                     event,
