@@ -126,6 +126,11 @@ body bytes stay exact
             [{"agent": "usurobor/cn-pi", "locus": "usurobor/tsc"}],
         )
 
+    def test_foreign_event_identity_accepts_proposal_class(self) -> None:
+        proposal = self.event.replace(b"class: request\n", b"class: proposal\n")
+        event_id, _ = bridge.inbound_event_identity(proposal, self.source)
+        self.assertEqual(event_id, "msg-cn-omega-home-test-01")
+
     def test_foreign_event_identity_rejects_spoofed_writer(self) -> None:
         spoofed = self.event.replace(
             b"  agent: usurobor/cn-omega\n", b"  agent: usurobor/cn-sigma\n", 1
@@ -446,6 +451,82 @@ test
         )
         self.assertEqual(wrong_route.events, [])
         self.assertRegex(wrong_route.incidents[0]["reason"], "not from cn-pi at CNOS")
+
+    def test_tsc_proposal_to_registered_omega_peer_is_accepted(self) -> None:
+        document = """CNPI-DOC: 0.2
+activation: cn-pi@tsc
+project: tsc
+intended_git_repo: usurobor/tsc
+intended_git_ref: refs/heads/cn-pi/tsc/dialogue
+
+---
+schema: cnos.agent-message.v1
+id: msg-cn-pi-tsc-proposal-01
+ts: 2026-08-06T02:34:13Z
+rank: r0
+class: proposal
+from:
+  agent: usurobor/cn-pi
+  activation: chatgpt
+  locus: usurobor/tsc
+to:
+  - agent: usurobor/cn-omega
+    locus: usurobor/cn-omega
+thread_id: tsc-core-runtime-semantics-20260805
+in_reply_to: null
+subject: Core semantics and methodology-as-code
+requires_response: true
+project:
+  repo: usurobor/tsc
+authority: communication-only
+---
+proposal body
+"""
+        extraction = bridge.extract_dialogue_events(
+            document,
+            bridge.PROJECT_ROUTES["tsc"],
+            "document-id-1234567890",
+        )
+        self.assertEqual(
+            [event_id for event_id, _ in extraction.events],
+            ["msg-cn-pi-tsc-proposal-01"],
+        )
+        self.assertEqual(extraction.incidents, [])
+
+    def test_tsc_event_to_unregistered_peer_is_quarantined(self) -> None:
+        document = """CNPI-DOC: 0.2
+---
+schema: cnos.agent-message.v1
+id: msg-cn-pi-tsc-unknown-peer-01
+ts: 2026-08-06T02:34:13Z
+rank: r0
+class: proposal
+from:
+  agent: usurobor/cn-pi
+  locus: usurobor/tsc
+to:
+  - agent: usurobor/cn-unknown
+    locus: usurobor/cn-unknown
+thread_id: tsc-unknown-peer
+in_reply_to: null
+subject: unsupported peer
+requires_response: false
+project:
+  repo: usurobor/tsc
+authority: communication-only
+---
+body
+"""
+        extraction = bridge.extract_dialogue_events(
+            document,
+            bridge.PROJECT_ROUTES["tsc"],
+            "document-id-1234567890",
+        )
+        self.assertEqual(extraction.events, [])
+        self.assertRegex(
+            extraction.incidents[0]["reason"],
+            "registered Pi dialogue peer",
+        )
 
     def test_final_envelope_does_not_require_runtime_as_activation_identity(self) -> None:
         document = """CNPI-DOC: 0.2

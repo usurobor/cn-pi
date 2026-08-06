@@ -133,6 +133,20 @@ SECRET_PATTERNS = {
     "google-private-key-json": re.compile(r'"private_key"\s*:\s*"-----BEGIN'),
 }
 
+MESSAGE_CLASSES = frozenset(
+    {
+        "note",
+        "decision",
+        "request",
+        "ack",
+        "review",
+        "handoff",
+        "status",
+        "proposal",
+    }
+)
+PI_DIALOGUE_PEERS = frozenset({"usurobor/cn-sigma", "usurobor/cn-omega"})
+
 
 class SyncError(RuntimeError):
     """Expected fail-closed sync error."""
@@ -683,8 +697,7 @@ def validate_dialogue_event(
         datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
     except ValueError as error:
         raise SyncError(f"{label} has a missing or invalid RFC3339 UTC ts") from error
-    allowed_classes = {"note", "decision", "request", "ack", "review", "handoff", "status"}
-    if scalar_fields.get("class") not in allowed_classes:
+    if scalar_fields.get("class") not in MESSAGE_CLASSES:
         raise SyncError(f"{label} has a missing or invalid class")
     thread_id = scalar_fields.get("thread_id", "")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", thread_id):
@@ -711,8 +724,8 @@ def validate_dialogue_event(
             raise SyncError(f"{label} has a recipient with an invalid agent")
         if not re.fullmatch(r"usurobor/[A-Za-z0-9._-]+", recipient.get("locus", "")):
             raise SyncError(f"{label} has a recipient with an invalid locus")
-    if not any(recipient.get("agent") == "usurobor/cn-sigma" for recipient in recipients):
-        raise SyncError(f"{label} is not addressed to cn-sigma")
+    if not any(recipient.get("agent") in PI_DIALOGUE_PEERS for recipient in recipients):
+        raise SyncError(f"{label} is not addressed to a registered Pi dialogue peer")
     if mappings["project"].get("repo") != route.expected_repo:
         raise SyncError(f"{label} is not scoped to {route.expected_repo}")
     return event_id, event.encode("utf-8")
@@ -1036,9 +1049,7 @@ def inbound_event_identity(payload: bytes, source: InboxSource) -> tuple[str, li
         datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
     except ValueError as error:
         raise SyncError(f"foreign event {event_id} has an invalid ts") from error
-    if scalar_fields.get("class") not in {
-        "note", "decision", "request", "ack", "review", "handoff", "status"
-    }:
+    if scalar_fields.get("class") not in MESSAGE_CLASSES:
         raise SyncError(f"foreign event {event_id} has an invalid class")
     if not re.fullmatch(
         r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", scalar_fields.get("thread_id", "")
