@@ -493,6 +493,51 @@ proposal body
         )
         self.assertEqual(extraction.incidents, [])
 
+    def test_dialogue_header_order_is_semantically_irrelevant(self) -> None:
+        document = """CNPI-DOC: 0.2
+activation: cn-pi@cnos
+project: cnos
+intended_git_repo: usurobor/cnos
+intended_git_ref: refs/heads/cn-pi/cnos/dialogue
+
+---
+id: msg-cn-pi-cnos-header-order-01
+class: proposal
+schema: cnos.agent-message.v1
+subject: Header mappings are unordered
+rank: r0
+to:
+  - locus: usurobor/cnos
+    agent: usurobor/cn-sigma
+from:
+  locus: usurobor/cnos
+  agent: usurobor/cn-pi
+requires_response: true
+thread_id: cnos-header-order
+project:
+  repo: usurobor/cnos
+authority: communication-only
+in_reply_to: null
+ts: 2026-08-06T04:15:00Z
+---
+body bytes remain unchanged
+"""
+        extraction = bridge.extract_dialogue_events(
+            document,
+            bridge.PROJECT_ROUTES["cnos"],
+            "document-id-1234567890",
+        )
+        self.assertEqual(
+            [event_id for event_id, _ in extraction.events],
+            ["msg-cn-pi-cnos-header-order-01"],
+        )
+        self.assertEqual(extraction.incidents, [])
+        self.assertTrue(extraction.events[0][1].startswith(b"id: msg-cn-pi"))
+        self.assertIn(
+            b"class: proposal\nschema: cnos.agent-message.v1\n",
+            extraction.events[0][1],
+        )
+
     def test_tsc_event_to_unregistered_peer_is_quarantined(self) -> None:
         document = """CNPI-DOC: 0.2
 ---
@@ -614,6 +659,9 @@ body
             "missing ts and class": complete.replace(
                 "ts: 2026-08-05T12:00:00Z\n", ""
             ).replace("class: request\n", ""),
+            "missing schema": complete.replace(
+                "schema: cnos.agent-message.v1\n", ""
+            ),
         }
         for label, event in cases.items():
             with self.subTest(label=label):
@@ -627,6 +675,74 @@ body
                 self.assertEqual(
                     extraction.incidents[0]["action"], "source_event_quarantined"
                 )
+
+    def test_malformed_reordered_event_is_quarantined_not_silently_appended(self) -> None:
+        document = """CNPI-DOC: 0.2
+activation: cn-pi@cnos
+project: cnos
+intended_git_repo: usurobor/cnos
+intended_git_ref: refs/heads/cn-pi/cnos/dialogue
+
+---
+schema: cnos.agent-message.v1
+id: msg-cn-pi-cnos-prior-09
+ts: 2026-08-06T02:32:00Z
+rank: r0
+class: review
+from:
+  agent: usurobor/cn-pi
+  locus: usurobor/cnos
+to:
+  - agent: usurobor/cn-sigma
+    locus: usurobor/cnos
+thread_id: cnos-prior
+in_reply_to: null
+subject: prior published event
+requires_response: false
+project:
+  repo: usurobor/cnos
+authority: communication-only
+---
+prior body
+
+---
+id: msg-cn-pi-cnos-obligation-projection-10
+schema: cnos.agent-message.v1
+ts: 2026-08-05T22:41:00-04:00
+from:
+  agent: usurobor/cn-pi
+  locus: usurobor/cnos
+to:
+  - agent: usurobor/cn-sigma
+    locus: usurobor/cnos
+thread_id: cnos-dialogue-obligation-projection
+in_reply_to: msg-cn-pi-cnos-prior-09
+class: proposal
+requires_response: true
+authority: communication-only
+subject: malformed event is still observable
+---
+malformed body
+"""
+        extraction = bridge.extract_dialogue_events(
+            document,
+            bridge.PROJECT_ROUTES["cnos"],
+            "document-id-1234567890",
+        )
+        self.assertEqual(
+            [event_id for event_id, _ in extraction.events],
+            ["msg-cn-pi-cnos-prior-09"],
+        )
+        self.assertNotIn(
+            b"msg-cn-pi-cnos-obligation-projection-10",
+            extraction.events[0][1],
+        )
+        self.assertEqual(len(extraction.incidents), 1)
+        self.assertEqual(
+            extraction.incidents[0]["event_id"],
+            "msg-cn-pi-cnos-obligation-projection-10",
+        )
+        self.assertRegex(extraction.incidents[0]["reason"], "field 'rank'")
 
     def test_invalid_envelope_does_not_initialize_or_advance_target_ref(self) -> None:
         document = """CNPI-DOC: 0.2

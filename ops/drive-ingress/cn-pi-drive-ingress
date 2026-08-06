@@ -146,6 +146,23 @@ MESSAGE_CLASSES = frozenset(
     }
 )
 PI_DIALOGUE_PEERS = frozenset({"usurobor/cn-sigma", "usurobor/cn-omega"})
+DIALOGUE_ENVELOPE_KEYS = frozenset(
+    {
+        "schema",
+        "id",
+        "ts",
+        "rank",
+        "class",
+        "from",
+        "to",
+        "thread_id",
+        "in_reply_to",
+        "subject",
+        "requires_response",
+        "project",
+        "authority",
+    }
+)
 
 
 class SyncError(RuntimeError):
@@ -653,6 +670,62 @@ def parse_dialogue_frontmatter(frontmatter: str, event_label: str) -> tuple[
     return scalar_fields, mappings, recipients
 
 
+def dialogue_event_starts(document: str) -> list[int]:
+    """Find envelope openings without assigning meaning to header order.
+
+    Each exact ``---`` line is considered as a possible opening delimiter.  A
+    delimiter is an event opening when the immediately following, bounded
+    YAML-like header prefix either declares the dialogue schema or has a stable
+    message ID plus enough envelope fields to be an attempted event.  The
+    latter rule makes missing/invalid schema declarations observable as
+    quarantine incidents instead of silent drops.
+
+    A closing delimiter is not normally a candidate because the following
+    event body begins with prose (or a blank line), not a header mapping.  This
+    keeps Markdown horizontal rules and fenced YAML examples in event bodies
+    from becoming framing boundaries.
+    """
+    delimiters = list(re.finditer(r"(?m)^---$", document))
+    starts: list[int] = []
+    key_pattern = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(?:\s*(.*))?$")
+
+    for position, delimiter in enumerate(delimiters):
+        prefix_start = delimiter.end()
+        if prefix_start < len(document) and document[prefix_start] == "\n":
+            prefix_start += 1
+        prefix_end = (
+            delimiters[position + 1].start()
+            if position + 1 < len(delimiters)
+            else len(document)
+        )
+        keys: list[tuple[str, str]] = []
+        for line in document[prefix_start:prefix_end].splitlines():
+            if not line.strip():
+                break
+            if line.startswith((" ", "\t")):
+                # Nested mapping/sequence content belongs to the preceding key.
+                continue
+            match = key_pattern.fullmatch(line)
+            if match is None:
+                break
+            keys.append((match.group(1), (match.group(2) or "").strip()))
+
+        schema_values = [value for key, value in keys if key == "schema"]
+        declared_dialogue_schema = any(
+            value.startswith("cnos.agent-message") for value in schema_values
+        )
+        ids = [value for key, value in keys if key == "id"]
+        attempted_dialogue_envelope = (
+            len(ids) == 1
+            and re.fullmatch(r"msg-[A-Za-z0-9._-]+", ids[0]) is not None
+            and len({key for key, _value in keys} & DIALOGUE_ENVELOPE_KEYS) >= 4
+        )
+        if declared_dialogue_schema or attempted_dialogue_envelope:
+            starts.append(delimiter.start())
+
+    return starts
+
+
 def validate_dialogue_event(
     event: str,
     route: ProjectRoute,
@@ -734,16 +807,16 @@ def validate_dialogue_event(
 def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES["cmp"],
                             source_document_id: str = ""
                             ) -> DialogueExtraction:
-    starts = list(re.finditer(r"(?m)^---\nschema: cnos\.agent-message\.v1$", document))
+    starts = dialogue_event_starts(document)
     if not starts:
         return DialogueExtraction(events=[], incidents=[])
 
     events: list[tuple[str, bytes]] = []
     incidents: list[dict[str, object]] = []
     seen: set[str] = set()
-    for position, match in enumerate(starts):
-        content_start = match.start() + len("---\n")
-        content_end = starts[position + 1].start() if position + 1 < len(starts) else len(document)
+    for position, start in enumerate(starts):
+        content_start = start + len("---\n")
+        content_end = starts[position + 1] if position + 1 < len(starts) else len(document)
         event = document[content_start:content_end].rstrip() + "\n"
         if "\n---\n" not in event:
             if position + 1 == len(starts):
