@@ -14,11 +14,11 @@
 
 This document specifies a small bridge experiment. Pi emits data; the host bridge admits and executes only operator-authorized operations. Request fields ask for authority. They never grant it.
 
-On cn-pi `main` at `6baa504bc18105f644f522d7a4393ea3449c493f`, `ops/drive-ingress/` is a proposed/new executable source path. The live `/usr/local/libexec/cn-pi-drive-ingress` is installed, unversioned host state. It is byte-identical to experimental branch `origin/agent/pi-drive-ingress` at `49846607f`, but neither that branch nor effect execution is canonical on `main`.
+On cn-pi `main` at `6baa504bc18105f644f522d7a4393ea3449c493f`, `ops/drive-ingress/` is a proposed/new executable source path. The live `/usr/local/libexec/cn-pi-drive-ingress` is installed, unversioned host state. Its recorded SHA-256 `b16d491116eb0e00d68458e667e4124547e8460fbc1dbffd415f6cddd12e1dc0` equals the artifact on experimental branch `origin/agent/pi-drive-ingress` at `49846607f`; an implementation cycle must reproduce and publish that equality rather than trusting this host-local observation. Neither that branch nor effect execution is canonical on `main`.
 
 The selected boundary is the smallest one that addresses a current failure: Pi cannot write private repositories, while granting it credentials would bypass operator policy. Dialogue-as-commands would mix communication with authority; direct credentials would widen authority; a CNOS scheduler/provider host has no present consumer. The selected adapter keeps credentials and policy on the host and emits evidence for later design.
 
-The only authority after review is this design. Implementation, Drive provisioning, deployment, and CNOS promotion require separate operator decisions.
+Issue #2 dispatched this documentation cycle after its initial `held/not dispatched` filing state; implementation remains held. The operator explicitly exempts this docs-only cycle from a `.cdd/unreleased/2/gamma-scaffold.md`: the only product artifact is this design, while exact-head alpha/beta evidence belongs on PR #3. Implementation, Drive provisioning, deployment, and CNOS promotion require separate operator decisions.
 
 ## Current bridge and Drive topology
 
@@ -33,7 +33,7 @@ cn-pi/r0-boxes/pi-tsc
 cn-pi/r0-boxes/pi-cnos
 ```
 
-Dialogue, memory, activation refs, and their cursors are not effect intake. Effect state is a fourth, separate plane. Google Drive is staging and projection; the local ledger is execution authority; GitHub and bridge-local state are effect backends.
+Dialogue, memory, activation refs, and their cursors are not effect intake. Effect intake and its ledger are a fourth, separate plane. Google Drive is staging and projection; the local ledger is execution authority; GitHub and the canonical Pi writer-owned state refs are effect backends. The ledger never becomes a second activation-state authority.
 
 The bridge's service account can read Drive and append to a shared user-owned Google Doc, but it has no personal Drive quota for per-operation files. V0 therefore uses paired, pre-created Docs rather than one Drive object per request.
 
@@ -73,7 +73,7 @@ Admission reads file metadata and every page of `permissions.list`. It normalize
 
 Pi appends complete records. The bridge reads the Docs structured-text model and records Doc ID, revision ID, and ordinal. A request starts with the exact line `<<<CN-PI-EFFECT-REQUEST-BEGIN id=<id>>>` and ends with `<<<CN-PI-EFFECT-REQUEST-END id=<same-id>>>`. Frames require matching IDs, no nesting, and exactly one intervening JSON object.
 
-Scanning resumes at the next valid begin marker after a malformed bounded record. An unterminated record is incomplete, never executed, and remains observable. Unexpected objects under `effect-ops/v0/` also produce incidents.
+Scanning resumes at the next valid begin marker after a malformed bounded record. Discovery of a begin marker without its matching end marker commits `pending_incomplete` with Doc ID, revision, ordinal, frame ID, and zero external calls. A later revision that completes the same frame transitions that record through ordinary validation exactly once. A different begin marker permits resynchronization but does not erase the pending record. After a configured revision/age bound, an unchanged fragment transitions to `parse_incident/incomplete_frame`; later completion then requires operator reconciliation and never executes silently. Unexpected objects under `effect-ops/v0/` also produce incidents.
 
 ## One-operation request contract
 
@@ -84,12 +84,65 @@ Schema name: `cn-pi.effect-request.v0`. Unknown fields are denied. Required fiel
 | `id` | `1..128` characters from `[A-Za-z0-9._-]`; stable logical request and operation ID, scoped by issuer |
 | `issuer` | exact `{agent,locus}` assertion matching the route |
 | `target` | exact `{repository,profile}` assertion matching the route |
-| `resource` | `{kind}` for a collection; item adds `number`, `issue_number`+`comment_id`, `path`, or `key` |
+| `resource` | one exact collection/item shape below; document items include both `path` and explicit `ref` |
 | `method` | one of `GET|POST|PUT|PATCH|DELETE` |
-| `query` | read filters only; required for collection `GET`, optional for item `GET` |
+| `query` | required for collection `GET`, absent from item `GET`; exact per-family shape below |
 | `representation` | mutation body; required for `POST|PUT|PATCH`, absent from reads and `DELETE` |
 | `precondition` | one backend-specific shape from section 7; reads use `{"kind":"none"}` |
 | `digest` | `sha256:` plus lowercase SHA-256 of the request canonical bytes with `digest` omitted |
+
+Closure is recursive: every object below admits exactly the named members, every enum is closed, and every unknown nested key causes `parse_incident/unknown_field` with zero backend calls. Strings are UTF-8 without NUL or control characters; RFC3339 values are UTC `...Z`; SHA values are lowercase hex with the stated prefix. Route policy may reduce any maximum but never enlarge these hard bounds.
+
+Common nested objects are exact:
+
+| Object | Required members and bounds |
+|---|---|
+| `issuer` | `agent`, `locus`: repository identities `1..128` bytes matching the route |
+| `target` | `repository`: `owner/name`, `3..200` bytes; `profile`: `[A-Za-z0-9._-]{1,64}`; both match the route |
+| `label` | UTF-8 `1..64` bytes; at most 20 unique labels per request |
+| `ref` | full `refs/heads/...`, `12..255` bytes; symbolic refs and tags are denied; mutation additionally denies `main`, protected refs, and foreign writer refs |
+| `path` | normalized repository-relative UTF-8, `1..512` bytes; no empty/dot segments, backslash, NUL, symlink traversal, or percent aliases |
+| `state key` | `[A-Za-z0-9][A-Za-z0-9._/-]{0,255}` mapped by route policy to one exact path/schema on the canonical state ref |
+
+The `resource` union is exact:
+
+| Shape | Exact object |
+|---|---|
+| issue collection/item | `{"kind":"issue"}` / `{"kind":"issue","number":1..2147483647}` |
+| comment collection/item | `{"kind":"comment","issue_number":1..2147483647}` / plus `"comment_id":1..9223372036854775807` |
+| document collection/item | `{"kind":"document"}` / `{"kind":"document","path":"<path>","ref":"<ref>"}` |
+| state collection/item | `{"kind":"state"}` / `{"kind":"state","key":"<state key>"}` |
+
+The `query` union is also closed. Item `GET` carries no `query`. Collection queries require only the listed object; omitted optional members take the shown fixed default before admission and are retained in the normalized operation.
+
+| Collection | Exact query members |
+|---|---|
+| issue | optional `state: open|closed|all` (`open`), `labels: label[]` (`[]`), `sort: created|updated` (`updated`), `direction: asc|desc` (`desc`), `since: RFC3339`, `limit: 1..100` (`30`), `cursor: string|null` (`null`, max 512 bytes) |
+| comment | required `issue_number` is in the resource; optional `since`, `limit`, and `cursor` with the same bounds/defaults |
+| document | required `ref`; optional `prefix` (`""`, path-prefix rules), `limit`, and `cursor` with the same bounds/defaults |
+| state | optional `prefix` (`""`, state-key rules), `limit`, and `cursor`; the route supplies the canonical state ref |
+
+Mutation `representation` objects are exact:
+
+| Operation | Required and optional members |
+|---|---|
+| issue `POST` | required `title: 1..256` bytes; optional `body: 0..65536` bytes and `labels: label[]`; defaults are empty |
+| issue `PATCH` | one or more of `title`, `body`, `labels`, `state: open|closed`, `state_reason: completed|not_planned|reopened`; `state_reason` is permitted only with `state` and must agree with the transition |
+| comment `POST` | required `body: 1..65536` bytes |
+| document `PUT` | required `encoding:"utf-8"`, route-allowlisted `media_type: 1..127` bytes, `content: 0..1048576` bytes, and matching `content_sha256` |
+| state `PUT` | required `encoding:"utf-8"`, route-pinned `media_type: application/json|application/yaml`, `content: 0..262144` bytes, and matching `content_sha256` |
+
+`DELETE` and reads carry no representation. The precondition union is exact:
+
+| Kind | Exact members |
+|---|---|
+| `none` | `kind` only |
+| `marker_absent` | `kind` only |
+| `observed_issue` | `kind`, `updated_at`, `representation_sha256` |
+| `document_match` | `kind`, `ref`, `head_sha`, `blob_sha`, `content_sha256` |
+| `document_absent` | `kind`, `ref`, `head_sha` |
+| `state_match` | `kind`, `ref_head_sha`, `content_sha256` |
+| `state_absent` | `kind`, `ref_head_sha` |
 
 Canonicalization is a bridge-local procedure, not a generic CNOS subsystem: parse strict UTF-8 as exactly one JSON object; reject duplicate keys, floats/exponents, non-finite numbers, unknown fields, BOMs, and integers outside signed 64-bit range; remove the top-level digest field; recursively sort object keys by Unicode code point; preserve array order; emit UTF-8 JSON with no insignificant whitespace or final newline; SHA-256 those bytes. Receipt digests use the same procedure with their top-level `digest` omitted. No Unicode normalization or adapter inference occurs.
 
@@ -103,6 +156,20 @@ Complete synthetic request fixture:
 
 The canonical bytes begin `{"id":...` because keys are sorted. Independent recomputation yields `sha256:b245954dcd2e1cb10d6c83319b1ef1b0eca73fe0370486b149eac057f306a467`.
 
+The other three resource families have complete positive request fixtures below. Their listed digests independently recompute under the same canonicalizer.
+
+```json
+{"schema":"cn-pi.effect-request.v0","id":"req-cn-pi-tsc-comment-0001","issuer":{"agent":"usurobor/cn-pi","locus":"usurobor/tsc"},"target":{"repository":"usurobor/tsc","profile":"issues-and-docs-v0"},"resource":{"kind":"comment","issue_number":123},"method":"POST","representation":{"body":"Please review the exact candidate head."},"precondition":{"kind":"marker_absent"},"digest":"sha256:f943b68de45a1225462f6531d660c209dff3f5b2ef422708e615c03b45cec91b"}
+{"schema":"cn-pi.effect-request.v0","id":"req-cn-pi-tsc-document-0001","issuer":{"agent":"usurobor/cn-pi","locus":"usurobor/tsc"},"target":{"repository":"usurobor/tsc","profile":"issues-and-docs-v0"},"resource":{"kind":"document","path":"docs/customer-note.md","ref":"refs/heads/agent/pi-docs-tsc"},"method":"PUT","representation":{"encoding":"utf-8","media_type":"text/markdown","content":"# Customer note\n","content_sha256":"sha256:f47fe3326336ccea4614d8ecad937f6aed6034dba315f35475d4a6b96a40428a"},"precondition":{"kind":"document_absent","ref":"refs/heads/agent/pi-docs-tsc","head_sha":"1111111111111111111111111111111111111111"},"digest":"sha256:6a9a62ed16ccde4e9642c9361c4222f9bd3dfd72771fcb663440d77f2c4ca47e"}
+{"schema":"cn-pi.effect-request.v0","id":"req-cn-pi-home-state-0001","issuer":{"agent":"usurobor/cn-pi","locus":"usurobor/cn-pi"},"target":{"repository":"usurobor/cn-pi","profile":"home-state-v0"},"resource":{"kind":"state","key":"tasks/example"},"method":"PUT","representation":{"encoding":"utf-8","media_type":"application/yaml","content":"state: ready\n","content_sha256":"sha256:1d013e814cdedbb7aa2469e36e5ca09435030a56b47a9ceaa480ea21c337c348"},"precondition":{"kind":"state_absent","ref_head_sha":"2222222222222222222222222222222222222222"},"digest":"sha256:c123752329cca84164a4316ebbdf872ec14d5546bbacaea3fdff77a32a1bcf55"}
+```
+
+Negative nested-closure fixture: although its digest is internally consistent, the unknown `representation.admin` member produces `parse_incident/unknown_field` and zero backend calls.
+
+```json
+{"schema":"cn-pi.effect-request.v0","id":"req-negative-nested-key-0001","issuer":{"agent":"usurobor/cn-pi","locus":"usurobor/tsc"},"target":{"repository":"usurobor/tsc","profile":"issues-and-docs-v0"},"resource":{"kind":"issue"},"method":"POST","representation":{"title":"Denied","admin":true},"precondition":{"kind":"marker_absent"},"digest":"sha256:12327256cff079b2b326955b5cd61a9579c639fed184368a1870eb9ab7b9bbf6"}
+```
+
 ## Resource, method, and policy matrix
 
 This matrix is closed. The 14 listed resource-shape/method pairs are the entire vocabulary; every other pair is denied.
@@ -110,37 +177,39 @@ This matrix is closed. The 14 listed resource-shape/method pairs are the entire 
 | # | Resource shape | Method | Input and meaning |
 |---:|---|---|---|
 | 1 | issue collection `{kind}` | `GET` | `query`; list issues |
-| 2 | issue item `{kind,number}` | `GET` | optional `query`; retrieve issue |
+| 2 | issue item `{kind,number}` | `GET` | retrieve issue; no `query` |
 | 3 | issue collection `{kind}` | `POST` | `representation`; create issue |
 | 4 | issue item `{kind,number}` | `PATCH` | `representation`; update, close, or reopen |
 | 5 | comment collection `{kind,issue_number}` | `GET` | `query`; list comments |
-| 6 | comment item `{kind,issue_number,comment_id}` | `GET` | optional `query`; retrieve comment |
+| 6 | comment item `{kind,issue_number,comment_id}` | `GET` | retrieve comment; no `query` |
 | 7 | comment collection `{kind,issue_number}` | `POST` | `representation`; create comment |
 | 8 | document collection `{kind}` | `GET` | `query`; list allowed non-code documents |
-| 9 | document item `{kind,path}` | `GET` | optional `query`; retrieve document |
-| 10 | document item `{kind,path}` | `PUT` | `representation`; create or replace document |
-| 11 | document item `{kind,path}` | `DELETE` | delete document |
+| 9 | document item `{kind,path,ref}` | `GET` | retrieve document from an admitted read ref |
+| 10 | document item `{kind,path,ref}` | `PUT` | `representation`; create or replace on an admitted candidate ref |
+| 11 | document item `{kind,path,ref}` | `DELETE` | delete on an admitted candidate ref |
 | 12 | state collection `{kind}` | `GET` | `query`; list Pi activation state keys |
-| 13 | state item `{kind,key}` | `GET` | optional `query`; retrieve state |
+| 13 | state item `{kind,key}` | `GET` | retrieve state; no `query` |
 | 14 | state item `{kind,key}` | `PUT` | `representation`; create or replace state |
 
-The route fixes the repository and profile. Policy then intersects exact resource/method pairs with repository attachment, issue fields/labels, maximum body and result sizes, document path prefixes and media types, state key prefixes, pagination, and per-route rate/budget limits. Home may target only `usurobor/cn-pi`; an attached route targets only its bound repository. State stays under the bound Pi-owned locus namespace.
+The route fixes the repository and profile. Policy then intersects exact resource/method pairs with repository attachment, issue fields/labels, maximum body and result sizes, document path prefixes and media types, exact read refs, one exact pre-created write ref or candidate-ref prefix, state key mappings, pagination, and per-route rate/budget limits. A request ref must equal or narrow that grant. Home may target only `usurobor/cn-pi`; an attached route targets only its bound repository. State stays under the bound Pi-owned locus namespace and exact canonical `refs/heads/cn-pi/<locus>/state` ref.
 
-Document policy is positive: a path and media type must both be listed as non-code. Extension alone never grants. Code, workflows, build/config files, symlinks, binary media, policy files, raw HTTP/Git/shell, credentials, repository settings, and unattached repositories are denied. Issue deletion and comment update/delete do not exist. Policy cannot be mutated by this protocol.
+Document policy is positive: a path and media type must both be listed as non-code. Extension alone never grants. Mutation of `main`, tags, protected refs, another writer's refs, or an unpinned/default branch is denied. An attached-locus write uses an operator-pre-created candidate ref; if none exists, document mutation is disabled because branch creation is not a v0 primitive. A configured PR may consume that candidate ref, but PR creation/merge is outside v0. Code, workflows, build/config files, symlinks, binary media, policy files, raw HTTP/Git/shell, credentials, repository settings, and unattached repositories are denied. Issue deletion and comment update/delete do not exist. A comment `issue_number` must identify an ordinary issue, not a pull request. Policy cannot be mutated by this protocol.
+
+V0 does not claim end-to-end pull-request review agency. It has no PR head/base, diff, changed-file, check, review, or thread observation resource and cannot issue a merge-gating verdict. Until a separately reviewed bounded PR-observation family exists, PR review remains operator-relayed and PR conversation comments are denied. This explicit non-goal preserves the 14-pair vocabulary instead of hiding PR aggregation behind issue `GET`.
 
 ## Backend preconditions and reconciliation
 
 | Operation | Required precondition and execution truth |
 |---|---|
-| any `GET` | `none`; read exact backend state, paginate within policy, and receipt the observed version/digest |
+| any `GET` | `none`; read exact backend state, paginate within policy, and receipt typed inline data plus version/completeness evidence |
 | issue `POST` / comment `POST` | `marker_absent`; derive a stable hidden marker from `agent NUL locus NUL id NUL request_digest`, query it before first attempt and every retry, create once, then exact-read the returned item |
 | issue `PATCH` | `observed_issue` with `updated_at` and representation digest; immediate preflight equality, PATCH, exact post-read; the interval between preflight and mutation is non-atomic and profiles may deny updates that need stronger exclusion |
-| document `PUT` existing | `document_match` with blob/content SHA, ref, and observed head SHA; preflight all evidence, send the backend-required blob SHA, and post-read the returned commit/blob/head |
-| document `PUT` new | `document_absent` with ref and observed head SHA; recheck absence/head, create, and post-read exact bytes and returned commit |
-| document `DELETE` | `document_match` with blob/content SHA, ref, and observed head SHA; send the required blob SHA and verify absence plus returned commit |
-| state `PUT` | `state_match` with version and digest, or explicit `state_absent`; compare and write atomically in one bridge-local transaction |
+| document `PUT` existing | `document_match` with blob/content SHA, route-admitted candidate ref, and observed head SHA; preflight all evidence, send the backend-required blob SHA, and post-read returned commit/blob/head |
+| document `PUT` new | `document_absent` with route-admitted candidate ref and observed head SHA; recheck absence/head, create, and post-read exact bytes and returned commit |
+| document `DELETE` | `document_match` with blob/content SHA, route-admitted candidate ref, and observed head SHA; send the required blob SHA and verify absence plus returned commit |
+| state `PUT` | `state_match` with canonical state-ref head and content digest, or `state_absent` with head; map key to the pinned state path/schema, create one commit on the observed head, and perform a fast-forward-only ref update; receipt before/after heads and content digests |
 
-GitHub's Contents API enforces the existing blob SHA for update/delete, but the observed branch head is preflight and reconciliation evidence unless the implementation selects a primitive that enforces it. A conflicting head, blob, issue representation, or state version is `denied/stale_precondition`, not silently overwritten.
+GitHub's Contents API enforces the existing blob SHA for update/delete, but the observed branch head is preflight and reconciliation evidence unless the implementation selects a primitive that enforces it. Candidate-ref mutation therefore remains subject to a disclosed head race and must post-read the returned commit. State writes use Git's fast-forward rejection as optimistic compare: a commit built on the expected state head cannot replace a concurrently advanced ref. A conflicting head, blob, issue representation, or state version is `denied/stale_precondition`, never silently overwritten.
 
 For creates, the bridge injects only the correlation marker into the created body. The example marker is `cn-pi-effect:c2d69ae6de3900171057ffd05c0d50d6dc09c59f165543f680dad68cf78a326e`. Query can prove an existing matching effect; an absent result after an ambiguous timeout does not necessarily prove non-commit. If the backend cannot prove success or absence, the request remains `indeterminate` and is not automatically replayed.
 
@@ -148,11 +217,11 @@ Backend references: [GitHub issue operations](https://docs.github.com/en/rest/is
 
 ## Durable ledger, replay, collision, and receipts
 
-The local SQLite ledger is authoritative. Discovery is inserted and committed before admission; admission is committed before execution; `executing` plus an attempt token is committed before the external call. Each transition records source Doc/revision/ordinal, scoped ID, request digest, policy version, backend observations, attempt, timestamps, and receipt projection state.
+The local SQLite ledger is authoritative. Discovery is inserted and committed before admission; admission is committed before execution; `executing` plus an attempt token is committed before the external call. Admission atomically retains source Doc/revision/ordinal, scoped ID, the exact canonical request bytes, normalized admitted-operation bytes, request and operation digests, immutable route-policy/config digest, normalized precondition, backend observations, attempt history, timestamps, and receipt projection state. Restart and reconciliation use only these retained bytes; mutable Drive text is never reread as execution input.
 
 | Dimension | States |
 |---|---|
-| delivery | `discovered` |
+| delivery | `discovered`, `pending_incomplete` |
 | admission | `pending`, `admitted`, `denied`, `parse_incident`, `trust_incident`, `policy_incident` |
 | execution | `not_started`, `executing`, `succeeded`, `failed`, `indeterminate` |
 | projection | `pending`, `projected` |
@@ -161,21 +230,52 @@ The local SQLite ledger is authoritative. Discovery is inserted and committed be
 
 After restart, `executing` is reconciled before any retry. Proven matching external state becomes `succeeded`; proven non-commit may retry under the original policy and budget; otherwise it becomes `indeterminate`. A terminal request never executes again.
 
-Receipts use `cn-pi.effect-receipt.v0`. The paired Drive journal is a revision-guarded, reread-verified projection. Projection failure records `receipt_projection_pending`; retries read only the ledger and never call the effect backend.
+Receipts use the recursively closed `cn-pi.effect-receipt.v0`. The paired Drive journal is a revision-guarded, reread-verified projection. Projection failure records `receipt_projection_pending`; retries read only the ledger and never call the effect backend.
+
+Every request receipt has exactly these common fields: `schema`, `id`, `request_digest`, `status`, `reason`, `source`, `ledger_seq`, `policy`, `admission`, `attempts`, `backend`, one status payload, and `digest`. `source` is exact `{doc_id,revision_id,record_ordinal}` with strings `1..256` bytes and ordinal `0..9223372036854775807`. `policy` is exact `{profile,digest}`. `admission` is exact `{canonical_request_sha256,normalized_operation_sha256,precondition}`. Each attempt is exact `{number,started_at,finished_at,outcome,backend_request_id?}` with number `1..16`, RFC3339 timestamps, optional request ID `1..256` bytes, and outcome `observed|no_commit|committed|ambiguous`; attempts are ordered, nonempty after a backend call, and bounded by policy. `backend` is exact `{kind:github-rest|git-ff,executor_identity,request_ids}` with identity `1..128` bytes and at most 16 request IDs. `ledger_seq` is a positive signed 64-bit integer; every digest uses the canonical SHA form.
+
+The status union is discriminated and closed:
+
+| Status | Allowed reason | Required payload | Forbidden payloads |
+|---|---|---|---|
+| `succeeded` read | `read_complete` | `observation` with `complete:true`, `truncated:false` | `mutation`, `denial`, `error`, `reconciliation` |
+| `incomplete` read | `pagination_limit|result_budget_exhausted` | `observation` with `complete:false`, `truncated:true`, partial inspectable data, and continuation evidence | `mutation`, `denial`, `error` |
+| `succeeded` mutation | `created|updated|deleted|reconciled` | `mutation` | `observation`, `denial`, `error` |
+| `denied` | `policy_denied|trust_denied|stale_precondition|id_collision|unsupported_pair` | `denial:{rule,evidence_sha256}` | `observation`, `mutation`, `error` |
+| `failed` | `backend_rejected` | `error:{code,message,commit_proven_absent:true}` | `observation`, `mutation`, `denial` |
+| `indeterminate` | `ambiguous_commit|remote_mismatch` | `reconciliation:{last_observation_sha256,next_action:observe|operator}` | `observation`, `mutation`, `denial`, `error` |
+
+An observation is exact `{resource_kind,shape:item|collection,complete,truncated,count,next_cursor,version,data}` and is at most 262144 canonical UTF-8 bytes after policy narrowing. Item reads require `count:0|1` and `next_cursor:null`; collections retain the backend continuation token when incomplete. No digest-only result counts as perception. V0 uses bounded inline data rather than mutable artifact pointers.
+
+The closed `data` views are: issue `{number,title,body,state,labels,updated_at,url}`; comment `{comment_id,issue_number,body,author,updated_at,url}`; document `{path,ref,media_type,encoding,content,content_sha256,blob_sha,head_sha}`; state `{key,path,ref,media_type,encoding,content,content_sha256,head_sha}`. Request field bounds apply to returned titles, bodies, labels, paths, refs, media, and content; author is `1..128` bytes and URL is `1..2048` bytes. Collection `data` is an array of the corresponding views. When a content body exceeds the inline budget, the receipt is `incomplete/result_budget_exhausted`, includes the remaining metadata and an empty content field, and never claims completeness.
+
+`version` and mutation observation points are resource-specific closed objects: issue `{number,updated_at,representation_sha256}`; comment `{comment_id,updated_at,representation_sha256}`; document `{ref,head_sha,blob_sha,content_sha256}`; state `{ref,head_sha,path,content_sha256}`. A `mutation` is exact `{resource_kind,observed_before,observed_after,correlation}`; before may be null only for a proven create. Correlation is exactly `{marker}` for issue/comment creates or `{commit_sha}` for document/state writes. Denial `rule` and error `code` are `[A-Za-z0-9._/-]{1,128}`; error message is `1..4096` bytes.
+
+Complete issue-create receipt fixture:
 
 ```text
 <<<CN-PI-EFFECT-RECEIPT-BEGIN id=req-cn-pi-tsc-20260807-0001>>>
-{"schema":"cn-pi.effect-receipt.v0","id":"req-cn-pi-tsc-20260807-0001","request_digest":"sha256:b245954dcd2e1cb10d6c83319b1ef1b0eca73fe0370486b149eac057f306a467","status":"succeeded","reason":"created","source":{"doc_id":"1ExampleTscOutboxDoc000000000","revision_id":"rev-outbox-20260807-01","record_ordinal":7},"ledger_seq":41,"effect":{"backend":"github-rest","correlation":{"issue_number":84,"marker":"cn-pi-effect:c2d69ae6de3900171057ffd05c0d50d6dc09c59f165543f680dad68cf78a326e"},"observed_after":{"state":"open","title":"Define customer-case realization proof","updated_at":"2026-08-07T12:00:04Z","body_sha256":"sha256:c578c40a6fc04f1e7ba1ca1f6502bf56d69f734a3ee2e0c75c8a3adecf7f8e3e"}},"digest":"sha256:51d8a79526b08ac1d8dfd9e453fb6a082d4f7edf7ee130e1b0680862bbf72802"}
+{"schema":"cn-pi.effect-receipt.v0","id":"req-cn-pi-tsc-20260807-0001","request_digest":"sha256:b245954dcd2e1cb10d6c83319b1ef1b0eca73fe0370486b149eac057f306a467","status":"succeeded","reason":"created","source":{"doc_id":"1ExampleTscOutboxDoc000000000","revision_id":"rev-outbox-20260807-01","record_ordinal":7},"ledger_seq":41,"policy":{"profile":"issues-and-docs-v0","digest":"sha256:4444444444444444444444444444444444444444444444444444444444444444"},"admission":{"canonical_request_sha256":"sha256:b245954dcd2e1cb10d6c83319b1ef1b0eca73fe0370486b149eac057f306a467","normalized_operation_sha256":"sha256:3333333333333333333333333333333333333333333333333333333333333333","precondition":{"kind":"marker_absent"}},"attempts":[{"number":1,"started_at":"2026-08-07T12:00:03Z","finished_at":"2026-08-07T12:00:04Z","outcome":"committed","backend_request_id":"gh-req-0001"}],"backend":{"kind":"github-rest","executor_identity":"host:cn-node-01","request_ids":["gh-req-0001"]},"mutation":{"resource_kind":"issue","observed_before":null,"observed_after":{"number":84,"updated_at":"2026-08-07T12:00:04Z","representation_sha256":"sha256:c578c40a6fc04f1e7ba1ca1f6502bf56d69f734a3ee2e0c75c8a3adecf7f8e3e"},"correlation":{"marker":"cn-pi-effect:c2d69ae6de3900171057ffd05c0d50d6dc09c59f165543f680dad68cf78a326e"}},"digest":"sha256:68b63f6774e4400441520181fa58a17517ba687e3eb28212bbeeb50daa5d4f77"}
 <<<CN-PI-EFFECT-RECEIPT-END id=req-cn-pi-tsc-20260807-0001>>>
 ```
 
-Independent canonicalization with receipt `digest` omitted yields `sha256:51d8a79526b08ac1d8dfd9e453fb6a082d4f7edf7ee130e1b0680862bbf72802`.
+Independent canonicalization with receipt `digest` omitted yields `sha256:68b63f6774e4400441520181fa58a17517ba687e3eb28212bbeeb50daa5d4f77`.
+
+Complete item-`GET` request/receipt pair, proving inspectable perception rather than digest-only verification:
+
+```json
+{"schema":"cn-pi.effect-request.v0","id":"req-cn-pi-tsc-issue-get-0002","issuer":{"agent":"usurobor/cn-pi","locus":"usurobor/tsc"},"target":{"repository":"usurobor/tsc","profile":"issues-and-docs-v0"},"resource":{"kind":"issue","number":84},"method":"GET","precondition":{"kind":"none"},"digest":"sha256:1d59a42dcb9a84355e370d7ef33d61d77d4b1ba0af363fb46cd156f52765c08e"}
+{"schema":"cn-pi.effect-receipt.v0","id":"req-cn-pi-tsc-issue-get-0002","request_digest":"sha256:1d59a42dcb9a84355e370d7ef33d61d77d4b1ba0af363fb46cd156f52765c08e","status":"succeeded","reason":"read_complete","source":{"doc_id":"1ExampleTscOutboxDoc000000000","revision_id":"rev-outbox-20260807-02","record_ordinal":8},"ledger_seq":42,"policy":{"profile":"issues-and-docs-v0","digest":"sha256:4444444444444444444444444444444444444444444444444444444444444444"},"admission":{"canonical_request_sha256":"sha256:1d59a42dcb9a84355e370d7ef33d61d77d4b1ba0af363fb46cd156f52765c08e","normalized_operation_sha256":"sha256:5555555555555555555555555555555555555555555555555555555555555555","precondition":{"kind":"none"}},"attempts":[{"number":1,"started_at":"2026-08-07T12:01:03Z","finished_at":"2026-08-07T12:01:04Z","outcome":"observed","backend_request_id":"gh-req-0002"}],"backend":{"kind":"github-rest","executor_identity":"host:cn-node-01","request_ids":["gh-req-0002"]},"observation":{"resource_kind":"issue","shape":"item","complete":true,"truncated":false,"count":1,"next_cursor":null,"version":{"number":84,"updated_at":"2026-08-07T12:00:04Z","representation_sha256":"sha256:931e34bac37d3a336e0b9f59e5d1165afcf36a31b5623402bbf2084b43c865ab"},"data":{"number":84,"title":"Define customer-case realization proof","body":"Capture the bounded customer-case realization and its proof plan.","state":"open","labels":["documentation"],"updated_at":"2026-08-07T12:00:04Z","url":"https://github.com/usurobor/tsc/issues/84"}},"digest":"sha256:5d6f63691ee25a8f3c4e5b1303b3fbaaac9fe8df02e7eb5d3093aeb556942af6"}
+```
 
 ## Failure scenarios and conformance proof
 
 | Scenario | Durable disposition | External-call rule |
 |---|---|---|
 | malformed/mismatched/nested frame or invalid JSON | `parse_incident` with Doc/revision/ordinal | zero |
+| unterminated frame first observed | `pending_incomplete` with Doc/revision/ordinal/frame ID | zero |
+| same frame completed in a later revision | validate once from retained discovery lineage | zero until admission |
+| unchanged fragment exceeds configured bound | `parse_incident/incomplete_frame`; later completion needs operator reconciliation | zero |
 | duplicate key, float, unknown field, or bad digest | `parse_incident` | zero |
 | wrong Doc/owner/issuer/locus/target/receipt route | `trust_incident` | zero |
 | permission metadata unavailable or ACL/fingerprint drift | `trust_incident`; projection pending | zero |
@@ -183,6 +283,8 @@ Independent canonicalization with receipt `digest` omitted yields `sha256:51d8a7
 | exact replay | retained receipt/state | zero |
 | same ID, different digest | terminal `denied/id_collision` | zero |
 | stale issue/blob/head/state evidence | terminal `denied/stale_precondition` | read only |
+| default/main/tag/protected/foreign/unpinned document ref | terminal `denied/policy_denied` | zero |
+| read exceeds pagination/result budget | terminal `incomplete` with partial inline data and continuation evidence | reads only |
 | definite backend rejection before commit | terminal `failed/backend_rejected` | one attempt |
 | create returns, exact post-read matches | terminal `succeeded` | one attempt |
 | timeout after possible commit, marker found | terminal `succeeded/reconciled` | reads only after timeout |
@@ -192,9 +294,9 @@ Independent canonicalization with receipt `digest` omitted yields `sha256:51d8a7
 | receipt Doc append or verification fails | terminal outcome + `receipt_projection_pending` | receipt retry only |
 | restart with `executing` | reconcile to success, proven absence, or indeterminate | never blind replay |
 
-AC proof map: AC1 is the header/status and one-file diff; AC2 is paired Docs, ACL binding, framing, and incidents; AC3 is the strict fixture and recomputed digest; AC4 is the closed 14-row matrix; AC5 is the backend table and indeterminate rule; AC6 is ledger-before-effect, replay, collision, and projection isolation; AC7 is the proposed layout and evidence gate below.
+AC proof map: AC1 is the header/status and one-file product diff plus exact-head PR review evidence; AC2 is paired Docs, ACL binding, framing, and durable incomplete/incidents; AC3 is recursive closure and recomputed fixture digests; AC4 is the closed 14-row matrix plus explicit PR-review exclusion; AC5 is the backend/ref table and indeterminate rule; AC6 is retained admitted bytes, ledger-before-effect, replay, collision, typed perception, and projection isolation; AC7 is the proposed layout and evidence gate below.
 
-Conformance must parse both fixture objects with duplicate-key rejection, recompute both digests, count exactly 14 matrix rows, exercise every failure row, verify all links/paths, scan negative space, and run `git diff --no-index --check /dev/null ops/drive-ingress/EFFECT-OPS-v0.md` while the file is untracked.
+Conformance must strictly parse every positive fixture, recompute every request/receipt/content digest, prove the negative nested-key fixture is denied before backend calls, count exactly 14 matrix rows, exercise every failure/status row, verify all links/paths, scan negative space, and run `git diff --check origin/main...HEAD`. Exact-head beta evidence is published on PR #3; no approval claim may precede a zero-finding review at that head.
 
 ## Proposed source, deployment, state, and retirement layout
 
@@ -231,9 +333,10 @@ Process economics: the paired Docs cost eight one-time operator-created files an
 
 ## Non-goals
 
-- No implementation, schema file, test, service, timer, Drive object, ledger, credential, ref, repository, or issue mutation in this design cycle.
+- No implementation, schema file, test, service, timer, Drive object, ledger, credential, runtime ref, or repository-content mutation beyond this design. Issue/PR metadata may record dispatch and exact-head review evidence only.
 - No dialogue/memory parsing as effects; no change to r0, activation, dialogue, memory, or state-ref grammar.
 - No direct Pi execution or credentials; no raw shell, HTTP, Git, workflow, settings, or policy operation.
+- No full pull-request observation, review-thread/check aggregation, merge-gating verdict, PR creation, or merge; those require a separately reviewed resource family.
 - No multi-operation plan, DAG, dependency scheduler, aggregate plan status, CTB compiler, provider host, hypermedia, cache, capability registry, canonical `cn:` URI, or generic canonicalization subsystem.
 - No atomic-CAS claim for GitHub issues/comments and no silent terminalization of uncertainty.
 - No canonical CNOS protocol until the evidence and runtime gates pass.
