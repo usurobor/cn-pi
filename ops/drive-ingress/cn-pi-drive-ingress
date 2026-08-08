@@ -1,0 +1,2776 @@
+#!/usr/bin/env python3
+"""Bridge Pi Drive staging, bounded GitHub effects, and addressed dialogue.
+
+Drive-to-Git projects Pi-authored staging onto Pi's writer-owned refs.
+Git-to-Drive projects immutable foreign events addressed to Pi into a Drive
+inbox. Git remains canonical. The bridge never imports canonical r1, executes
+source content, or checks out an operational ref. Effect records expose only
+issues, issue comments, and textual repository documents on the source locus's
+attached repository.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import configparser
+from dataclasses import dataclass
+from datetime import date, datetime, timezone
+import fcntl
+import hashlib
+from io import BytesIO
+import json
+import os
+from pathlib import Path
+import re
+import sqlite3
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+from typing import Mapping
+import unicodedata
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlencode
+from urllib.request import Request, urlopen
+import xml.etree.ElementTree as ET
+import zipfile
+
+
+DEFAULT_DOC_ID = "11nbk6ZncQ7iwZ8vr-Yk0v71gxXCLwtO4OQL6XBOraeE"
+DEFAULT_REMOTE = "origin"
+DEFAULT_RCLONE_CONFIG = "/root/.config/rclone/rclone.conf"
+DEFAULT_INBOX_DOC_ID = "1bIs7sYGDwcDWOBvWm4dy2MfJjoNR6jK3VSB84450SDs"
+MAX_SOURCE_BYTES = 1_048_576
+LOCK_PATH = "/run/lock/cn-pi-drive-ingress.lock"
+INCIDENT_PATH = Path("/var/lib/cn-pi-drive-ingress/source-mutations.jsonl")
+MAX_INCIDENT_LEDGER_BYTES = 8 * 1_048_576
+INBOX_STATE_DIR = Path("/var/lib/cn-pi-drive-ingress/inbox-cursors")
+EFFECT_LEDGER_PATH = Path("/var/lib/cn-pi-drive-ingress/effects.sqlite3")
+MAX_GITHUB_RESPONSE_BYTES = 2 * 1_048_576
+DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+WORD_NAMESPACE = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+EFFECT_ID = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
+EFFECT_BEGIN = re.compile(rf"(?m)^<<<CN-PI-EFFECT-BEGIN id=({EFFECT_ID})>>>$")
+DOCUMENT_EXTENSIONS = frozenset({".md", ".mdx", ".rst", ".txt", ".adoc"})
+
+
+@dataclass(frozen=True)
+class ProjectRoute:
+    project: str
+    activation: str
+    drive_root: str
+    repo: Path
+    expected_repo: str
+    target_ref: str
+    peer_ref: str
+    memory_ref: str | None
+
+
+@dataclass(frozen=True)
+class DialogueExtraction:
+    events: list[tuple[str, bytes]]
+    incidents: list[dict[str, object]]
+
+
+@dataclass(frozen=True)
+class InboxSource:
+    repo: Path
+    expected_repo: str
+    owner_agent: str
+    owner_locus: str
+    dialogue_ref: str
+
+
+PROJECT_ROUTES = {
+    project: ProjectRoute(
+        project=project,
+        activation=f"cn-pi@{project}",
+        drive_root=f"gdrive:cn-pi/r0-boxes/pi-{project}",
+        repo=Path(f"/root/{project}"),
+        expected_repo=f"usurobor/{project}",
+        target_ref=f"refs/heads/cn-pi/{project}/dialogue",
+        peer_ref=f"refs/heads/cn-sigma/{project}/dialogue",
+        memory_ref=f"refs/heads/cn-pi/{project}/memory",
+    )
+    for project in ("cmp", "tsc", "cnos")
+}
+PROJECT_ROUTES["home"] = ProjectRoute(
+    project="home",
+    activation="cn-pi@home",
+    drive_root="gdrive:cn-pi/r0-boxes/pi-home",
+    repo=Path("/root/cn-pi-clone"),
+    expected_repo="usurobor/cn-pi",
+    target_ref="refs/heads/cn-pi/home/dialogue",
+    peer_ref="refs/heads/cn-sigma/home/dialogue",
+    memory_ref="refs/heads/cn-pi/home/memory",
+)
+
+INBOX_SOURCES = (
+    *(
+        InboxSource(
+            repo=Path(f"/root/{project}"),
+            expected_repo=f"usurobor/{project}",
+            owner_agent="usurobor/cn-sigma",
+            owner_locus=f"usurobor/{project}",
+            dialogue_ref=f"refs/heads/cn-sigma/{project}/dialogue",
+        )
+        for project in ("cmp", "tsc", "cnos")
+    ),
+    InboxSource(
+        repo=Path("/root/cn-sigma"),
+        expected_repo="usurobor/cn-sigma",
+        owner_agent="usurobor/cn-sigma",
+        owner_locus="usurobor/cn-sigma",
+        dialogue_ref="refs/heads/cn-sigma/home/dialogue",
+    ),
+    InboxSource(
+        repo=Path("/root/cn-omega"),
+        expected_repo="usurobor/cn-omega",
+        owner_agent="usurobor/cn-omega",
+        owner_locus="usurobor/cn-omega",
+        dialogue_ref="refs/heads/cn-omega/home/dialogue",
+    ),
+)
+
+SECRET_PATTERNS = {
+    "private-key": re.compile(r"-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----"),
+    "github-token": re.compile(r"(?:github_pat_|gh[opusr]_)[A-Za-z0-9_]{20,}"),
+    "google-api-key": re.compile(r"AIza[0-9A-Za-z_-]{30,}"),
+    "google-private-key-json": re.compile(r'"private_key"\s*:\s*"-----BEGIN'),
+}
+
+MESSAGE_CLASSES = frozenset(
+    {
+        "note",
+        "decision",
+        "request",
+        "ack",
+        "review",
+        "handoff",
+        "status",
+        "proposal",
+    }
+)
+PI_DIALOGUE_PEERS = frozenset({"usurobor/cn-sigma", "usurobor/cn-omega"})
+DIALOGUE_ENVELOPE_KEYS = frozenset(
+    {
+        "schema",
+        "id",
+        "ts",
+        "rank",
+        "class",
+        "from",
+        "to",
+        "thread_id",
+        "in_reply_to",
+        "subject",
+        "requires_response",
+        "project",
+        "authority",
+    }
+)
+
+
+class SyncError(RuntimeError):
+    """Expected fail-closed sync error."""
+
+
+class GitHubAPIError(RuntimeError):
+    """A definite GitHub REST rejection with its HTTP response."""
+
+    def __init__(self, status: int, payload: object):
+        super().__init__(f"GitHub REST returned HTTP {status}")
+        self.status = status
+        self.payload = payload
+
+
+class GitHubUncertainError(RuntimeError):
+    """A transport failure whose mutation outcome may be unknown."""
+
+
+def git(repo: Path, args: list[str], *, data: bytes | None = None,
+        env: Mapping[str, str] | None = None, check: bool = True) -> subprocess.CompletedProcess[bytes]:
+    command = ["git", "-C", str(repo), *args]
+    merged_env = os.environ.copy()
+    if env:
+        merged_env.update(env)
+    result = subprocess.run(
+        command,
+        input=data,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=merged_env,
+        check=False,
+    )
+    if check and result.returncode != 0:
+        diagnostic = result.stderr.decode("utf-8", "replace").strip()
+        raise SyncError(f"git {' '.join(args[:2])} failed: {diagnostic}")
+    return result
+
+
+def fetch_public_source(doc_id: str) -> tuple[str, bytes, str, str]:
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", doc_id):
+        raise SyncError("invalid Google document ID")
+    url = f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+    request = Request(url, headers={"User-Agent": "cn-pi-drive-ingress/0.1"})
+    try:
+        with urlopen(request, timeout=20) as response:
+            if response.status != 200:
+                raise SyncError(f"Drive export returned HTTP {response.status}")
+            payload = response.read(MAX_SOURCE_BYTES + 1)
+    except (HTTPError, URLError, TimeoutError) as error:
+        raise SyncError(f"Drive export failed: {error}") from error
+    if len(payload) > MAX_SOURCE_BYTES:
+        raise SyncError("Drive export exceeds the 1 MiB pilot limit")
+    if not payload:
+        raise SyncError("Drive export is empty")
+    return doc_id, payload, url, f"public:{doc_id}"
+
+
+def rclone(config: Path, args: list[str], *,
+           check: bool = True) -> subprocess.CompletedProcess[bytes]:
+    command = ["rclone", "--config", str(config), *args]
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if check and result.returncode != 0:
+        diagnostic = result.stderr.decode("utf-8", "replace").strip()
+        raise SyncError(f"rclone {' '.join(args[:2])} failed: {diagnostic}")
+    return result
+
+
+def docx_paragraph_text(paragraph: ET.Element) -> str:
+    """Render the text-bearing WordprocessingML nodes in one paragraph."""
+    parts: list[str] = []
+    for element in paragraph.iter():
+        if element.tag == f"{WORD_NAMESPACE}t":
+            parts.append(element.text or "")
+        elif element.tag == f"{WORD_NAMESPACE}tab":
+            parts.append("\t")
+        elif element.tag in (f"{WORD_NAMESPACE}br", f"{WORD_NAMESPACE}cr"):
+            parts.append("\n")
+        elif element.tag == f"{WORD_NAMESPACE}noBreakHyphen":
+            parts.append("\N{NON-BREAKING HYPHEN}")
+        elif element.tag == f"{WORD_NAMESPACE}softHyphen":
+            parts.append("\N{SOFT HYPHEN}")
+    return "".join(parts)
+
+
+def extract_docx_text(payload: bytes, path: str) -> bytes:
+    """Extract deterministic plain text from a bounded DOCX container."""
+    try:
+        with zipfile.ZipFile(BytesIO(payload)) as archive:
+            try:
+                document_info = archive.getinfo("word/document.xml")
+            except KeyError as error:
+                raise SyncError(f"DOCX is missing word/document.xml: {path}") from error
+            if document_info.file_size > MAX_SOURCE_BYTES:
+                raise SyncError(f"expanded DOCX document exceeds the 1 MiB pilot limit: {path}")
+            document_xml = archive.read(document_info)
+    except (zipfile.BadZipFile, OSError) as error:
+        raise SyncError(f"Drive item is not a valid DOCX file: {path}") from error
+
+    if b"<!DOCTYPE" in document_xml or b"<!ENTITY" in document_xml:
+        raise SyncError(f"DOCX contains forbidden XML declarations: {path}")
+    try:
+        document = ET.fromstring(document_xml)
+    except ET.ParseError as error:
+        raise SyncError(f"DOCX contains invalid WordprocessingML: {path}") from error
+    body = document.find(f"{WORD_NAMESPACE}body")
+    if body is None:
+        raise SyncError(f"DOCX is missing its document body: {path}")
+
+    lines: list[str] = []
+    for block in body:
+        if block.tag == f"{WORD_NAMESPACE}p":
+            lines.append(docx_paragraph_text(block))
+        elif block.tag == f"{WORD_NAMESPACE}tbl":
+            for row in block.findall(f"{WORD_NAMESPACE}tr"):
+                cells: list[str] = []
+                for cell in row.findall(f"{WORD_NAMESPACE}tc"):
+                    paragraphs = cell.findall(f".//{WORD_NAMESPACE}p")
+                    cells.append("\n".join(docx_paragraph_text(item) for item in paragraphs))
+                lines.append("\t".join(cells))
+
+    text = ("\n".join(lines) + "\n").encode("utf-8")
+    if len(text) > MAX_SOURCE_BYTES:
+        raise SyncError(f"extracted DOCX text exceeds the 1 MiB pilot limit: {path}")
+    if not text.strip():
+        raise SyncError(f"DOCX contains no readable text: {path}")
+    return text
+
+
+def drive_text_payload(payload: bytes, path: str, mime_type: object) -> bytes:
+    """Return UTF-8 source text for a Drive item, including stored DOCX files."""
+    if mime_type == DOCX_MIME_TYPE or path.casefold().endswith(".docx"):
+        return extract_docx_text(payload, path)
+    return payload
+
+
+def rclone_remote_config(config: Path, root: str) -> tuple[str, configparser.RawConfigParser] | None:
+    remote = root.split(":", 1)[0]
+    parser = configparser.RawConfigParser()
+    try:
+        with config.open("r", encoding="utf-8") as handle:
+            parser.read_file(handle)
+    except (OSError, configparser.Error):
+        return None
+    if not parser.has_section(remote):
+        return None
+    return remote, parser
+
+
+def rclone_service_account_path(config: Path, root: str) -> Path | None:
+    parsed = rclone_remote_config(config, root)
+    if parsed is None:
+        return None
+    remote, parser = parsed
+    value = parser.get(remote, "service_account_file", fallback="").strip()
+    if not value:
+        return None
+    path = Path(os.path.expandvars(os.path.expanduser(value)))
+    return path if path.is_file() else None
+
+
+def service_account_access_token(
+    credentials_path: Path,
+    scope: str = "https://www.googleapis.com/auth/drive.readonly",
+) -> str:
+    """Mint a short-lived Google token without exposing credentials."""
+    allowed_scopes = {
+        "https://www.googleapis.com/auth/drive.readonly",
+        (
+            "https://www.googleapis.com/auth/drive.readonly "
+            "https://www.googleapis.com/auth/documents"
+        ),
+    }
+    if scope not in allowed_scopes:
+        raise SyncError("refusing an unapproved service-account scope")
+    mode = credentials_path.stat().st_mode & 0o777
+    if mode & 0o077:
+        raise SyncError(
+            f"service-account credentials permissions must be 0600 or stricter, got {mode:04o}"
+        )
+    if credentials_path.stat().st_size > 64 * 1024:
+        raise SyncError("service-account credentials file is unexpectedly large")
+    try:
+        credentials = json.loads(credentials_path.read_text(encoding="utf-8"))
+        client_email = credentials["client_email"]
+        private_key_pem = credentials["private_key"]
+        token_uri = credentials["token_uri"]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as error:
+        raise SyncError("service-account credentials are invalid") from error
+    if not all(isinstance(value, str) and value for value in (
+        client_email, private_key_pem, token_uri
+    )):
+        raise SyncError("service-account credentials are incomplete")
+    if token_uri != "https://oauth2.googleapis.com/token":
+        raise SyncError("service-account token URI is not the expected Google endpoint")
+
+    try:
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import padding
+    except ImportError as error:
+        raise SyncError("Python cryptography support is required for service-account export") from error
+
+    def encoded(value: bytes) -> bytes:
+        return base64.urlsafe_b64encode(value).rstrip(b"=")
+
+    now = int(time.time())
+    header = encoded(b'{"alg":"RS256","typ":"JWT"}')
+    claims = encoded(json.dumps({
+        "iss": client_email,
+        "scope": scope,
+        "aud": token_uri,
+        "iat": now,
+        "exp": now + 3600,
+    }, separators=(",", ":")).encode("utf-8"))
+    unsigned = header + b"." + claims
+    try:
+        private_key = serialization.load_pem_private_key(
+            private_key_pem.encode("utf-8"), password=None
+        )
+        signature = private_key.sign(unsigned, padding.PKCS1v15(), hashes.SHA256())
+    except (TypeError, ValueError) as error:
+        raise SyncError("service-account private key is invalid") from error
+    assertion = (unsigned + b"." + encoded(signature)).decode("ascii")
+    request = Request(
+        token_uri,
+        data=urlencode({
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion": assertion,
+        }).encode("ascii"),
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            result = json.load(response)
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise SyncError("service-account token exchange failed") from error
+    token = result.get("access_token") if isinstance(result, dict) else None
+    if not isinstance(token, str) or not token:
+        raise SyncError("service-account token exchange returned no access token")
+    return token
+
+
+def fetch_authenticated_text_export(file_id: str, access_token: str) -> bytes:
+    """Export editor text with the Drive API using a read-only bearer token."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", file_id):
+        raise SyncError("invalid Google Drive file ID")
+    query = urlencode({"mimeType": "text/plain"})
+    url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export?{query}"
+    request = Request(url, headers={
+        "Authorization": f"Bearer {access_token}",
+        "User-Agent": "cn-pi-drive-ingress/0.2",
+    })
+    try:
+        with urlopen(request, timeout=20) as response:
+            if response.status != 200:
+                raise SyncError(f"authenticated Drive export returned HTTP {response.status}")
+            payload = response.read(MAX_SOURCE_BYTES + 1)
+    except HTTPError as error:
+        raise SyncError(
+            f"authenticated Drive text export failed for {file_id}: HTTP {error.code}"
+        ) from error
+    except (URLError, TimeoutError) as error:
+        raise SyncError(f"authenticated Drive text export failed for {file_id}") from error
+    if len(payload) > MAX_SOURCE_BYTES:
+        raise SyncError(f"authenticated Drive export exceeds the 1 MiB pilot limit: {file_id}")
+    if not payload:
+        raise SyncError(f"authenticated Drive export is empty: {file_id}")
+    return payload
+
+
+def staging_source_name(name: str) -> bool:
+    """Recognize the legacy r0 title and the current explicit outbox title."""
+    folded = name.casefold()
+    return folded.startswith("r0") or folded.startswith("pi — outbox —")
+
+
+def authenticated_sources(config: Path, root: str) -> list[tuple[str, bytes, str, str]]:
+    if not config.is_file():
+        raise SyncError(f"rclone config does not exist: {config}")
+    mode = config.stat().st_mode & 0o777
+    if mode & 0o077:
+        raise SyncError(f"rclone config permissions must be 0600 or stricter, got {mode:04o}")
+    if not re.fullmatch(r"[A-Za-z0-9._-]+:[A-Za-z0-9._/ -]*", root):
+        raise SyncError("invalid rclone source root")
+
+    listing_result = rclone(config, ["lsjson", root, "--recursive", "--files-only"])
+    try:
+        listing = json.loads(listing_result.stdout)
+    except json.JSONDecodeError as error:
+        raise SyncError("rclone lsjson returned invalid JSON") from error
+    if not isinstance(listing, list):
+        raise SyncError("rclone lsjson did not return a file list")
+
+    candidates: list[dict[str, object]] = []
+    for item in listing:
+        if not isinstance(item, dict) or item.get("IsDir"):
+            continue
+        path = item.get("Path")
+        if not isinstance(path, str):
+            continue
+        name = path.rsplit("/", 1)[-1]
+        if not staging_source_name(name):
+            continue
+        candidates.append(item)
+    if not candidates:
+        raise SyncError(f"no Pi staging documents found below {root}")
+
+    service_account_path = rclone_service_account_path(config, root)
+    service_account_token: str | None = None
+    sources: list[tuple[str, bytes, str, str]] = []
+    for item in sorted(candidates, key=lambda value: str(value["Path"])):
+        path = str(item["Path"])
+        file_id = item.get("ID")
+        if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{20,}", file_id):
+            raise SyncError(f"Drive item is missing a stable file ID: {path}")
+        mime_type = item.get("MimeType")
+        is_docx = mime_type == DOCX_MIME_TYPE or path.casefold().endswith(".docx")
+        if is_docx and service_account_path is not None:
+            if service_account_token is None:
+                service_account_token = service_account_access_token(service_account_path)
+            payload = fetch_authenticated_text_export(file_id, service_account_token)
+        else:
+            remote_path = f"{root.rstrip('/')}/{path}"
+            payload = rclone(config, ["cat", remote_path]).stdout
+        if len(payload) > MAX_SOURCE_BYTES:
+            raise SyncError(f"Drive item exceeds the 1 MiB pilot limit: {path}")
+        if not payload:
+            raise SyncError(f"Drive item is empty: {path}")
+        if not (is_docx and service_account_path is not None):
+            payload = drive_text_payload(payload, path, mime_type)
+        source_url = f"https://docs.google.com/document/d/{file_id}"
+        modified = item.get("ModTime")
+        source_label = f"rclone:{path}@{modified or 'unknown'}"
+        sources.append((file_id, payload, source_url, source_label))
+    return sources
+
+
+def rclone_credentials_present(config: Path, root: str) -> bool:
+    """Return whether the configured remote has OAuth or service-account auth."""
+    parsed = rclone_remote_config(config, root)
+    if parsed is None:
+        return False
+    remote, parser = parsed
+    token = parser.get(remote, "token", fallback="").strip()
+    inline_service_account = parser.get(
+        remote, "service_account_credentials", fallback=""
+    ).strip()
+    service_account_file = parser.get(remote, "service_account_file", fallback="").strip()
+    if token or inline_service_account:
+        return True
+    if not service_account_file:
+        return False
+    credential_path = Path(os.path.expandvars(os.path.expanduser(service_account_file)))
+    return credential_path.is_file()
+
+
+def effect_source_label(label: str) -> bool:
+    """Effects are accepted only from the current explicit Pi outbox."""
+    return label.casefold().startswith("rclone:pi — outbox —")
+
+
+def strict_json_object(payload: bytes) -> dict[str, object]:
+    def pairs(values: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in values:
+            if key in result:
+                raise SyncError(f"duplicate JSON key: {key}")
+            result[key] = value
+        return result
+
+    try:
+        value = json.loads(payload, object_pairs_hook=pairs)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SyncError("effect body is not one UTF-8 JSON object") from error
+    if not isinstance(value, dict):
+        raise SyncError("effect body is not one JSON object")
+    return value
+
+
+def extract_effect_records(
+    document: str,
+) -> list[tuple[str, bytes, dict[str, object] | None, str | None]]:
+    """Recover independently framed effect requests from one outbox."""
+    records: list[tuple[str, bytes, dict[str, object] | None, str | None]] = []
+    starts = list(EFFECT_BEGIN.finditer(document))
+    for index, start in enumerate(starts):
+        request_id = start.group(1)
+        body_start = start.end()
+        if body_start < len(document) and document[body_start] == "\n":
+            body_start += 1
+        end_marker = f"<<<CN-PI-EFFECT-END id={request_id}>>>"
+        end = document.find(end_marker, body_start)
+        next_start = starts[index + 1].start() if index + 1 < len(starts) else len(document)
+        if end < 0 or end >= next_start:
+            raw = document[body_start:next_start].strip().encode("utf-8")
+            records.append((request_id, raw, None, "unterminated or nested effect frame"))
+            continue
+        trailing = document[end + len(end_marker):]
+        if trailing and not trailing.startswith("\n"):
+            raw = document[body_start:end].strip().encode("utf-8")
+            records.append((request_id, raw, None, "effect end marker is not line-delimited"))
+            continue
+        raw = document[body_start:end].strip().encode("utf-8")
+        try:
+            request = strict_json_object(raw)
+        except SyncError as error:
+            records.append((request_id, raw, None, str(error)))
+            continue
+        records.append((request_id, raw, request, None))
+    return records
+
+
+def simple_query(value: object) -> bool:
+    if value is None or isinstance(value, (str, int, bool)):
+        return True
+    return isinstance(value, list) and all(
+        isinstance(item, (str, int, bool)) for item in value
+    )
+
+
+def document_path(value: str, *, item: bool) -> str:
+    if not value or value.startswith("/") or len(value.encode("utf-8")) > 512:
+        raise SyncError("document path must be a bounded repository-relative path")
+    parts = value.split("/")
+    if any(part in ("", ".", "..") or part.startswith(".") for part in parts):
+        raise SyncError("document path contains a forbidden segment")
+    if item and Path(parts[-1]).suffix.casefold() not in DOCUMENT_EXTENSIONS:
+        raise SyncError("document mutation is limited to textual documentation extensions")
+    return "/".join(parts)
+
+
+def validate_effect_request(
+    marker_id: str, request: Mapping[str, object], route: ProjectRoute
+) -> dict[str, object]:
+    allowed = {"schema", "id", "method", "path", "query", "body"}
+    unknown = set(request) - allowed
+    if unknown:
+        raise SyncError(f"unknown effect field: {sorted(unknown)[0]}")
+    if request.get("schema") != "cn-pi.effect.v0":
+        raise SyncError("unsupported effect schema")
+    request_id = request.get("id")
+    if request_id != marker_id or not isinstance(request_id, str):
+        raise SyncError("effect ID does not match its frame")
+    method = request.get("method")
+    path = request.get("path")
+    if method not in {"GET", "POST", "PATCH", "PUT", "DELETE"}:
+        raise SyncError("unsupported effect method")
+    if not isinstance(path, str) or len(path) > 1024 or "?" in path or "#" in path:
+        raise SyncError("effect path must be a bounded query-free resource path")
+    query = request.get("query", {})
+    if not isinstance(query, dict) or not all(
+        isinstance(key, str) and simple_query(value) for key, value in query.items()
+    ):
+        raise SyncError("effect query must contain only scalar or scalar-list values")
+    body = request.get("body")
+    if body is not None and not isinstance(body, dict):
+        raise SyncError("effect body must be a JSON object")
+    if method == "GET" and body is not None:
+        raise SyncError("GET does not accept an effect body")
+
+    issue_collection = path == "/issues" and method in {"GET", "POST"}
+    issue_item = re.fullmatch(r"/issues/([1-9][0-9]*)", path)
+    comment_collection = re.fullmatch(r"/issues/([1-9][0-9]*)/comments", path)
+    comment_item = re.fullmatch(
+        r"/issues/([1-9][0-9]*)/comments/([1-9][0-9]*)", path
+    )
+    document = re.fullmatch(r"/documents(?:/(.*))?", path)
+    valid = issue_collection
+    valid = valid or bool(issue_item and method in {"GET", "PATCH"})
+    valid = valid or bool(comment_collection and method in {"GET", "POST"})
+    valid = valid or bool(comment_item and method in {"GET", "PATCH", "DELETE"})
+    valid = valid or bool(document and method in {"GET", "PUT", "DELETE"})
+    if not valid:
+        raise SyncError("effect path/method is outside issues, comments, and documents")
+    if method in {"POST", "PATCH", "PUT"} and body is None:
+        raise SyncError("mutation requires an effect body")
+
+    if document:
+        raw_path = document.group(1) or ""
+        if method in {"PUT", "DELETE"} and not raw_path:
+            raise SyncError("document mutation requires an item path")
+        if raw_path:
+            document_path(raw_path, item=method in {"PUT", "DELETE"})
+        if method == "PUT":
+            assert isinstance(body, dict)
+            if set(body) - {"content", "message", "branch", "sha"}:
+                raise SyncError("document PUT accepts only content, message, branch, and sha")
+            if not isinstance(body.get("content"), str) or not isinstance(body.get("message"), str):
+                raise SyncError("document PUT requires text content and commit message")
+            if len(body["content"].encode("utf-8")) > MAX_SOURCE_BYTES:
+                raise SyncError("document content exceeds 1 MiB")
+        if method == "DELETE":
+            if not isinstance(body, dict) or not isinstance(body.get("sha"), str) or not isinstance(body.get("message"), str):
+                raise SyncError("document DELETE requires sha and commit message")
+            if set(body) - {"message", "branch", "sha"}:
+                raise SyncError("document DELETE accepts only message, branch, and sha")
+    return {
+        "schema": "cn-pi.effect.v0",
+        "id": request_id,
+        "repo": route.expected_repo,
+        "method": method,
+        "path": path,
+        "query": query,
+        "body": body,
+    }
+
+
+def github_token() -> str:
+    result = subprocess.run(
+        ["gh", "auth", "token"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    token = result.stdout.decode("utf-8", "replace").strip()
+    if result.returncode != 0 or not token:
+        raise SyncError("GitHub host credential is unavailable")
+    return token
+
+
+def decode_json_response(payload: bytes) -> object:
+    if not payload:
+        return None
+    try:
+        return json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return {"text": payload.decode("utf-8", "replace")}
+
+
+def github_rest(
+    token: str,
+    repo: str,
+    method: str,
+    endpoint: str,
+    *,
+    query: Mapping[str, object] | None = None,
+    body: Mapping[str, object] | None = None,
+) -> tuple[int, object]:
+    url = f"https://api.github.com/repos/{repo}{endpoint}"
+    if query:
+        pairs: list[tuple[str, object]] = []
+        for key, value in query.items():
+            if value is None:
+                continue
+            if isinstance(value, list):
+                pairs.extend((key, item) for item in value)
+            else:
+                pairs.append((key, value))
+        if pairs:
+            url += "?" + urlencode(pairs)
+    data = None if body is None else json.dumps(body, separators=(",", ":")).encode("utf-8")
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": "2026-03-10",
+        "User-Agent": "cn-pi-drive-ingress/0.4",
+    }
+    if data is not None:
+        headers["Content-Type"] = "application/json"
+    request = Request(url, data=data, method=method, headers=headers)
+    try:
+        with urlopen(request, timeout=30) as response:
+            payload = response.read(MAX_GITHUB_RESPONSE_BYTES + 1)
+            if len(payload) > MAX_GITHUB_RESPONSE_BYTES:
+                raise SyncError("GitHub REST response exceeds 2 MiB")
+            return response.status, decode_json_response(payload)
+    except HTTPError as error:
+        payload = error.read(MAX_GITHUB_RESPONSE_BYTES + 1)
+        raise GitHubAPIError(error.code, decode_json_response(payload)) from error
+    except (URLError, TimeoutError) as error:
+        raise GitHubUncertainError("GitHub REST transport failed") from error
+
+
+def ordinary_issue(token: str, repo: str, number: int) -> dict[str, object]:
+    _status, payload = github_rest(token, repo, "GET", f"/issues/{number}")
+    if not isinstance(payload, dict):
+        raise SyncError("GitHub returned a malformed issue")
+    if "pull_request" in payload:
+        raise SyncError("pull requests are not issue resources")
+    return payload
+
+
+def comment_matches_issue(payload: object, number: int) -> None:
+    if not isinstance(payload, dict):
+        raise SyncError("GitHub returned a malformed issue comment")
+    issue_url = payload.get("issue_url")
+    if not isinstance(issue_url, str) or not issue_url.endswith(f"/issues/{number}"):
+        raise SyncError("issue comment does not belong to the requested issue")
+
+
+def document_result(payload: object) -> object:
+    if isinstance(payload, list):
+        return [
+            item for item in payload
+            if isinstance(item, dict)
+            and (
+                item.get("type") == "dir"
+                or Path(str(item.get("name", ""))).suffix.casefold() in DOCUMENT_EXTENSIONS
+            )
+        ]
+    if not isinstance(payload, dict) or payload.get("type") != "file":
+        return payload
+    result = dict(payload)
+    if Path(str(result.get("name", result.get("path", "")))).suffix.casefold() not in DOCUMENT_EXTENSIONS:
+        raise SyncError("requested repository object is not a textual document")
+    content = result.pop("content", None)
+    encoding = result.pop("encoding", None)
+    if encoding == "base64" and isinstance(content, str):
+        try:
+            decoded = base64.b64decode(content, validate=False).decode("utf-8")
+        except (ValueError, UnicodeDecodeError) as error:
+            raise SyncError("repository document is not UTF-8 text") from error
+        result["content"] = decoded
+        result["encoding"] = "utf-8"
+    return result
+
+
+def execute_effect(request: Mapping[str, object]) -> tuple[int, object]:
+    repo = str(request["repo"])
+    method = str(request["method"])
+    path = str(request["path"])
+    query = request["query"]
+    body = request["body"]
+    assert isinstance(query, dict)
+    assert body is None or isinstance(body, dict)
+    token = github_token()
+
+    if path == "/issues":
+        status, payload = github_rest(token, repo, method, "/issues", query=query, body=body)
+        if method == "GET" and isinstance(payload, list):
+            payload = [item for item in payload if isinstance(item, dict) and "pull_request" not in item]
+        return status, payload
+
+    issue_item = re.fullmatch(r"/issues/([1-9][0-9]*)", path)
+    if issue_item:
+        number = int(issue_item.group(1))
+        current = ordinary_issue(token, repo, number)
+        if method == "GET":
+            return 200, current
+        return github_rest(token, repo, method, f"/issues/{number}", body=body)
+
+    comment_collection = re.fullmatch(r"/issues/([1-9][0-9]*)/comments", path)
+    if comment_collection:
+        number = int(comment_collection.group(1))
+        ordinary_issue(token, repo, number)
+        return github_rest(
+            token, repo, method, f"/issues/{number}/comments", query=query, body=body
+        )
+
+    comment_item = re.fullmatch(
+        r"/issues/([1-9][0-9]*)/comments/([1-9][0-9]*)", path
+    )
+    if comment_item:
+        number = int(comment_item.group(1))
+        comment_id = int(comment_item.group(2))
+        ordinary_issue(token, repo, number)
+        if method == "GET":
+            status, payload = github_rest(token, repo, method, f"/issues/comments/{comment_id}")
+            comment_matches_issue(payload, number)
+            return status, payload
+        _status, current = github_rest(token, repo, "GET", f"/issues/comments/{comment_id}")
+        comment_matches_issue(current, number)
+        return github_rest(token, repo, method, f"/issues/comments/{comment_id}", body=body)
+
+    document = re.fullmatch(r"/documents(?:/(.*))?", path)
+    if document:
+        repo_path = document.group(1) or ""
+        if repo_path:
+            document_path(repo_path, item=method in {"PUT", "DELETE"})
+        endpoint = "/contents" + ("/" + quote(repo_path, safe="/") if repo_path else "")
+        api_body = None if body is None else dict(body)
+        if method == "PUT":
+            assert api_body is not None
+            content = api_body.get("content")
+            assert isinstance(content, str)
+            api_body["content"] = base64.b64encode(content.encode("utf-8")).decode("ascii")
+        status, payload = github_rest(
+            token, repo, method, endpoint, query=query, body=api_body
+        )
+        return status, document_result(payload) if method == "GET" else payload
+    raise SyncError("unreachable effect resource")
+
+
+def effect_database(path: Path = EFFECT_LEDGER_PATH) -> sqlite3.Connection:
+    memory = str(path) == ":memory:"
+    if not memory:
+        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    connection = sqlite3.connect(path, timeout=10)
+    connection.execute("PRAGMA journal_mode=WAL")
+    connection.execute("PRAGMA synchronous=FULL")
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS requests (
+            project TEXT NOT NULL,
+            request_id TEXT NOT NULL,
+            request_digest TEXT NOT NULL,
+            request_json BLOB NOT NULL,
+            status TEXT NOT NULL,
+            result_json BLOB NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (project, request_id)
+        )
+        """
+    )
+    connection.commit()
+    if not memory:
+        os.chmod(path, 0o600)
+    return connection
+
+
+def effect_result(
+    route: ProjectRoute,
+    request_id: str,
+    digest: str,
+    status: str,
+    *,
+    request: Mapping[str, object] | None = None,
+    http_status: int | None = None,
+    result: object = None,
+    error: object = None,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "schema": "cn-pi.effect-result.v0",
+        "id": request_id,
+        "repo": route.expected_repo,
+        "request_digest": digest,
+        "status": status,
+    }
+    if request is not None:
+        payload["method"] = request.get("method")
+        payload["path"] = request.get("path")
+    if http_status is not None:
+        payload["http_status"] = http_status
+    if status == "succeeded":
+        payload["result"] = result
+    else:
+        payload["error"] = error
+    return payload
+
+
+def retain_effect_result(
+    connection: sqlite3.Connection,
+    route: ProjectRoute,
+    request_id: str,
+    digest: str,
+    raw: bytes,
+    request: Mapping[str, object] | None,
+    parse_error: str | None,
+    *,
+    dry_run: bool,
+) -> tuple[dict[str, object], str]:
+    inserted = False
+    row = connection.execute(
+        "SELECT request_digest,status,result_json FROM requests WHERE project=? AND request_id=?",
+        (route.project, request_id),
+    ).fetchone()
+    if row is not None:
+        old_digest, old_status, old_result = row
+        if old_digest != digest:
+            result = effect_result(
+                route, request_id, digest, "rejected", error={"code": "id_collision"}
+            )
+            return result, f"effect-{route.project}-{request_id}-{digest[:12]}"
+        if old_status == "executing":
+            result = effect_result(
+                route,
+                request_id,
+                digest,
+                "uncertain",
+                request=request,
+                error={"code": "interrupted_write", "message": "operator reconciliation required"},
+            )
+            encoded = json.dumps(result, sort_keys=True, separators=(",", ":")).encode()
+            if not dry_run:
+                connection.execute(
+                    "UPDATE requests SET status='uncertain',result_json=?,updated_at=? WHERE project=? AND request_id=?",
+                    (encoded, datetime.now(timezone.utc).isoformat(), route.project, request_id),
+                )
+                connection.commit()
+            return result, f"effect-{route.project}-{request_id}-{digest[:12]}"
+        return json.loads(old_result), f"effect-{route.project}-{request_id}-{digest[:12]}"
+
+    if parse_error is not None:
+        result = effect_result(
+            route, request_id, digest, "rejected", error={"code": "invalid_request", "message": parse_error}
+        )
+        status = "rejected"
+    else:
+        try:
+            assert request is not None
+            request = validate_effect_request(request_id, request, route)
+        except (AssertionError, SyncError) as error:
+            result = effect_result(
+                route, request_id, digest, "rejected", error={"code": "invalid_request", "message": str(error)}
+            )
+            status = "rejected"
+        else:
+            if dry_run:
+                return (
+                    effect_result(route, request_id, digest, "would_execute", request=request, result=None),
+                    f"effect-{route.project}-{request_id}-{digest[:12]}",
+                )
+            now = datetime.now(timezone.utc).isoformat()
+            placeholder = json.dumps(
+                effect_result(route, request_id, digest, "executing", request=request),
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+            connection.execute(
+                "INSERT INTO requests VALUES (?,?,?,?,?,?,?,?)",
+                (route.project, request_id, digest, raw, "executing", placeholder, now, now),
+            )
+            connection.commit()
+            inserted = True
+            try:
+                http_status, response = execute_effect(request)
+                result = effect_result(
+                    route,
+                    request_id,
+                    digest,
+                    "succeeded",
+                    request=request,
+                    http_status=http_status,
+                    result=response,
+                )
+                status = "succeeded"
+            except GitHubAPIError as error:
+                result = effect_result(
+                    route,
+                    request_id,
+                    digest,
+                    "failed",
+                    request=request,
+                    http_status=error.status,
+                    error={"code": "github_rejected", "detail": error.payload},
+                )
+                status = "failed"
+            except GitHubUncertainError as error:
+                status = "failed" if request.get("method") == "GET" else "uncertain"
+                result = effect_result(
+                    route,
+                    request_id,
+                    digest,
+                    status,
+                    request=request,
+                    error={"code": "transport_failed", "message": str(error)},
+                )
+            except SyncError as error:
+                result = effect_result(
+                    route,
+                    request_id,
+                    digest,
+                    "rejected",
+                    request=request,
+                    error={"code": "resource_rejected", "message": str(error)},
+                )
+                status = "rejected"
+
+    encoded = json.dumps(result, sort_keys=True, separators=(",", ":")).encode()
+    if not dry_run:
+        now = datetime.now(timezone.utc).isoformat()
+        if inserted:
+            connection.execute(
+                "UPDATE requests SET status=?,result_json=?,updated_at=? WHERE project=? AND request_id=?",
+                (status, encoded, now, route.project, request_id),
+            )
+        else:
+            connection.execute(
+                "INSERT INTO requests VALUES (?,?,?,?,?,?,?,?)",
+                (route.project, request_id, digest, raw, status, encoded, now, now),
+            )
+        connection.commit()
+    return result, f"effect-{route.project}-{request_id}-{digest[:12]}"
+
+
+def effect_receipt_record(record_id: str, result: Mapping[str, object]) -> bytes:
+    request_id = str(result["id"])
+    payload = json.dumps(result, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return (
+        f"\n<<<CNOS-DRIVE-INBOX-BEGIN id={record_id}>>>\n"
+        f"kind: cn-pi-effect-result\n"
+        f"<<<CN-PI-EFFECT-RESULT-BEGIN id={request_id}>>>\n"
+    ).encode() + payload + (
+        f"\n<<<CN-PI-EFFECT-RESULT-END id={request_id}>>>\n"
+        f"<<<CNOS-DRIVE-INBOX-END id={record_id}>>>\n"
+    ).encode()
+
+
+def sync_effect_requests(
+    route: ProjectRoute,
+    args: argparse.Namespace,
+    sources: list[tuple[str, bytes, str, str]],
+) -> dict[str, object]:
+    candidates: list[tuple[str, bytes, dict[str, object] | None, str | None]] = []
+    for _file_id, payload, _source_url, source_label in sources:
+        if not effect_source_label(source_label):
+            continue
+        scan_source(payload)
+        document = normalize_document(payload)
+        candidates.extend(extract_effect_records(document))
+    if not candidates:
+        return {"status": "no_change", "requests_seen": []}
+
+    connection = effect_database(Path(":memory:") if args.dry_run else EFFECT_LEDGER_PATH)
+    records: dict[str, bytes] = {}
+    results: list[dict[str, object]] = []
+    try:
+        for request_id, raw, request, parse_error in candidates:
+            digest = hashlib.sha256(raw).hexdigest()
+            if parse_error == "unterminated or nested effect frame":
+                result = effect_result(
+                    route,
+                    request_id,
+                    digest,
+                    "pending",
+                    error={"code": "incomplete_frame", "message": parse_error},
+                )
+                record_id = f"effect-{route.project}-{request_id}-{digest[:12]}"
+            else:
+                result, record_id = retain_effect_result(
+                    connection,
+                    route,
+                    request_id,
+                    digest,
+                    raw,
+                    request,
+                    parse_error,
+                    dry_run=args.dry_run,
+                )
+            results.append(result)
+            if not args.dry_run:
+                records[record_id] = effect_receipt_record(record_id, result)
+    finally:
+        connection.close()
+
+    if args.dry_run:
+        return {"status": "would_process", "requests_seen": results}
+    config = Path(args.rclone_config)
+    credential_path = rclone_service_account_path(config, route.drive_root)
+    if credential_path is None:
+        raise SyncError("service-account credentials are required for effect receipts")
+    token = service_account_access_token(
+        credential_path,
+        (
+            "https://www.googleapis.com/auth/drive.readonly "
+            "https://www.googleapis.com/auth/documents"
+        ),
+    )
+    statuses = append_google_docs_inbox(args.inbox_doc_id, token, records)
+    return {
+        "status": "updated" if any(value == "created" for value in statuses.values()) else "no_change",
+        "requests_seen": results,
+        "receipt_statuses": statuses,
+    }
+
+
+def normalize_document(payload: bytes) -> str:
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise SyncError("Drive export is not UTF-8") from error
+
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    version = re.search(r"(?m)^CNPI-DOC: (0\.[0-9]+)$", normalized[:1000])
+    if not version:
+        raise SyncError("missing or unsupported CNPI-DOC version")
+    return normalized
+
+
+def validate_dialogue_document(document: str, route: ProjectRoute) -> None:
+    markers = (
+        f"activation: {route.activation}",
+        f"project: {route.project}",
+        f"intended_git_repo: {route.expected_repo}",
+    )
+    for marker in markers:
+        if not re.search(rf"(?m)^{re.escape(marker)}$", document[:3000]):
+            raise SyncError(f"{route.project} dialogue document is missing marker: {marker}")
+    if not re.search(
+        rf"(?m)^intended_git_ref: {re.escape(route.target_ref)}$", document[:3000]
+    ):
+        raise SyncError(f"{route.project} dialogue document does not target its final ref")
+
+
+def minted_event_id(source_document_id: str, ordinal: int, project: str) -> str:
+    """Mint a replay-stable ID from source identity, never from Git identity."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", source_document_id):
+        raise SyncError("cannot mint a stable event id without a stable Drive file ID")
+    identity = f"{source_document_id}\0{ordinal}".encode("utf-8")
+    suffix = hashlib.sha256(identity).hexdigest()[:24]
+    return f"msg-cn-pi-{project}-drive-{suffix}"
+
+
+def invalid_source_event_incident(
+    event: str,
+    ordinal: int,
+    source_document_id: str,
+    reason: str,
+) -> dict[str, object]:
+    ids = re.findall(r"(?m)^id:\s*([^\s]+)\s*$", event)
+    event_id = ids[0] if len(ids) == 1 else None
+    digest = sha256_label(canonical_event_bytes(event.encode("utf-8")))
+    incident: dict[str, object] = {
+        "kind": "invalid_source_event",
+        "event_id": event_id,
+        "source_ordinal": ordinal,
+        "current_source_digest": digest,
+        "source_document_id": source_document_id,
+        "reason": reason,
+        "observed_at": datetime.now(timezone.utc)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
+        "action": "source_event_quarantined",
+    }
+    identity = {
+        key: incident[key]
+        for key in (
+            "kind",
+            "source_ordinal",
+            "current_source_digest",
+            "source_document_id",
+            "reason",
+        )
+    }
+    incident["incident_id"] = hashlib.sha256(
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return incident
+
+
+def parse_dialogue_frontmatter(frontmatter: str, event_label: str) -> tuple[
+    dict[str, str], dict[str, dict[str, str]], list[dict[str, str]]
+]:
+    """Parse the bounded v1 envelope subset and reject ambiguous keys."""
+    scalar_fields: dict[str, str] = {}
+    mappings: dict[str, dict[str, str]] = {"from": {}, "project": {}}
+    recipients: list[dict[str, str]] = []
+    current_top = ""
+    current_recipient: dict[str, str] | None = None
+    key_pattern = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(?:\s*(.*))?$")
+
+    for line_number, line in enumerate(frontmatter.splitlines(), 1):
+        if not line.strip():
+            raise SyncError(f"{event_label} frontmatter contains a blank line")
+        indent = len(line) - len(line.lstrip(" "))
+        stripped = line[indent:]
+        if indent == 0:
+            match = key_pattern.fullmatch(stripped)
+            if match is None:
+                raise SyncError(
+                    f"{event_label} frontmatter line {line_number} is not a field"
+                )
+            key, value = match.group(1), (match.group(2) or "").strip()
+            if key in scalar_fields:
+                raise SyncError(f"{event_label} has duplicate top-level field {key!r}")
+            if key in {"from", "to", "project"} and value:
+                raise SyncError(
+                    f"{event_label} field {key!r} must use block container syntax"
+                )
+            scalar_fields[key] = value
+            current_top = key
+            current_recipient = None
+            continue
+
+        if current_top in mappings and indent == 2:
+            match = key_pattern.fullmatch(stripped)
+            if match is None:
+                raise SyncError(
+                    f"{event_label} field {current_top!r} has malformed mapping syntax"
+                )
+            key, value = match.group(1), (match.group(2) or "").strip()
+            if key in mappings[current_top]:
+                raise SyncError(
+                    f"{event_label} field {current_top!r} has duplicate key {key!r}"
+                )
+            mappings[current_top][key] = value
+            continue
+
+        if current_top == "to" and indent == 2 and stripped.startswith("- "):
+            match = key_pattern.fullmatch(stripped[2:])
+            if match is None:
+                raise SyncError(f"{event_label} field 'to' has malformed recipient syntax")
+            current_recipient = {}
+            recipients.append(current_recipient)
+            key, value = match.group(1), (match.group(2) or "").strip()
+            current_recipient[key] = value
+            continue
+
+        if current_top == "to" and indent == 4 and current_recipient is not None:
+            match = key_pattern.fullmatch(stripped)
+            if match is None:
+                raise SyncError(f"{event_label} field 'to' has malformed recipient syntax")
+            key, value = match.group(1), (match.group(2) or "").strip()
+            if key in current_recipient:
+                raise SyncError(
+                    f"{event_label} field 'to' has duplicate recipient key {key!r}"
+                )
+            current_recipient[key] = value
+            continue
+
+        # Optional extension fields such as reads/causal_parents may contain
+        # nested YAML. Their top-level key is still duplicate-checked above;
+        # they are opaque to this transport's routing grammar.
+        if current_top not in {"from", "to", "project"} and indent >= 2:
+            continue
+        # Optional nested runtime provenance is not identity or routing data.
+        if current_top in {"from", "to"} and indent >= 4:
+            continue
+        raise SyncError(
+            f"{event_label} field {current_top!r} has invalid indentation at line {line_number}"
+        )
+
+    return scalar_fields, mappings, recipients
+
+
+def dialogue_event_starts(document: str) -> list[int]:
+    """Find envelope openings without assigning meaning to header order.
+
+    Each exact ``---`` line is considered as a possible opening delimiter.  A
+    delimiter is an event opening when the immediately following, bounded
+    YAML-like header prefix either declares the dialogue schema or has a stable
+    message ID plus enough envelope fields to be an attempted event.  The
+    latter rule makes missing/invalid schema declarations observable as
+    quarantine incidents instead of silent drops.
+
+    A closing delimiter is not normally a candidate because the following
+    event body begins with prose (or a blank line), not a header mapping.  This
+    keeps Markdown horizontal rules and fenced YAML examples in event bodies
+    from becoming framing boundaries.
+    """
+    delimiters = list(re.finditer(r"(?m)^---$", document))
+    starts: list[int] = []
+    key_pattern = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(?:\s*(.*))?$")
+
+    for position, delimiter in enumerate(delimiters):
+        prefix_start = delimiter.end()
+        if prefix_start < len(document) and document[prefix_start] == "\n":
+            prefix_start += 1
+        prefix_end = (
+            delimiters[position + 1].start()
+            if position + 1 < len(delimiters)
+            else len(document)
+        )
+        keys: list[tuple[str, str]] = []
+        for line in document[prefix_start:prefix_end].splitlines():
+            if not line.strip():
+                break
+            if line.startswith((" ", "\t")):
+                # Nested mapping/sequence content belongs to the preceding key.
+                continue
+            match = key_pattern.fullmatch(line)
+            if match is None:
+                break
+            keys.append((match.group(1), (match.group(2) or "").strip()))
+
+        schema_values = [value for key, value in keys if key == "schema"]
+        declared_dialogue_schema = any(
+            value.startswith("cnos.agent-message") for value in schema_values
+        )
+        ids = [value for key, value in keys if key == "id"]
+        attempted_dialogue_envelope = (
+            len(ids) == 1
+            and re.fullmatch(r"msg-[A-Za-z0-9._-]+", ids[0]) is not None
+            and len({key for key, _value in keys} & DIALOGUE_ENVELOPE_KEYS) >= 4
+        )
+        if declared_dialogue_schema or attempted_dialogue_envelope:
+            starts.append(delimiter.start())
+
+    return starts
+
+
+def validate_dialogue_event(
+    event: str,
+    route: ProjectRoute,
+    source_document_id: str,
+    ordinal: int,
+) -> tuple[str, bytes]:
+    frontmatter_end = event.find("\n---\n")
+    if frontmatter_end < 0:
+        raise SyncError("dialogue event is missing its frontmatter terminator")
+    frontmatter = event[:frontmatter_end]
+    label = f"dialogue event {ordinal}"
+    scalar_fields, mappings, recipients = parse_dialogue_frontmatter(frontmatter, label)
+
+    event_id = scalar_fields.get("id", "")
+    if not event_id:
+        event_id = minted_event_id(source_document_id, ordinal, route.project)
+        event = event.replace(
+            "schema: cnos.agent-message.v1\n",
+            f"schema: cnos.agent-message.v1\nid: {event_id}\n",
+            1,
+        )
+        scalar_fields["id"] = event_id
+        label = f"event {event_id}"
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", event_id):
+        raise SyncError(f"dialogue event has an invalid stable id: {event_id!r}")
+
+    required_scalars = {
+        "schema": "cnos.agent-message.v1",
+        "rank": "r0",
+        "authority": "communication-only",
+    }
+    for key, expected in required_scalars.items():
+        if scalar_fields.get(key) != expected:
+            raise SyncError(
+                f"{label} field {key!r} must be {expected!r}, "
+                f"got {scalar_fields.get(key)!r}"
+            )
+    timestamp = scalar_fields.get("ts", "")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", timestamp):
+        raise SyncError(f"{label} has a missing or invalid RFC3339 UTC ts")
+    try:
+        datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as error:
+        raise SyncError(f"{label} has a missing or invalid RFC3339 UTC ts") from error
+    if scalar_fields.get("class") not in MESSAGE_CLASSES:
+        raise SyncError(f"{label} has a missing or invalid class")
+    thread_id = scalar_fields.get("thread_id", "")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", thread_id):
+        raise SyncError(f"{label} has an invalid thread_id: {thread_id!r}")
+    if "in_reply_to" not in scalar_fields:
+        raise SyncError(f"{label} is missing required field 'in_reply_to'")
+    reply_to = scalar_fields["in_reply_to"]
+    if reply_to not in {"null", "~"} and not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", reply_to
+    ):
+        raise SyncError(f"{label} has an invalid in_reply_to: {reply_to!r}")
+    if not scalar_fields.get("subject"):
+        raise SyncError(f"{label} is missing required field 'subject'")
+    if scalar_fields.get("requires_response") not in {"true", "false"}:
+        raise SyncError(f"{label} has a missing or invalid requires_response")
+
+    sender = mappings["from"]
+    if sender.get("agent") != "usurobor/cn-pi" or sender.get("locus") != route.expected_repo:
+        raise SyncError(f"{label} is not from cn-pi at {route.project.upper()}")
+    if not recipients:
+        raise SyncError(f"{label} is missing required field 'to'")
+    for recipient in recipients:
+        if not re.fullmatch(r"usurobor/[A-Za-z0-9._-]+", recipient.get("agent", "")):
+            raise SyncError(f"{label} has a recipient with an invalid agent")
+        if not re.fullmatch(r"usurobor/[A-Za-z0-9._-]+", recipient.get("locus", "")):
+            raise SyncError(f"{label} has a recipient with an invalid locus")
+    if not any(recipient.get("agent") in PI_DIALOGUE_PEERS for recipient in recipients):
+        raise SyncError(f"{label} is not addressed to a registered Pi dialogue peer")
+    if mappings["project"].get("repo") != route.expected_repo:
+        raise SyncError(f"{label} is not scoped to {route.expected_repo}")
+    return event_id, event.encode("utf-8")
+
+
+def extract_dialogue_events(document: str, route: ProjectRoute = PROJECT_ROUTES["cmp"],
+                            source_document_id: str = ""
+                            ) -> DialogueExtraction:
+    starts = dialogue_event_starts(document)
+    if not starts:
+        return DialogueExtraction(events=[], incidents=[])
+
+    events: list[tuple[str, bytes]] = []
+    incidents: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for position, start in enumerate(starts):
+        content_start = start + len("---\n")
+        content_end = starts[position + 1] if position + 1 < len(starts) else len(document)
+        event = document[content_start:content_end].rstrip() + "\n"
+        if "\n---\n" not in event:
+            incidents.append(
+                invalid_source_event_incident(
+                    event,
+                    position,
+                    source_document_id,
+                    "dialogue event is missing its frontmatter terminator",
+                )
+            )
+            continue
+        try:
+            event_id, event_bytes = validate_dialogue_event(
+                event, route, source_document_id, position
+            )
+            if event_id in seen:
+                raise SyncError(f"duplicate dialogue event id in source: {event_id}")
+        except SyncError as error:
+            if "stable Drive file ID" in str(error):
+                raise
+            incidents.append(
+                invalid_source_event_incident(
+                    event, position, source_document_id, str(error)
+                )
+            )
+            continue
+        seen.add(event_id)
+        events.append((event_id, event_bytes))
+    return DialogueExtraction(events=events, incidents=incidents)
+
+
+def extract_closed_memory_snapshot(
+    document: str,
+    payload: bytes,
+    route: ProjectRoute,
+    *,
+    today: date | None = None,
+) -> tuple[str, bytes] | None:
+    """Return one immutable, closed-day r0 snapshot; never treat dialogue as memory."""
+    if route.memory_ref is None:
+        return None
+    header = document[:3000]
+    required = (
+        "kind: cnos-memory-box",
+        f"activation: {route.activation}",
+        f"project: {route.project}",
+        "rank: r0",
+        f"intended_git_repo: {route.expected_repo}",
+        f"intended_git_ref: {route.memory_ref}",
+        "canonical_status: drive-staging",
+    )
+    if any(not re.search(rf"(?m)^{re.escape(marker)}$", header) for marker in required):
+        return None
+    # The current 2026-08-04 staging doc mixes dialogue and memory. Importing it
+    # as a memory snapshot would copy a transcript across the protocol boundary.
+    if re.search(r"(?m)^schema: cnos\.agent-message\.v1$", document):
+        return None
+    date_match = re.search(r"(?m)^date: (\d{4}-\d{2}-\d{2})$", header)
+    if date_match is None:
+        raise SyncError(f"{route.project} r0 memory document is missing a valid date")
+    try:
+        snapshot_date = date.fromisoformat(date_match.group(1))
+    except ValueError as error:
+        raise SyncError(f"{route.project} r0 memory document has an invalid date") from error
+    if snapshot_date >= (today or datetime.now(timezone.utc).date()):
+        return None
+    return f"posts/{snapshot_date.strftime('%Y%m%d')}.md", payload
+
+
+def scan_source(payload: bytes) -> None:
+    text = payload.decode("utf-8-sig")
+    for detector, pattern in SECRET_PATTERNS.items():
+        match = pattern.search(text)
+        if match:
+            line = text.count("\n", 0, match.start()) + 1
+            raise SyncError(f"source rejected by {detector} detector at line {line}")
+
+
+def canonical_event_bytes(payload: bytes) -> bytes:
+    """Normalize only transport-insignificant differences for comparison."""
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise SyncError("dialogue event is not UTF-8") from error
+    text = unicodedata.normalize("NFC", text.replace("\r\n", "\n").replace("\r", "\n"))
+    lines = text.splitlines()
+    return ("\n".join(line.rstrip(" \t") for line in lines) + "\n").encode("utf-8")
+
+
+def sha256_label(payload: bytes) -> str:
+    return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def first_difference(published: bytes, current: bytes) -> dict[str, object]:
+    common = min(len(published), len(current))
+    offset = 0
+    while offset < common and published[offset] == current[offset]:
+        offset += 1
+    line = published.count(b"\n", 0, offset) + 1
+    previous_newline = published.rfind(b"\n", 0, offset)
+    column = offset + 1 if previous_newline < 0 else offset - previous_newline
+
+    def byte_label(value: bytes, position: int) -> str:
+        return "EOF" if position >= len(value) else f"0x{value[position]:02x}"
+
+    return {
+        "byte_offset": offset,
+        "published_line": line,
+        "published_column": column,
+        "published_byte": byte_label(published, offset),
+        "current_source_byte": byte_label(current, offset),
+        "published_bytes": len(published),
+        "current_source_bytes": len(current),
+    }
+
+
+def published_file_commit(repo: Path, parent: str, path: str) -> str:
+    commit = git(repo, ["log", "-1", "--format=%H", parent, "--", path]).stdout.decode().strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise SyncError(f"cannot locate the publishing commit for {path}")
+    return commit
+
+
+def source_mutation_incident(repo: Path, parent: str, destination: str,
+                             event_id: str, published: bytes, current: bytes,
+                             doc_id: str, source_revision: str) -> dict[str, object]:
+    published_canonical = canonical_event_bytes(published)
+    current_canonical = canonical_event_bytes(current)
+    incident: dict[str, object] = {
+        "kind": "source_mutation",
+        "event_id": event_id,
+        "published_digest": sha256_label(published_canonical),
+        "current_source_digest": sha256_label(current_canonical),
+        "published_git_commit": published_file_commit(repo, parent, destination),
+        "source_document_id": doc_id,
+        "source_revision": source_revision,
+        "first_difference": first_difference(published_canonical, current_canonical),
+        "observed_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "action": "published_event_preserved",
+    }
+    identity = {
+        key: incident[key]
+        for key in (
+            "kind",
+            "event_id",
+            "published_digest",
+            "current_source_digest",
+            "source_document_id",
+        )
+    }
+    incident["incident_id"] = hashlib.sha256(
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return incident
+
+
+def persist_incidents(incidents: list[dict[str, object]], path: Path = INCIDENT_PATH) -> str | None:
+    """Append new incidents once; return an error for journaling without blocking imports."""
+    if not incidents:
+        return None
+    try:
+        known: set[str] = set()
+        if path.exists():
+            file_stat = path.lstat()
+            if not stat.S_ISREG(file_stat.st_mode):
+                raise OSError("incident ledger is not a regular file")
+            if file_stat.st_size > MAX_INCIDENT_LEDGER_BYTES:
+                raise OSError("incident ledger exceeds its 8 MiB safety limit")
+            with path.open("r", encoding="utf-8") as handle:
+                for line_number, line in enumerate(handle, 1):
+                    if not line.strip():
+                        continue
+                    entry = json.loads(line)
+                    incident_id = entry.get("incident_id")
+                    if not isinstance(incident_id, str):
+                        raise OSError(f"incident ledger line {line_number} has no incident_id")
+                    known.add(incident_id)
+        new_entries = [entry for entry in incidents if str(entry["incident_id"]) not in known]
+        if not new_entries:
+            return None
+        flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, flags, 0o600)
+        with os.fdopen(descriptor, "a", encoding="utf-8") as handle:
+            os.fchmod(handle.fileno(), 0o600)
+            for entry in new_entries:
+                handle.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        return None
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as error:
+        return str(error)
+
+
+def inbox_source_key(source: InboxSource) -> str:
+    return f"{source.expected_repo}#{source.dialogue_ref}"
+
+
+def inbox_cursor_path(route: ProjectRoute) -> Path:
+    if route.project not in PROJECT_ROUTES:
+        raise SyncError("invalid inbox cursor route")
+    return INBOX_STATE_DIR / f"{route.project}.json"
+
+
+def read_inbox_cursors(route: ProjectRoute) -> dict[str, str]:
+    path = inbox_cursor_path(route)
+    if not path.exists():
+        return {}
+    file_stat = path.lstat()
+    if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_size > 256 * 1024:
+        raise SyncError(f"invalid inbox cursor file: {path}")
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SyncError(f"cannot read inbox cursor file: {path}") from error
+    if not isinstance(document, dict) or document.get("version") != 1:
+        raise SyncError(f"unsupported inbox cursor file: {path}")
+    sources = document.get("sources")
+    if not isinstance(sources, dict):
+        raise SyncError(f"invalid inbox cursor sources: {path}")
+    cursors: dict[str, str] = {}
+    for key, value in sources.items():
+        if not isinstance(key, str) or not isinstance(value, dict):
+            raise SyncError(f"invalid inbox cursor entry: {path}")
+        sha = value.get("last_read_sha")
+        if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+            raise SyncError(f"invalid inbox cursor SHA: {path}")
+        cursors[key] = sha
+    return cursors
+
+
+def persist_inbox_cursors(route: ProjectRoute, cursors: Mapping[str, str]) -> None:
+    path = inbox_cursor_path(route)
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    parent_stat = path.parent.lstat()
+    if not stat.S_ISDIR(parent_stat.st_mode) or stat.S_ISLNK(parent_stat.st_mode):
+        raise SyncError(f"invalid inbox cursor directory: {path.parent}")
+    sources: dict[str, dict[str, str]] = {}
+    for key, sha in sorted(cursors.items()):
+        if not isinstance(key, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+            raise SyncError("refusing to persist an invalid inbox cursor")
+        sources[key] = {"last_read_sha": sha}
+    document = {
+        "version": 1,
+        "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace(
+            "+00:00", "Z"
+        ),
+        "sources": sources,
+    }
+    handle = tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        delete=False,
+    )
+    temporary = Path(handle.name)
+    try:
+        os.fchmod(handle.fileno(), 0o600)
+        json.dump(document, handle, sort_keys=True, separators=(",", ":"))
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+        handle.close()
+        os.replace(temporary, path)
+        path.chmod(0o600)
+    finally:
+        if not handle.closed:
+            handle.close()
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def inbound_event_identity(payload: bytes, source: InboxSource) -> tuple[str, list[dict[str, str]]]:
+    try:
+        event = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise SyncError("foreign dialogue event is not UTF-8") from error
+    if event.startswith("---\n"):
+        event = event[4:]
+    frontmatter_end = event.find("\n---\n")
+    if frontmatter_end < 0:
+        raise SyncError("foreign dialogue event is missing its frontmatter terminator")
+    scalar_fields, mappings, recipients = parse_dialogue_frontmatter(
+        event[:frontmatter_end], "foreign dialogue event"
+    )
+    event_id = scalar_fields.get("id", "")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", event_id):
+        raise SyncError("foreign dialogue event has an invalid stable id")
+    if scalar_fields.get("schema") != "cnos.agent-message.v1":
+        raise SyncError(f"foreign event {event_id} has an invalid schema")
+    if scalar_fields.get("rank") != "r0":
+        raise SyncError(f"foreign event {event_id} has an invalid rank")
+    if scalar_fields.get("authority") != "communication-only":
+        raise SyncError(f"foreign event {event_id} has an invalid authority")
+    timestamp = scalar_fields.get("ts", "")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", timestamp):
+        raise SyncError(f"foreign event {event_id} has an invalid ts")
+    try:
+        datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as error:
+        raise SyncError(f"foreign event {event_id} has an invalid ts") from error
+    if scalar_fields.get("class") not in MESSAGE_CLASSES:
+        raise SyncError(f"foreign event {event_id} has an invalid class")
+    if not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", scalar_fields.get("thread_id", "")
+    ):
+        raise SyncError(f"foreign event {event_id} has an invalid thread_id")
+    if "in_reply_to" not in scalar_fields:
+        raise SyncError(f"foreign event {event_id} lacks in_reply_to")
+    reply_to = scalar_fields["in_reply_to"]
+    if reply_to not in {"null", "~"} and not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", reply_to
+    ):
+        raise SyncError(f"foreign event {event_id} has an invalid in_reply_to")
+    if not scalar_fields.get("subject"):
+        raise SyncError(f"foreign event {event_id} lacks a subject")
+    if scalar_fields.get("requires_response") not in {"true", "false"}:
+        raise SyncError(f"foreign event {event_id} has an invalid requires_response")
+    sender = mappings["from"]
+    if sender.get("agent") != source.owner_agent or sender.get("locus") != source.owner_locus:
+        raise SyncError(f"foreign event {event_id} does not match its writer-owned ref")
+    if not recipients:
+        raise SyncError(f"foreign event {event_id} has no recipients")
+    for recipient in recipients:
+        if not re.fullmatch(r"usurobor/[A-Za-z0-9._-]+", recipient.get("agent", "")):
+            raise SyncError(f"foreign event {event_id} has an invalid recipient agent")
+        if not re.fullmatch(r"usurobor/[A-Za-z0-9._-]+", recipient.get("locus", "")):
+            raise SyncError(f"foreign event {event_id} has an invalid recipient locus")
+    return event_id, recipients
+
+
+def source_event_paths(source: InboxSource, remote: str, cursor: str | None) -> tuple[str | None, list[str]]:
+    validate_repo(source.repo, remote, source.expected_repo)
+    validate_ref(source.repo, source.dialogue_ref)
+    expected = remote_head(source.repo, remote, source.dialogue_ref)
+    tip = fetch_parent(source.repo, remote, source.dialogue_ref, expected)
+    if tip is None or tip == cursor:
+        return tip, []
+    if cursor is None:
+        output = git(
+            source.repo,
+            ["ls-tree", "-r", "--name-only", tip, "--", "events/"],
+        ).stdout.decode("utf-8", "strict")
+        return tip, [line for line in output.splitlines() if line]
+    ancestor = git(
+        source.repo, ["merge-base", "--is-ancestor", cursor, tip], check=False
+    )
+    if ancestor.returncode != 0:
+        raise SyncError(
+            f"inbox source {source.dialogue_ref} is not fast-forward from cursor {cursor}"
+        )
+    changes = git(
+        source.repo,
+        ["diff", "--name-status", cursor, tip, "--", "events/"],
+    ).stdout.decode("utf-8", "strict")
+    paths: list[str] = []
+    for line in changes.splitlines():
+        status_code, separator, path = line.partition("\t")
+        if not separator or status_code != "A":
+            raise SyncError(
+                f"inbox source {source.dialogue_ref} mutated a published event: {line}"
+            )
+        paths.append(path)
+    return tip, paths
+
+
+def inbox_record(event_id: str, event: bytes, receipt: bytes) -> bytes:
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", event_id):
+        raise SyncError("invalid event ID for Drive inbox record")
+    return (
+        f"\n<<<CNOS-DRIVE-INBOX-BEGIN id={event_id}>>>\n".encode()
+        + event.rstrip(b"\n")
+        + b"\n<<<CNOS-DRIVE-INBOX-RECEIPT>>>\n"
+        + receipt.rstrip(b"\n")
+        + f"\n<<<CNOS-DRIVE-INBOX-END id={event_id}>>>\n".encode()
+    )
+
+
+def google_docs_document(document_id: str, access_token: str) -> dict[str, object]:
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", document_id):
+        raise SyncError("invalid Drive inbox document ID")
+    url = (
+        f"https://docs.googleapis.com/v1/documents/{document_id}"
+        "?includeTabsContent=true"
+    )
+    request = Request(url, headers={
+        "Authorization": f"Bearer {access_token}",
+        "User-Agent": "cn-pi-drive-ingress/0.3",
+    })
+    try:
+        with urlopen(request, timeout=20) as response:
+            document = json.load(response)
+    except HTTPError as error:
+        try:
+            detail = json.loads(error.read()).get("error", {}).get("message", "")
+        except (json.JSONDecodeError, AttributeError):
+            detail = ""
+        suffix = f": {detail}" if detail else ""
+        raise SyncError(f"Google Docs inbox read failed: HTTP {error.code}{suffix}") from error
+    except (URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise SyncError("Google Docs inbox read failed") from error
+    if not isinstance(document, dict):
+        raise SyncError("Google Docs inbox returned an invalid document")
+    return document
+
+
+def google_docs_structural_text(content: object) -> str:
+    if not isinstance(content, list):
+        raise SyncError("Google Docs inbox content is malformed")
+    chunks: list[str] = []
+    for structural in content:
+        if not isinstance(structural, dict):
+            raise SyncError("Google Docs inbox structural element is malformed")
+        paragraph = structural.get("paragraph")
+        if isinstance(paragraph, dict):
+            elements = paragraph.get("elements", [])
+            if not isinstance(elements, list):
+                raise SyncError("Google Docs inbox paragraph is malformed")
+            for element in elements:
+                if not isinstance(element, dict):
+                    raise SyncError("Google Docs inbox paragraph element is malformed")
+                text_run = element.get("textRun")
+                if isinstance(text_run, dict):
+                    text = text_run.get("content")
+                    if not isinstance(text, str):
+                        raise SyncError("Google Docs inbox text run is malformed")
+                    chunks.append(text)
+            continue
+        table = structural.get("table")
+        if isinstance(table, dict):
+            rows = table.get("tableRows", [])
+            if not isinstance(rows, list):
+                raise SyncError("Google Docs inbox table is malformed")
+            for row in rows:
+                if not isinstance(row, dict):
+                    raise SyncError("Google Docs inbox table row is malformed")
+                cells = row.get("tableCells", [])
+                if not isinstance(cells, list):
+                    raise SyncError("Google Docs inbox table cells are malformed")
+                for cell in cells:
+                    if not isinstance(cell, dict):
+                        raise SyncError("Google Docs inbox table cell is malformed")
+                    chunks.append(google_docs_structural_text(cell.get("content")))
+            continue
+        table_of_contents = structural.get("tableOfContents")
+        if isinstance(table_of_contents, dict):
+            chunks.append(
+                google_docs_structural_text(table_of_contents.get("content"))
+            )
+    return "".join(chunks)
+
+
+def google_docs_document_text(document: Mapping[str, object]) -> bytes:
+    tabs = document.get("tabs")
+    if isinstance(tabs, list) and tabs:
+        tab = tabs[0]
+        if not isinstance(tab, dict):
+            raise SyncError("Google Docs inbox has an invalid first tab")
+        document_tab = tab.get("documentTab")
+        if not isinstance(document_tab, dict):
+            raise SyncError("Google Docs inbox first tab is incomplete")
+        body = document_tab.get("body")
+    else:
+        body = document.get("body")
+    if not isinstance(body, dict):
+        raise SyncError("Google Docs inbox lacks a document body")
+    return google_docs_structural_text(body.get("content")).encode("utf-8")
+
+
+def google_docs_append_location(document: Mapping[str, object]) -> tuple[int, str | None]:
+    tabs = document.get("tabs")
+    if isinstance(tabs, list) and tabs:
+        tab = tabs[0]
+        if not isinstance(tab, dict):
+            raise SyncError("Google Docs inbox has an invalid first tab")
+        properties = tab.get("tabProperties")
+        document_tab = tab.get("documentTab")
+        if not isinstance(properties, dict) or not isinstance(document_tab, dict):
+            raise SyncError("Google Docs inbox first tab is incomplete")
+        tab_id = properties.get("tabId")
+        body = document_tab.get("body")
+        if not isinstance(tab_id, str) or not isinstance(body, dict):
+            raise SyncError("Google Docs inbox first tab lacks an append location")
+    else:
+        tab_id = None
+        body = document.get("body")
+        if not isinstance(body, dict):
+            raise SyncError("Google Docs inbox lacks a document body")
+    content = body.get("content")
+    if not isinstance(content, list) or not content or not isinstance(content[-1], dict):
+        raise SyncError("Google Docs inbox body is empty or malformed")
+    end_index = content[-1].get("endIndex")
+    if not isinstance(end_index, int) or end_index < 1:
+        raise SyncError("Google Docs inbox has an invalid end index")
+    return end_index - 1, tab_id
+
+
+def append_google_docs_inbox(
+    document_id: str,
+    access_token: str,
+    records: Mapping[str, bytes],
+) -> dict[str, str]:
+    document = google_docs_document(document_id, access_token)
+    before = google_docs_document_text(document)
+    statuses: dict[str, str] = {}
+    missing: list[bytes] = []
+    for event_id, record in records.items():
+        marker = f"<<<CNOS-DRIVE-INBOX-BEGIN id={event_id}>>>".encode()
+        if record in before:
+            statuses[event_id] = "exists"
+        elif marker in before:
+            raise SyncError(f"Drive inbox record {event_id} differs from canonical Git bytes")
+        else:
+            statuses[event_id] = "pending"
+            missing.append(record)
+    if not missing:
+        return statuses
+
+    revision = document.get("revisionId")
+    if not isinstance(revision, str) or not revision:
+        raise SyncError("Google Docs inbox lacks a revision ID")
+    index, tab_id = google_docs_append_location(document)
+    location: dict[str, object] = {"index": index}
+    if tab_id is not None:
+        location["tabId"] = tab_id
+    insertion = b"".join(missing).decode("utf-8", "strict")
+    body = json.dumps({
+        "requests": [{"insertText": {"location": location, "text": insertion}}],
+        "writeControl": {"requiredRevisionId": revision},
+    }, separators=(",", ":")).encode()
+    url = f"https://docs.googleapis.com/v1/documents/{document_id}:batchUpdate"
+    request = Request(
+        url,
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "User-Agent": "cn-pi-drive-ingress/0.3",
+        },
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            json.load(response)
+    except HTTPError as error:
+        try:
+            detail = json.loads(error.read()).get("error", {}).get("message", "")
+        except (json.JSONDecodeError, AttributeError):
+            detail = ""
+        suffix = f": {detail}" if detail else ""
+        raise SyncError(f"Google Docs inbox append failed: HTTP {error.code}{suffix}") from error
+    except (URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise SyncError("Google Docs inbox append failed") from error
+
+    after = google_docs_document_text(
+        google_docs_document(document_id, access_token)
+    )
+    if not after.startswith(before.rstrip(b"\n")):
+        raise SyncError("Google Docs inbox historical prefix changed during append")
+    for event_id, record in records.items():
+        if after.count(record) != 1:
+            raise SyncError(f"Google Docs inbox verification failed for {event_id}")
+        statuses[event_id] = "created" if statuses[event_id] == "pending" else "exists"
+    return statuses
+
+
+def sync_git_inbox(route: ProjectRoute, args: argparse.Namespace) -> dict[str, object]:
+    config = Path(args.rclone_config)
+    if rclone_service_account_path(config, route.drive_root) is None:
+        raise SyncError("service-account credentials are required for Git-to-Drive inbox sync")
+    cursors = read_inbox_cursors(route)
+    next_cursors = dict(cursors)
+    inbox_doc_id = args.inbox_doc_id
+
+    source_results: list[dict[str, object]] = []
+    delivered: list[str] = []
+    records: dict[str, bytes] = {}
+    delivery_entries: list[dict[str, object]] = []
+    for source in INBOX_SOURCES:
+        key = inbox_source_key(source)
+        cursor = cursors.get(key)
+        tip, paths = source_event_paths(source, args.remote, cursor)
+        source_result: dict[str, object] = {
+            "repo": source.expected_repo,
+            "ref": source.dialogue_ref,
+            "from": cursor,
+            "to": tip,
+            "events_scanned": len(paths),
+        }
+        quarantined: list[dict[str, str]] = []
+        addressed = 0
+        for path in paths:
+            match = re.fullmatch(r"events/([A-Za-z0-9][A-Za-z0-9._-]{0,127})\.md", path)
+            if match is None:
+                quarantined.append({"path": path, "reason": "invalid event path"})
+                continue
+            if tip is None:
+                raise SyncError("inbox event path exists without a source tip")
+            payload = existing_file(source.repo, tip, path)
+            if payload is None:
+                raise SyncError(f"inbox source event disappeared: {path}")
+            try:
+                event_id, recipients = inbound_event_identity(payload, source)
+                if event_id != match.group(1):
+                    raise SyncError("event ID does not match its Git path")
+                scan_source(payload)
+            except SyncError as error:
+                quarantined.append({"path": path, "reason": str(error)})
+                continue
+            if not any(
+                recipient.get("agent") == "usurobor/cn-pi"
+                and recipient.get("locus") == route.expected_repo
+                for recipient in recipients
+            ):
+                continue
+            addressed += 1
+            publishing_commit = published_file_commit(source.repo, tip, path)
+            receipt = (
+                json.dumps(
+                    {
+                        "schema": "cnos.drive-inbox-receipt.v1",
+                        "event_id": event_id,
+                        "source_repo": source.expected_repo,
+                        "source_ref": source.dialogue_ref,
+                        "source_commit": publishing_commit,
+                        "content_sha256": hashlib.sha256(payload).hexdigest(),
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            ).encode("utf-8")
+            record = inbox_record(event_id, payload, receipt)
+            if event_id in records and records[event_id] != record:
+                raise SyncError(f"duplicate inbox event ID has different Git bytes: {event_id}")
+            records[event_id] = record
+            delivered.append(event_id)
+            delivery = {
+                "event_id": event_id,
+                "source_commit": publishing_commit,
+                "status": "would_append" if args.dry_run else "pending",
+            }
+            source_result.setdefault("deliveries", []).append(delivery)
+            delivery_entries.append(delivery)
+        source_result["events_addressed"] = addressed
+        if quarantined:
+            source_result["quarantined"] = quarantined
+        if tip is not None:
+            next_cursors[key] = tip
+        source_results.append(source_result)
+
+    if args.dry_run:
+        statuses = {event_id: "would_append" for event_id in records}
+    else:
+        credential_path = rclone_service_account_path(config, route.drive_root)
+        if credential_path is None:
+            raise SyncError("service-account credentials disappeared during inbox sync")
+        token = service_account_access_token(
+            credential_path,
+            (
+                "https://www.googleapis.com/auth/drive.readonly "
+                "https://www.googleapis.com/auth/documents"
+            ),
+        )
+        statuses = append_google_docs_inbox(inbox_doc_id, token, records)
+    for delivery in delivery_entries:
+        delivery["status"] = statuses[str(delivery["event_id"])]
+    created = sum(status == "created" for status in statuses.values())
+    would_create = sum(status == "would_append" for status in statuses.values())
+    if not args.dry_run and next_cursors != cursors:
+        persist_inbox_cursors(route, next_cursors)
+    if args.dry_run:
+        status = "would_update" if would_create else "no_change"
+    else:
+        status = "updated" if created else "no_change"
+    return {
+        "status": status,
+        "drive_inbox_document_id": inbox_doc_id,
+        "events_delivered": delivered,
+        "records_created": created,
+        "records_would_create": would_create,
+        "sources": source_results,
+    }
+
+
+def validate_ref(repo: Path, target_ref: str) -> None:
+    if not target_ref.startswith("refs/heads/"):
+        raise SyncError("target must be a heads ref")
+    git(repo, ["check-ref-format", target_ref])
+
+
+def validate_repo(repo: Path, remote: str, expected_repo: str | None) -> None:
+    if not repo.is_dir() or not (repo / ".git").is_dir():
+        raise SyncError(f"not a Git worktree: {repo}")
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", remote):
+        raise SyncError("invalid remote name")
+    inside = git(repo, ["rev-parse", "--is-inside-work-tree"]).stdout.strip()
+    if inside != b"true":
+        raise SyncError(f"not inside a Git worktree: {repo}")
+    remote_url = git(repo, ["remote", "get-url", remote]).stdout.decode().strip()
+    if expected_repo:
+        accepted = {
+            f"https://github.com/{expected_repo}",
+            f"https://github.com/{expected_repo}.git",
+            f"git@github.com:{expected_repo}.git",
+        }
+        if remote_url not in accepted:
+            raise SyncError(f"remote URL is outside the configured repository: {remote_url}")
+
+
+def remote_head(repo: Path, remote: str, target_ref: str) -> str | None:
+    output = git(repo, ["ls-remote", "--heads", remote, target_ref]).stdout.decode().strip()
+    if not output:
+        return None
+    lines = output.splitlines()
+    if len(lines) != 1:
+        raise SyncError("target ref resolved ambiguously")
+    sha, ref = lines[0].split("\t", 1)
+    if ref != target_ref or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise SyncError("target ref returned an invalid object ID")
+    return sha
+
+
+def fetch_parent(repo: Path, remote: str, target_ref: str, expected: str | None) -> str | None:
+    if expected is None:
+        return None
+    git(repo, ["fetch", "--no-tags", remote, target_ref])
+    fetched = git(repo, ["rev-parse", "FETCH_HEAD"]).stdout.decode().strip()
+    if fetched != expected:
+        raise SyncError("target ref changed while it was being fetched; retry later")
+    return fetched
+
+
+def existing_file(repo: Path, parent: str | None, path: str) -> bytes | None:
+    if parent is None:
+        return None
+    result = git(repo, ["show", f"{parent}:{path}"], check=False)
+    if result.returncode == 0:
+        return result.stdout
+    diagnostic = result.stderr.decode("utf-8", "replace")
+    if "does not exist" in diagnostic or "exists on disk, but not in" in diagnostic:
+        return None
+    raise SyncError(f"cannot inspect existing source projection: {diagnostic.strip()}")
+
+
+def readme_bytes(route: ProjectRoute, doc_id: str, source_url: str) -> bytes:
+    if doc_id and source_url:
+        source = (
+            f"Source document: {source_url}\n"
+            f"Source file ID: `{doc_id}`\n"
+        )
+    else:
+        source = (
+            f"Drive staging route: `{route.drive_root}`\n"
+            "No memory document or dialogue event was imported during stream initialization.\n"
+        )
+    text = f"""# cn-pi @ {route.project} — dialogue stream
+
+Writer-owned append-only r0 dialogue stream for the durable activation formed
+by agent `cn-pi` at locus `{route.project}`.
+
+- agent (home repo): `usurobor/cn-pi`
+- locus (project): `{route.expected_repo}`
+- activation: `cn-pi@{route.project}`
+- runtime: informational only, not part of ref identity
+- handle: `cn-pi@{route.project}`
+- ref: `{route.target_ref}`
+- reads Sigma at: `{route.peer_ref}`
+
+Communication is not memory and is not project authority. Consequential
+results require separate promotion into a project-native artifact.
+
+{source}
+Writer: `{route.activation}` through the mechanical Pi Drive bridge
+
+Files under `events/` contain normalized-LF, otherwise verbatim
+`cnos.agent-message.v1` blocks extracted from Drive staging. Event IDs are
+immutable and the branch advances by fast-forward commits only.
+"""
+    return text.encode("utf-8")
+
+
+def project(repo: Path, remote: str, target_ref: str, doc_id: str,
+            payload: bytes, source_url: str, events: list[tuple[str, bytes]],
+            *, route: ProjectRoute = PROJECT_ROUTES["cmp"], dry_run: bool,
+            initialize_if_empty: bool = False) -> dict[str, object]:
+    digest = hashlib.sha256(payload).hexdigest()
+    source_revision = f"export-sha256:{digest}"
+    expected = remote_head(repo, remote, target_ref)
+    parent = fetch_parent(repo, remote, target_ref, expected)
+    additions: list[tuple[str, bytes]] = []
+    incidents: list[dict[str, object]] = []
+    for event_id, event_bytes in events:
+        destination = f"events/{event_id}.md"
+        previous = existing_file(repo, parent, destination)
+        if previous is None:
+            additions.append((destination, event_bytes))
+        elif canonical_event_bytes(previous) != canonical_event_bytes(event_bytes):
+            if parent is None:
+                raise SyncError("an existing event cannot exist without a parent commit")
+            incidents.append(
+                source_mutation_incident(
+                    repo,
+                    parent,
+                    destination,
+                    event_id,
+                    previous,
+                    event_bytes,
+                    doc_id,
+                    source_revision,
+                )
+            )
+
+    incident_ledger_error = None if dry_run else persist_incidents(incidents)
+
+    if not additions and not (initialize_if_empty and parent is None):
+        result: dict[str, object] = {
+            "status": "source_mutation_preserved" if incidents else "no_change",
+            "target_ref": target_ref,
+            "source_digest": f"sha256:{digest}",
+            "events_seen": [event_id for event_id, _ in events],
+            "head": parent,
+        }
+        if incidents:
+            result["incidents"] = incidents
+        if incident_ledger_error:
+            result["incident_ledger_error"] = incident_ledger_error
+        return result
+
+    if dry_run:
+        if not additions:
+            return {
+                "status": "would_initialize",
+                "target_ref": target_ref,
+                "source_digest": f"sha256:{digest}",
+                "parent": parent,
+            }
+        result = {
+            "status": "would_update",
+            "target_ref": target_ref,
+            "source_digest": f"sha256:{digest}",
+            "events_to_add": [path.removeprefix("events/").removesuffix(".md") for path, _ in additions],
+            "parent": parent,
+            "source_bytes": len(payload),
+        }
+        if incidents:
+            result["incidents"] = incidents
+        return result
+
+    index_handle = tempfile.NamedTemporaryFile(prefix="cmp-pi-sync-index-", delete=False)
+    index_path = Path(index_handle.name)
+    index_handle.close()
+    index_path.unlink()
+    index_env = {"GIT_INDEX_FILE": str(index_path)}
+    try:
+        if parent:
+            git(repo, ["read-tree", parent], env=index_env)
+        else:
+            git(repo, ["read-tree", "--empty"], env=index_env)
+
+        for destination, event_bytes in additions:
+            source_blob = git(
+                repo, ["hash-object", "-w", "--stdin"], data=event_bytes
+            ).stdout.decode().strip()
+            git(
+                repo,
+                ["update-index", "--add", "--cacheinfo", "100644", source_blob, destination],
+                env=index_env,
+            )
+
+        if parent is None:
+            readme = readme_bytes(route, doc_id, source_url)
+            readme_blob = git(repo, ["hash-object", "-w", "--stdin"], data=readme).stdout.decode().strip()
+            git(repo, ["update-index", "--add", "--cacheinfo", "100644", readme_blob, "README.md"], env=index_env)
+
+        tree = git(repo, ["write-tree"], env=index_env).stdout.decode().strip()
+        if parent:
+            old_tree = git(repo, ["rev-parse", f"{parent}^{{tree}}"]).stdout.decode().strip()
+            if tree == old_tree:
+                result = {
+                    "status": "no_change",
+                    "target_ref": target_ref,
+                    "source_digest": f"sha256:{digest}",
+                    "events_seen": [event_id for event_id, _ in events],
+                    "head": parent,
+                }
+                if incidents:
+                    result["incidents"] = incidents
+                if incident_ledger_error:
+                    result["incident_ledger_error"] = incident_ledger_error
+                return result
+
+        short_digest = digest[:12]
+        event_ids = [path.removeprefix("events/").removesuffix(".md") for path, _ in additions]
+        event_trailers = "".join(f"Pi-Event-ID: {event_id}\n" for event_id in event_ids)
+        if additions:
+            subject = (
+                f"dialogue(r0): import {len(additions)} Pi "
+                f"{route.project.upper()} event(s) @ {short_digest}"
+            )
+        else:
+            subject = f"dialogue(r0): initialize cn-pi {route.project.upper()} stream"
+        source_trailers = ""
+        if additions:
+            source_trailers = (
+                "Pi-Source: google-drive-export\n"
+                f"Pi-Doc-ID: {doc_id}\n"
+                f"Pi-Doc-Revision: export-sha256:{digest}\n"
+                f"Pi-Source-Digest: sha256:{digest}\n"
+            )
+        commit_message = (
+            f"{subject}\n\n"
+            f"{source_trailers}"
+            f"{event_trailers}"
+            "Pi-Protocol: CNOS-698-dialogue-pilot\n"
+        ).encode("utf-8")
+        commit_args = ["commit-tree", tree]
+        if parent:
+            commit_args += ["-p", parent]
+        identity_env = {
+            "GIT_AUTHOR_NAME": "Pi Drive Bridge",
+            "GIT_AUTHOR_EMAIL": "pi-host@local",
+            "GIT_COMMITTER_NAME": "Pi Drive Bridge",
+            "GIT_COMMITTER_EMAIL": "pi-host@local",
+        }
+        commit = git(repo, commit_args, data=commit_message, env=identity_env).stdout.decode().strip()
+
+        git(repo, ["push", remote, f"{commit}:{target_ref}"])
+        published = remote_head(repo, remote, target_ref)
+        if published != commit:
+            raise SyncError("post-push verification did not resolve the created commit")
+        result = {
+            "status": "updated" if additions else "initialized",
+            "target_ref": target_ref,
+            "source_digest": f"sha256:{digest}",
+            "events_added": event_ids,
+            "commit": commit,
+            "source_bytes": len(payload),
+        }
+        if incidents:
+            result["incidents"] = incidents
+        if incident_ledger_error:
+            result["incident_ledger_error"] = incident_ledger_error
+        return result
+    finally:
+        try:
+            index_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def memory_readme_bytes(route: ProjectRoute) -> bytes:
+    if route.memory_ref is None:
+        raise SyncError("memory projection requested for a route without a memory ref")
+    return f"""# Pi @ {route.project} — memory r0
+
+Writer-owned, append-only r0 evidence for Pi's activation at
+`{route.expected_repo}`.
+
+- ref: `{route.memory_ref}`
+- home is the sole cross-box reader/compactor
+- Drive r1 is provisional and is never materialized here
+
+Only closed-day, memory-only Drive documents are accepted. Mixed documents
+containing `cnos.agent-message.v1` dialogue are excluded to preserve the
+dialogue != memory boundary. A published daily snapshot is immutable; a later
+source difference is quarantined rather than replacing Git bytes.
+""".encode("utf-8")
+
+
+def project_memory_snapshot(
+    repo: Path,
+    remote: str,
+    route: ProjectRoute,
+    doc_id: str,
+    source_url: str,
+    destination: str,
+    payload: bytes,
+    *,
+    dry_run: bool,
+) -> dict[str, object]:
+    if route.memory_ref is None:
+        raise SyncError("memory projection requested for a route without a memory ref")
+    digest = hashlib.sha256(payload).hexdigest()
+    source_revision = f"export-sha256:{digest}"
+    expected = remote_head(repo, remote, route.memory_ref)
+    parent = fetch_parent(repo, remote, route.memory_ref, expected)
+    previous = existing_file(repo, parent, destination)
+    incidents: list[dict[str, object]] = []
+    if previous is not None:
+        if canonical_event_bytes(previous) != canonical_event_bytes(payload):
+            if parent is None:
+                raise SyncError("an existing memory snapshot cannot exist without a parent")
+            incidents.append(
+                source_mutation_incident(
+                    repo,
+                    parent,
+                    destination,
+                    f"memory-r0-{Path(destination).stem}",
+                    previous,
+                    payload,
+                    doc_id,
+                    source_revision,
+                )
+            )
+        incident_ledger_error = None if dry_run else persist_incidents(incidents)
+        result: dict[str, object] = {
+            "status": "source_mutation_preserved" if incidents else "no_change",
+            "target_ref": route.memory_ref,
+            "source_digest": f"sha256:{digest}",
+            "snapshot": destination,
+            "head": parent,
+        }
+        if incidents:
+            result["incidents"] = incidents
+        if incident_ledger_error:
+            result["incident_ledger_error"] = incident_ledger_error
+        return result
+
+    if dry_run:
+        return {
+            "status": "would_update",
+            "target_ref": route.memory_ref,
+            "source_digest": f"sha256:{digest}",
+            "snapshot": destination,
+            "parent": parent,
+            "source_bytes": len(payload),
+        }
+
+    index_handle = tempfile.NamedTemporaryFile(prefix="cn-pi-memory-index-", delete=False)
+    index_path = Path(index_handle.name)
+    index_handle.close()
+    index_path.unlink()
+    index_env = {"GIT_INDEX_FILE": str(index_path)}
+    try:
+        git(repo, ["read-tree", parent] if parent else ["read-tree", "--empty"], env=index_env)
+        source_blob = git(repo, ["hash-object", "-w", "--stdin"], data=payload).stdout.decode().strip()
+        git(
+            repo,
+            ["update-index", "--add", "--cacheinfo", "100644", source_blob, destination],
+            env=index_env,
+        )
+        if parent is None:
+            readme = memory_readme_bytes(route)
+            readme_blob = git(repo, ["hash-object", "-w", "--stdin"], data=readme).stdout.decode().strip()
+            git(
+                repo,
+                ["update-index", "--add", "--cacheinfo", "100644", readme_blob, "README.md"],
+                env=index_env,
+            )
+        tree = git(repo, ["write-tree"], env=index_env).stdout.decode().strip()
+        subject = f"memory(r0): import Pi {route.project.upper()} snapshot {Path(destination).stem}"
+        commit_message = (
+            f"{subject}\n\n"
+            "Pi-Source: google-drive-export\n"
+            f"Pi-Doc-ID: {doc_id}\n"
+            f"Pi-Doc-Revision: {source_revision}\n"
+            f"Pi-Source-Digest: sha256:{digest}\n"
+            "Pi-Protocol: CNOS-690/CNOS-698-r0\n"
+        ).encode("utf-8")
+        commit_args = ["commit-tree", tree]
+        if parent:
+            commit_args += ["-p", parent]
+        identity_env = {
+            "GIT_AUTHOR_NAME": "Pi Drive Bridge",
+            "GIT_AUTHOR_EMAIL": "pi-host@local",
+            "GIT_COMMITTER_NAME": "Pi Drive Bridge",
+            "GIT_COMMITTER_EMAIL": "pi-host@local",
+        }
+        commit = git(repo, commit_args, data=commit_message, env=identity_env).stdout.decode().strip()
+        git(repo, ["push", remote, f"{commit}:{route.memory_ref}"])
+        if remote_head(repo, remote, route.memory_ref) != commit:
+            raise SyncError("post-push verification did not resolve the memory commit")
+        return {
+            "status": "updated",
+            "target_ref": route.memory_ref,
+            "source_digest": f"sha256:{digest}",
+            "snapshot": destination,
+            "commit": commit,
+            "source_bytes": len(payload),
+            "source": source_url,
+        }
+    finally:
+        try:
+            index_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--doc-id", default=os.getenv("CN_PI_INGRESS_DOC_ID", DEFAULT_DOC_ID))
+    parser.add_argument(
+        "--project",
+        choices=("all", *PROJECT_ROUTES),
+        default=os.getenv("CN_PI_INGRESS_PROJECT", "all"),
+        help="sync one explicitly allowed project or all configured projects",
+    )
+    parser.add_argument(
+        "--source-mode",
+        choices=("auto", "rclone", "public"),
+        default=os.getenv("CN_PI_INGRESS_SOURCE_MODE", "auto"),
+        help="auto uses authenticated folder mode when OAuth or service-account credentials exist",
+    )
+    parser.add_argument(
+        "--direction",
+        choices=("both", "drive-to-git", "git-to-drive"),
+        default=os.getenv("CN_PI_INGRESS_DIRECTION", "both"),
+        help="run both projections or only one side of the bridge",
+    )
+    parser.add_argument(
+        "--rclone-config",
+        default=os.getenv("CN_PI_INGRESS_RCLONE_CONFIG", DEFAULT_RCLONE_CONFIG),
+    )
+    parser.add_argument(
+        "--inbox-doc-id",
+        default=os.getenv("CN_PI_INGRESS_INBOX_DOC_ID", DEFAULT_INBOX_DOC_ID),
+        help="existing user-owned pi-host document used as the append-only Git inbox",
+    )
+    parser.add_argument("--remote", default=os.getenv("CN_PI_INGRESS_REMOTE", DEFAULT_REMOTE))
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--discover", action="store_true", help="list matched Drive sources without Git writes")
+    return parser.parse_args()
+
+
+def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
+                       source_mode: str) -> dict[str, object]:
+    repo = route.repo.resolve()
+    validate_repo(repo, args.remote, route.expected_repo)
+    validate_ref(repo, route.target_ref)
+    if source_mode == "public":
+        if route.project != "cmp":
+            raise SyncError("public fallback is available only for the CMP pilot")
+        sources = [fetch_public_source(args.doc_id)]
+    else:
+        sources = authenticated_sources(Path(args.rclone_config), route.drive_root)
+
+    if args.discover:
+        return {
+            "project": route.project,
+            "repo": route.expected_repo,
+            "target_ref": route.target_ref,
+            "sources": [
+                {"file_id": file_id, "source": label, "bytes": len(payload)}
+                for file_id, payload, _url, label in sources
+            ],
+        }
+
+    effects = sync_effect_requests(route, args, sources)
+
+    results: list[dict[str, object]] = []
+    saw_dialogue = False
+    for file_id, payload, source_url, source_label in sources:
+        document = normalize_document(payload)
+        scan_source(payload)
+        declared_ref = re.search(
+            r"(?m)^intended_git_ref: (refs/heads/[^\s]+)$", document[:3000]
+        )
+        allowed_refs = {route.target_ref}
+        if route.memory_ref is not None:
+            allowed_refs.add(route.memory_ref)
+        if declared_ref is None or declared_ref.group(1) not in allowed_refs:
+            results.append({
+                "status": "ignored_retired_staging_ref",
+                "file_id": file_id,
+                "source": source_label,
+            })
+            continue
+        extraction = extract_dialogue_events(document, route, file_id)
+        events = extraction.events
+        invalid_incidents = extraction.incidents
+        invalid_ledger_error = (
+            None if args.dry_run else persist_incidents(invalid_incidents)
+        )
+        if events or invalid_incidents:
+            saw_dialogue = True
+        memory_snapshot = extract_closed_memory_snapshot(document, payload, route)
+        if not events:
+            if memory_snapshot is None:
+                ignored_result: dict[str, object] = {
+                    "status": (
+                        "invalid_events_quarantined"
+                        if invalid_incidents
+                        else "ignored_no_materializable_events"
+                    ),
+                    "file_id": file_id,
+                    "source": source_label,
+                }
+                if invalid_incidents:
+                    ignored_result["incidents"] = invalid_incidents
+                if invalid_ledger_error:
+                    ignored_result["incident_ledger_error"] = invalid_ledger_error
+                results.append(ignored_result)
+            else:
+                destination, memory_payload = memory_snapshot
+                memory_result = project_memory_snapshot(
+                    repo,
+                    args.remote,
+                    route,
+                    file_id,
+                    source_url,
+                    destination,
+                    memory_payload,
+                    dry_run=args.dry_run,
+                )
+                memory_result["source"] = source_label
+                results.append(memory_result)
+            continue
+        validate_dialogue_document(document, route)
+        result = project(
+            repo,
+            args.remote,
+            route.target_ref,
+            file_id,
+            payload,
+            source_url,
+            events,
+            route=route,
+            dry_run=args.dry_run,
+        )
+        result["source"] = source_label
+        if invalid_incidents:
+            result["incidents"] = [
+                *invalid_incidents,
+                *list(result.get("incidents", [])),
+            ]
+            result["quarantined_event_count"] = len(invalid_incidents)
+        if invalid_ledger_error:
+            result["incident_ledger_error"] = invalid_ledger_error
+        results.append(result)
+
+    if not saw_dialogue and sources:
+        initialization = project(
+            repo,
+            args.remote,
+            route.target_ref,
+            "",
+            b"",
+            "",
+            [],
+            route=route,
+            dry_run=args.dry_run,
+            initialize_if_empty=True,
+        )
+        if initialization["status"] in ("initialized", "would_initialize"):
+            initialization["source"] = f"route:{route.drive_root}"
+            results.append(initialization)
+
+    return {
+        "project": route.project,
+        "repo": route.expected_repo,
+        "target_ref": route.target_ref,
+        "documents": results,
+        "effects": effects,
+    }
+
+
+def main() -> int:
+    args = parse_args()
+    routes = (
+        list(PROJECT_ROUTES.values())
+        if args.project == "all"
+        else [PROJECT_ROUTES[args.project]]
+    )
+    lock_fd = os.open(LOCK_PATH, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print(json.dumps({"status": "busy", "message": "another sync is active"}))
+        return 0
+
+    try:
+        source_mode = args.source_mode
+        if source_mode == "auto":
+            probe_route = routes[0]
+            source_mode = (
+                "rclone"
+                if rclone_credentials_present(
+                    Path(args.rclone_config), probe_route.drive_root
+                )
+                else "public"
+            )
+        drive_to_git = args.direction in {"both", "drive-to-git"}
+        git_to_drive = args.direction in {"both", "git-to-drive"}
+        if source_mode == "public" and drive_to_git and len(routes) != 1:
+            raise SyncError(
+                "service-account credentials are required for multi-project Drive sync"
+            )
+        if source_mode == "public" and git_to_drive:
+            raise SyncError(
+                "authenticated service-account credentials are required for Git-to-Drive sync"
+            )
+
+        project_results: list[dict[str, object]] = []
+        failures = False
+        for route in routes:
+            route_result: dict[str, object] = {
+                "project": route.project,
+                "repo": route.expected_repo,
+            }
+            if drive_to_git:
+                try:
+                    route_result["drive_to_git"] = sync_project_route(
+                        route, args, source_mode
+                    )
+                except SyncError as error:
+                    failures = True
+                    route_result["drive_to_git"] = {
+                        "status": "error",
+                        "message": str(error),
+                    }
+            if git_to_drive and not args.discover:
+                try:
+                    route_result["git_to_drive"] = sync_git_inbox(route, args)
+                except SyncError as error:
+                    failures = True
+                    route_result["git_to_drive"] = {
+                        "status": "error",
+                        "message": str(error),
+                    }
+            project_results.append(route_result)
+        status = "partial" if failures else "ok"
+        print(json.dumps({"status": status, "projects": project_results}, sort_keys=True))
+        return 1 if failures else 0
+    except SyncError as error:
+        print(json.dumps({"status": "error", "message": str(error)}, sort_keys=True), file=sys.stderr)
+        return 1
+    finally:
+        os.close(lock_fd)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
