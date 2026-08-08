@@ -1209,6 +1209,12 @@ class EffectBridgeTests(unittest.TestCase):
         self.assertTrue(bridge.effect_source_label("rclone:Pi — Outbox — TSC Sigma.docx@now"))
         self.assertFalse(bridge.effect_source_label("rclone:r0 — pi-tsc-chatgpt.docx@now"))
 
+    def test_effect_outbox_must_match_its_activation_route(self) -> None:
+        with self.assertRaisesRegex(bridge.SyncError, "activation: cn-pi@tsc"):
+            bridge.validate_effect_document(
+                "CNPI-DOC: 0.3\nactivation: cn-pi@cmp\nproject: cmp\n", self.route
+            )
+
     def test_effect_frames_recover_independently(self) -> None:
         one = json.dumps(self.request(), separators=(",", ":"))
         two = json.dumps(self.request(id="pi-effect-test-002"), separators=(",", ":"))

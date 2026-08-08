@@ -537,6 +537,13 @@ def effect_source_label(label: str) -> bool:
     return label.casefold().startswith("rclone:pi — outbox —")
 
 
+def validate_effect_document(document: str, route: ProjectRoute) -> None:
+    header = document[:3000]
+    for marker in (f"activation: {route.activation}", f"project: {route.project}"):
+        if re.search(rf"(?m)^{re.escape(marker)}$", header) is None:
+            raise SyncError(f"effect outbox is missing route marker: {marker}")
+
+
 def strict_json_object(payload: bytes) -> dict[str, object]:
     def pairs(values: list[tuple[str, object]]) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -1076,6 +1083,7 @@ def sync_effect_requests(
             continue
         scan_source(payload)
         document = normalize_document(payload)
+        validate_effect_document(document, route)
         candidates.extend(extract_effect_records(document))
     if not candidates:
         return {"status": "no_change", "requests_seen": []}
