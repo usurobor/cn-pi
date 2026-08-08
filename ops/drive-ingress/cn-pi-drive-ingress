@@ -553,8 +553,11 @@ def strict_json_object(payload: bytes) -> dict[str, object]:
             result[key] = value
         return result
 
+    def constant(value: str) -> object:
+        raise SyncError(f"non-finite JSON number: {value}")
+
     try:
-        value = json.loads(payload, object_pairs_hook=pairs)
+        value = json.loads(payload, object_pairs_hook=pairs, parse_constant=constant)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise SyncError("effect body is not one UTF-8 JSON object") from error
     if not isinstance(value, dict):
@@ -604,7 +607,13 @@ def simple_query(value: object) -> bool:
 
 
 def document_path(value: str, *, item: bool) -> str:
-    if not value or value.startswith("/") or len(value.encode("utf-8")) > 512:
+    if (
+        not value
+        or value.startswith("/")
+        or "\\" in value
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+        or len(value.encode("utf-8")) > 512
+    ):
         raise SyncError("document path must be a bounded repository-relative path")
     parts = value.split("/")
     if any(part in ("", ".", "..") or part.startswith(".") for part in parts):
@@ -790,13 +799,14 @@ def document_result(payload: object) -> object:
         raise SyncError("requested repository object is not a textual document")
     content = result.pop("content", None)
     encoding = result.pop("encoding", None)
-    if encoding == "base64" and isinstance(content, str):
-        try:
-            decoded = base64.b64decode(content, validate=False).decode("utf-8")
-        except (ValueError, UnicodeDecodeError) as error:
-            raise SyncError("repository document is not UTF-8 text") from error
-        result["content"] = decoded
-        result["encoding"] = "utf-8"
+    if encoding != "base64" or not isinstance(content, str):
+        raise SyncError("repository document content is unavailable through the Contents API")
+    try:
+        decoded = base64.b64decode(content, validate=False).decode("utf-8")
+    except (ValueError, UnicodeDecodeError) as error:
+        raise SyncError("repository document is not UTF-8 text") from error
+    result["content"] = decoded
+    result["encoding"] = "utf-8"
     return result
 
 
@@ -1011,16 +1021,20 @@ def retain_effect_result(
                 )
                 status = "succeeded"
             except GitHubAPIError as error:
+                status = (
+                    "uncertain"
+                    if request.get("method") != "GET" and error.status >= 500
+                    else "failed"
+                )
                 result = effect_result(
                     route,
                     request_id,
                     digest,
-                    "failed",
+                    status,
                     request=request,
                     http_status=error.status,
                     error={"code": "github_rejected", "detail": error.payload},
                 )
-                status = "failed"
             except GitHubUncertainError as error:
                 status = "failed" if request.get("method") == "GET" else "uncertain"
                 result = effect_result(

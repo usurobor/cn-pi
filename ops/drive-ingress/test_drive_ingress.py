@@ -1233,6 +1233,12 @@ class EffectBridgeTests(unittest.TestCase):
         self.assertIsNone(records[1][3])
         self.assertIn("unterminated", records[2][3])
 
+    def test_effect_json_rejects_duplicate_keys_and_nonfinite_numbers(self) -> None:
+        with self.assertRaisesRegex(bridge.SyncError, "duplicate JSON key"):
+            bridge.strict_json_object(b'{"id":"one","id":"two"}')
+        with self.assertRaisesRegex(bridge.SyncError, "non-finite JSON number"):
+            bridge.strict_json_object(b'{"value":NaN}')
+
     def test_incomplete_frame_is_pending_not_terminal_or_executed(self) -> None:
         payload = (
             "CNPI-DOC: 0.3\nactivation: cn-pi@tsc\nproject: tsc\n"
@@ -1418,6 +1424,32 @@ class EffectBridgeTests(unittest.TestCase):
                     outcomes.append(result["status"])
             connection.close()
         self.assertEqual(outcomes, ["failed", "uncertain"])
+
+    def test_server_error_is_uncertain_for_write(self) -> None:
+        request = self.request(
+            id="pi-effect-server-error", method="PATCH", body={"state": "closed"}
+        )
+        raw = json.dumps(request, separators=(",", ":")).encode()
+        with tempfile.TemporaryDirectory() as directory:
+            connection = bridge.effect_database(Path(directory) / "effects.sqlite3")
+            with mock.patch.object(
+                bridge,
+                "execute_effect",
+                side_effect=bridge.GitHubAPIError(502, {"message": "bad gateway"}),
+            ):
+                result, _ = bridge.retain_effect_result(
+                    connection,
+                    self.route,
+                    request["id"],
+                    bridge.hashlib.sha256(raw).hexdigest(),
+                    raw,
+                    request,
+                    None,
+                    dry_run=False,
+                )
+            connection.close()
+        self.assertEqual(result["status"], "uncertain")
+        self.assertEqual(result["http_status"], 502)
 
 
 if __name__ == "__main__":
