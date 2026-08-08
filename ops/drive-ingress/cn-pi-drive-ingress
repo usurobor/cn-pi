@@ -747,7 +747,7 @@ def github_rest(
         with urlopen(request, timeout=30) as response:
             payload = response.read(MAX_GITHUB_RESPONSE_BYTES + 1)
             if len(payload) > MAX_GITHUB_RESPONSE_BYTES:
-                raise SyncError("GitHub REST response exceeds 2 MiB")
+                raise GitHubUncertainError("GitHub REST response exceeds 2 MiB")
             return response.status, decode_json_response(payload)
     except HTTPError as error:
         payload = error.read(MAX_GITHUB_RESPONSE_BYTES + 1)

@@ -1387,6 +1387,38 @@ class EffectBridgeTests(unittest.TestCase):
         execute.assert_not_called()
         self.assertEqual(result["status"], "uncertain")
 
+    def test_transport_failure_is_uncertain_for_write_but_failed_for_read(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            connection = bridge.effect_database(Path(directory) / "effects.sqlite3")
+            with mock.patch.object(
+                bridge,
+                "execute_effect",
+                side_effect=bridge.GitHubUncertainError("network failed"),
+            ):
+                outcomes = []
+                for request in (
+                    self.request(id="pi-effect-read-failure"),
+                    self.request(
+                        id="pi-effect-write-failure",
+                        method="PATCH",
+                        body={"state": "closed"},
+                    ),
+                ):
+                    raw = json.dumps(request, separators=(",", ":")).encode()
+                    result, _ = bridge.retain_effect_result(
+                        connection,
+                        self.route,
+                        request["id"],
+                        bridge.hashlib.sha256(raw).hexdigest(),
+                        raw,
+                        request,
+                        None,
+                        dry_run=False,
+                    )
+                    outcomes.append(result["status"])
+            connection.close()
+        self.assertEqual(outcomes, ["failed", "uncertain"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
