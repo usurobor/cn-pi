@@ -1,0 +1,38 @@
+[Unit]
+Description=Bridge Pi Drive dialogue and bounded GitHub effects at four loci
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/cmp
+Environment=CN_PI_INGRESS_SOURCE_MODE=auto
+Environment=CN_PI_INGRESS_RCLONE_CONFIG=/root/.config/rclone/rclone.conf
+Environment=CN_PI_INGRESS_PROJECT=all
+ExecStart=/usr/local/libexec/cn-pi-drive-ingress
+TimeoutStartSec=300s
+UMask=0077
+
+# Quick CMP pilot hardening: the source is untrusted text and is never executed.
+NoNewPrivileges=true
+CapabilityBoundingSet=
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/root/cn-pi-clone/.git /root/cmp/.git /root/tsc/.git /root/cnos/.git /root/cn-sigma/.git /root/cn-omega/.git /run/lock /var/lib/cn-pi-drive-ingress
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryMax=128M
+CPUQuota=25%
+
+[Install]
+WantedBy=multi-user.target

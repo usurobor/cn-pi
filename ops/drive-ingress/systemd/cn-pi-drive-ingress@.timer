@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll Pi Drive staging for %i independently
+
+[Timer]
+OnBootSec=20s
+OnUnitInactiveSec=60s
+AccuracySec=5s
+RandomizedDelaySec=20s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

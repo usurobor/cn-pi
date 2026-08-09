@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly CONFIG=/root/.config/rclone/rclone.conf
+readonly SYNC=/usr/local/libexec/cn-pi-drive-ingress
+readonly INBOX_TIMER=cn-pi-drive-inbox.timer
+readonly ROUTES=(home cmp tsc cnos)
+
+if [[ ${EUID} -ne 0 ]]; then
+    printf 'Run this helper as root: sudo %s\n' "$0" >&2
+    exit 1
+fi
+
+printf '%s\n' 'Checking the service-account Drive API and syncing home, CMP, TSC, and CNOS...'
+gh auth status --hostname github.com >/dev/null
+gh api repos/usurobor/cn-pi/issues/2 >/dev/null
+for project in "${ROUTES[@]}"; do
+    rclone --config "$CONFIG" lsf "gdrive:cn-pi/r0-boxes/pi-$project" --dirs-only >/dev/null
+done
+"$SYNC" --project all --source-mode rclone --rclone-config "$CONFIG" --discover
+"$SYNC" --project all --source-mode rclone --rclone-config "$CONFIG" --dry-run
+"$SYNC" --project all --source-mode rclone --rclone-config "$CONFIG" --direction git-to-drive --dry-run
+for project in "${ROUTES[@]}"; do
+    "$SYNC" --project "$project" --source-mode rclone --rclone-config "$CONFIG" --direction drive-to-git
+    systemctl start "cn-pi-drive-ingress@$project.timer"
+done
+systemctl start "$INBOX_TIMER"
+systemctl --no-pager --full status "$INBOX_TIMER" \
+    cn-pi-drive-ingress@home.timer cn-pi-drive-ingress@cmp.timer \
+    cn-pi-drive-ingress@tsc.timer cn-pi-drive-ingress@cnos.timer
