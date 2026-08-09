@@ -1452,5 +1452,256 @@ class EffectBridgeTests(unittest.TestCase):
         self.assertEqual(result["http_status"], 502)
 
 
+class IncrementalRecoveryTests(unittest.TestCase):
+    def test_checkpoint_survives_interruption_and_skips_only_completed_sources(self) -> None:
+        route = bridge.PROJECT_ROUTES["cmp"]
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            bridge, "SOURCE_STATE_DIR", Path(directory)
+        ):
+            state = bridge.load_source_state(route)
+            bridge.checkpoint_source(
+                route,
+                state,
+                "drive-file-complete-1234567890",
+                "rclone:r0-complete@2026-08-09T00:00:00Z",
+                "updated",
+                "sha256:" + "a" * 64,
+            )
+            recovered = bridge.load_source_state(route)
+            versions = bridge.known_source_versions(recovered)
+        self.assertEqual(
+            versions,
+            {
+                "drive-file-complete-1234567890":
+                    "rclone:r0-complete@2026-08-09T00:00:00Z"
+            },
+        )
+        self.assertNotIn("drive-file-pending-1234567890", versions)
+
+    def test_authenticated_listing_does_not_export_checkpointed_revision(self) -> None:
+        item = {
+            "ID": "drive-file-complete-1234567890",
+            "Path": "r0 — cn-pi@cmp — 2026-08-08.docx",
+            "MimeType": bridge.DOCX_MIME_TYPE,
+            "ModTime": "2026-08-09T00:00:00Z",
+        }
+        label = (
+            "rclone:r0 — cn-pi@cmp — 2026-08-08.docx"
+            "@2026-08-09T00:00:00Z"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "rclone.conf"
+            config.write_text("[gdrive]\ntype = drive\n", encoding="utf-8")
+            config.chmod(0o600)
+            skipped: list[dict[str, object]] = []
+            with mock.patch.object(
+                bridge,
+                "rclone",
+                return_value=SimpleNamespace(stdout=json.dumps([item]).encode()),
+            ) as rclone_mock:
+                sources = bridge.authenticated_sources(
+                    config,
+                    "gdrive:cn-pi/r0-boxes/pi-cmp",
+                    unchanged_versions={item["ID"]: label},
+                    skipped=skipped,
+                )
+        self.assertEqual(sources, [])
+        self.assertEqual(skipped[0]["status"], "unchanged_source_skipped")
+        self.assertEqual(rclone_mock.call_count, 1)
+
+    def test_route_locks_do_not_let_a_slow_route_block_inbox_or_other_routes(self) -> None:
+        args = SimpleNamespace(direction="drive-to-git")
+        cmp_lock = bridge.lock_paths(args, [bridge.PROJECT_ROUTES["cmp"]])
+        tsc_lock = bridge.lock_paths(args, [bridge.PROJECT_ROUTES["tsc"]])
+        inbox_lock = bridge.lock_paths(
+            SimpleNamespace(direction="git-to-drive"),
+            list(bridge.PROJECT_ROUTES.values()),
+        )
+        self.assertNotEqual(cmp_lock, tsc_lock)
+        self.assertEqual(len(inbox_lock), 1)
+        self.assertNotIn(inbox_lock[0], cmp_lock + tsc_lock)
+
+    def test_daily_audit_reopens_incremental_scan(self) -> None:
+        recent = {"last_full_audit": "2026-08-09T12:00:00Z"}
+        old = {"last_full_audit": "2026-08-08T00:00:00Z"}
+        now = bridge.datetime(2026, 8, 9, 13, 0, tzinfo=bridge.timezone.utc)
+        self.assertFalse(bridge.audit_due(recent, now=now))
+        self.assertTrue(bridge.audit_due(old, now=now))
+
+
+class MemorySubmissionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.route = bridge.PROJECT_ROUTES["cnos"]
+        self.request = {
+            "schema": "cn-pi.memory-submit.v0",
+            "id": "pi-cnos-memory-20260808-01",
+            "route": "cnos",
+            "file_id": "drive-memory-source-1234567890",
+            "date": "2026-08-08",
+            "content_sha256": "a" * 64,
+        }
+
+    def outbox(self) -> bytes:
+        encoded = json.dumps(self.request, separators=(",", ":"))
+        return (
+            "CNPI-DOC: 0.4\n"
+            "activation: cn-pi@cnos\n"
+            "project: cnos\n"
+            "intended_git_repo: usurobor/cnos\n"
+            "intended_git_ref: refs/heads/cn-pi/cnos/dialogue\n\n"
+            f"<<<CN-PI-MEMORY-SUBMIT-BEGIN id={self.request['id']}>>>\n"
+            f"{encoded}\n"
+            f"<<<CN-PI-MEMORY-SUBMIT-END id={self.request['id']}>>>\n"
+        ).encode()
+
+    def test_wrong_parent_has_terminal_receipt_instead_of_silent_drop(self) -> None:
+        sources = [
+            (
+                "outbox-document-1234567890",
+                self.outbox(),
+                "https://example.invalid/outbox",
+                "rclone:Pi — Outbox — CNOS Sigma.docx@now",
+            )
+        ]
+        args = SimpleNamespace(rclone_config="/unused", dry_run=False)
+        with (
+            mock.patch.object(bridge, "rclone_service_account_path", return_value=Path("/credential")),
+            mock.patch.object(bridge, "service_account_access_token", return_value="token"),
+            mock.patch.object(bridge, "drive_root_id", return_value="expected-parent-1234567890"),
+            mock.patch.object(
+                bridge,
+                "drive_file_metadata",
+                return_value={
+                    "id": self.request["file_id"],
+                    "parents": ["wrong-parent-1234567890"],
+                    "mimeType": "application/vnd.google-apps.document",
+                    "trashed": False,
+                },
+            ),
+        ):
+            returned, submissions = bridge.prepare_memory_submissions(
+                self.route, args, sources
+            )
+        self.assertEqual(returned, sources)
+        result = submissions[0]["result"]
+        self.assertEqual(result["status"], "rejected")
+        self.assertEqual(result["error"]["code"], "source_rejected")
+        self.assertIn("wrong parent", result["error"]["message"])
+
+    def test_projected_submission_gets_exact_terminal_result(self) -> None:
+        digest = bridge.hashlib.sha256(b"memory").hexdigest()
+        request = dict(self.request, content_sha256=digest)
+        submission = {
+            "record_id": "memory-submit-cnos-pi-cnos-memory-20260808-01",
+            "request_digest": "b" * 64,
+            "request": request,
+            "file_id": request["file_id"],
+        }
+        document_result = {
+            "file_id": request["file_id"],
+            "status": "updated",
+            "snapshot": "posts/20260808.md",
+            "commit": "c" * 40,
+        }
+        args = SimpleNamespace(dry_run=True)
+        result = bridge.finish_memory_submissions(
+            self.route, args, [submission], [document_result]
+        )
+        terminal = result["submissions_seen"][0]
+        self.assertEqual(terminal["status"], "would_project")
+        self.assertEqual(terminal["result"]["head"], "c" * 40)
+
+
+class HealthReceiptTests(unittest.TestCase):
+    def test_interrupted_run_health_is_persisted_then_delivered(self) -> None:
+        route = bridge.PROJECT_ROUTES["home"]
+        args = SimpleNamespace(
+            dry_run=False,
+            rclone_config="/unused",
+            inbox_doc_id="inbox-document-1234567890",
+        )
+        with tempfile.TemporaryDirectory() as directory, \
+            mock.patch.object(bridge, "HEALTH_STATE_DIR", Path(directory)), \
+            mock.patch.object(bridge, "rclone_service_account_path", return_value=Path("/credential")), \
+            mock.patch.object(bridge, "service_account_access_token", return_value="token"), \
+            mock.patch.object(
+                bridge,
+                "append_google_docs_inbox",
+                side_effect=lambda _doc, _token, records: {
+                    record_id: "created" for record_id in records
+                },
+            ):
+            incident_id = bridge.record_health_incident(
+                "interrupted", "terminated", route="cmp"
+            )
+            result = bridge.sync_health_inbox(route, args)
+            stored = json.loads((Path(directory) / f"{incident_id}.json").read_text())
+        self.assertEqual(result["status"], "updated")
+        self.assertTrue(stored["delivered"])
+
+
+class SchedulerTests(unittest.TestCase):
+    def test_inbox_delivery_precedes_every_drive_materializer(self) -> None:
+        calls: list[str] = []
+        args = SimpleNamespace(
+            project="all",
+            direction="both",
+            source_mode="rclone",
+            remote="origin",
+            rclone_config="/unused",
+            inbox_doc_id="inbox-document-1234567890",
+            doc_id="unused",
+            dry_run=True,
+            discover=False,
+            full_audit=False,
+            verbose_results=False,
+        )
+
+        def inbox(route: bridge.ProjectRoute, _args: object) -> dict[str, object]:
+            calls.append(f"inbox:{route.project}")
+            return {
+                "status": "no_change",
+                "events_delivered": [],
+                "records_created": 0,
+            }
+
+        def drive(route: bridge.ProjectRoute, _args: object,
+                  _mode: str) -> dict[str, object]:
+            calls.append(f"drive:{route.project}")
+            return {
+                "documents": [],
+                "effects": {"requests_seen": []},
+                "memory_submissions": {"submissions_seen": []},
+                "source_scan": {},
+            }
+
+        with tempfile.TemporaryDirectory() as directory, \
+            mock.patch.object(bridge, "parse_args", return_value=args), \
+            mock.patch.object(
+                bridge, "lock_paths", return_value=[Path(directory) / "lock"]
+            ), \
+            mock.patch.object(bridge, "begin_run"), \
+            mock.patch.object(bridge, "update_run"), \
+            mock.patch.object(bridge, "finish_run"), \
+            mock.patch.object(bridge.signal, "signal"), \
+            mock.patch.object(
+                bridge,
+                "sync_health_inbox",
+                side_effect=lambda _route, _args: calls.append("health") or {
+                    "status": "no_change",
+                    "incidents": [],
+                },
+            ), \
+            mock.patch.object(bridge, "sync_git_inbox", side_effect=inbox), \
+            mock.patch.object(bridge, "sync_project_route", side_effect=drive):
+            result = bridge.main()
+
+        self.assertEqual(result, 0)
+        self.assertEqual(calls[0], "health")
+        first_drive = next(index for index, value in enumerate(calls) if value.startswith("drive:"))
+        self.assertTrue(all(value.startswith("inbox:") for value in calls[1:first_drive]))
+        self.assertEqual(calls[1], "inbox:home")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

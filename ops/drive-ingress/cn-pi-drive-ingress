@@ -23,6 +23,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import sqlite3
 import stat
 import subprocess
@@ -43,17 +44,25 @@ DEFAULT_REMOTE = "origin"
 DEFAULT_RCLONE_CONFIG = "/root/.config/rclone/rclone.conf"
 DEFAULT_INBOX_DOC_ID = "1bIs7sYGDwcDWOBvWm4dy2MfJjoNR6jK3VSB84450SDs"
 MAX_SOURCE_BYTES = 1_048_576
-LOCK_PATH = "/run/lock/cn-pi-drive-ingress.lock"
+LOCK_DIR = Path("/run/lock")
 INCIDENT_PATH = Path("/var/lib/cn-pi-drive-ingress/source-mutations.jsonl")
 MAX_INCIDENT_LEDGER_BYTES = 8 * 1_048_576
 INBOX_STATE_DIR = Path("/var/lib/cn-pi-drive-ingress/inbox-cursors")
+SOURCE_STATE_DIR = Path("/var/lib/cn-pi-drive-ingress/source-state")
+RUN_STATE_DIR = Path("/var/lib/cn-pi-drive-ingress/run-state")
+HEALTH_STATE_DIR = Path("/var/lib/cn-pi-drive-ingress/health")
 EFFECT_LEDGER_PATH = Path("/var/lib/cn-pi-drive-ingress/effects.sqlite3")
 MAX_GITHUB_RESPONSE_BYTES = 2 * 1_048_576
 DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 WORD_NAMESPACE = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 EFFECT_ID = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
 EFFECT_BEGIN = re.compile(rf"(?m)^<<<CN-PI-EFFECT-BEGIN id=({EFFECT_ID})>>>$")
+MEMORY_SUBMIT_BEGIN = re.compile(
+    rf"(?m)^<<<CN-PI-MEMORY-SUBMIT-BEGIN id=({EFFECT_ID})>>>$"
+)
 DOCUMENT_EXTENSIONS = frozenset({".md", ".mdx", ".rst", ".txt", ".adoc"})
+SOURCE_AUDIT_SECONDS = 24 * 60 * 60
+MAX_HEALTH_RECORDS = 256
 
 
 @dataclass(frozen=True)
@@ -188,6 +197,138 @@ class GitHubAPIError(RuntimeError):
 
 class GitHubUncertainError(RuntimeError):
     """A transport failure whose mutation outcome may be unknown."""
+
+
+_ACTIVE_RUN: dict[str, object] | None = None
+_ACTIVE_RUN_PATH: Path | None = None
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace(
+        "+00:00", "Z"
+    )
+
+
+def atomic_json(path: Path, document: Mapping[str, object]) -> None:
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    parent_stat = path.parent.lstat()
+    if not stat.S_ISDIR(parent_stat.st_mode) or stat.S_ISLNK(parent_stat.st_mode):
+        raise SyncError(f"invalid state directory: {path.parent}")
+    handle = tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        delete=False,
+    )
+    temporary = Path(handle.name)
+    try:
+        os.fchmod(handle.fileno(), 0o600)
+        json.dump(document, handle, sort_keys=True, separators=(",", ":"))
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+        handle.close()
+        os.replace(temporary, path)
+        path.chmod(0o600)
+    finally:
+        if not handle.closed:
+            handle.close()
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def emit_progress(event: str, **fields: object) -> None:
+    record = {"schema": "cn-pi.bridge-progress.v0", "event": event, "ts": utc_now()}
+    record.update(fields)
+    print(json.dumps(record, sort_keys=True, separators=(",", ":")), flush=True)
+
+
+def begin_run(args: argparse.Namespace) -> None:
+    global _ACTIVE_RUN, _ACTIVE_RUN_PATH
+    seed = f"{time.time_ns()}:{os.getpid()}:{args.project}:{args.direction}".encode()
+    run_id = hashlib.sha256(seed).hexdigest()[:24]
+    _ACTIVE_RUN = {
+        "version": 1,
+        "run_id": run_id,
+        "pid": os.getpid(),
+        "project": args.project,
+        "direction": args.direction,
+        "status": "running",
+        "phase": "startup",
+        "started_at": utc_now(),
+        "updated_at": utc_now(),
+    }
+    # One durable current/last-run slot per independently scheduled worker;
+    # successful minute polls must not create an unbounded file stream.
+    _ACTIVE_RUN_PATH = RUN_STATE_DIR / f"{args.direction}-{args.project}.json"
+    atomic_json(_ACTIVE_RUN_PATH, _ACTIVE_RUN)
+    emit_progress("run_started", run_id=run_id, project=args.project, direction=args.direction)
+
+
+def update_run(phase: str, **fields: object) -> None:
+    if _ACTIVE_RUN is None or _ACTIVE_RUN_PATH is None:
+        return
+    _ACTIVE_RUN["phase"] = phase
+    _ACTIVE_RUN["updated_at"] = utc_now()
+    _ACTIVE_RUN.update(fields)
+    atomic_json(_ACTIVE_RUN_PATH, _ACTIVE_RUN)
+    emit_progress("progress", run_id=_ACTIVE_RUN["run_id"], phase=phase, **fields)
+
+
+def record_health_incident(kind: str, message: str, **fields: object) -> str:
+    run_id = str((_ACTIVE_RUN or {}).get("run_id", "unbound"))
+    digest = hashlib.sha256(
+        json.dumps(
+            {"run_id": run_id, "kind": kind, "message": message, "fields": fields},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    incident_id = f"bridge-health-{digest[:24]}"
+    document: dict[str, object] = {
+        "schema": "cn-pi.bridge-health.v0",
+        "id": incident_id,
+        "run_id": run_id,
+        "kind": kind,
+        "message": message,
+        "observed_at": utc_now(),
+        "delivered": False,
+    }
+    document.update(fields)
+    atomic_json(HEALTH_STATE_DIR / f"{incident_id}.json", document)
+    return incident_id
+
+
+def finish_run(status_value: str, **fields: object) -> None:
+    if _ACTIVE_RUN is None or _ACTIVE_RUN_PATH is None:
+        return
+    _ACTIVE_RUN["status"] = status_value
+    _ACTIVE_RUN["phase"] = "complete"
+    _ACTIVE_RUN["updated_at"] = utc_now()
+    _ACTIVE_RUN.update(fields)
+    atomic_json(_ACTIVE_RUN_PATH, _ACTIVE_RUN)
+    emit_progress(
+        "run_finished", run_id=_ACTIVE_RUN["run_id"], status=status_value, **fields
+    )
+
+
+def interrupted_run(signum: int, _frame: object) -> None:
+    message = f"bridge process interrupted by signal {signum}"
+    try:
+        if _ACTIVE_RUN is not None:
+            _ACTIVE_RUN["status"] = "interrupted"
+            _ACTIVE_RUN["updated_at"] = utc_now()
+            if _ACTIVE_RUN_PATH is not None:
+                atomic_json(_ACTIVE_RUN_PATH, _ACTIVE_RUN)
+        incident_id = record_health_incident(
+            "interrupted", message, phase=(_ACTIVE_RUN or {}).get("phase")
+        )
+        emit_progress("run_interrupted", incident_id=incident_id, signal=signum)
+    finally:
+        raise SystemExit(128 + signum)
 
 
 def git(repo: Path, args: list[str], *, data: bytes | None = None,
@@ -452,7 +593,86 @@ def staging_source_name(name: str) -> bool:
     return folded.startswith("r0") or folded.startswith("pi — outbox —")
 
 
-def authenticated_sources(config: Path, root: str) -> list[tuple[str, bytes, str, str]]:
+def source_state_path(route: ProjectRoute) -> Path:
+    if route.project not in PROJECT_ROUTES:
+        raise SyncError("invalid source-state route")
+    return SOURCE_STATE_DIR / f"{route.project}.json"
+
+
+def load_source_state(route: ProjectRoute) -> dict[str, object]:
+    path = source_state_path(route)
+    if not path.exists():
+        return {"version": 1, "sources": {}, "last_full_audit": None}
+    file_stat = path.lstat()
+    if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_size > 2 * 1_048_576:
+        raise SyncError(f"invalid source-state file: {path}")
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SyncError(f"cannot read source-state file: {path}") from error
+    if not isinstance(document, dict) or document.get("version") != 1:
+        raise SyncError(f"unsupported source-state file: {path}")
+    if not isinstance(document.get("sources"), dict):
+        raise SyncError(f"invalid source-state entries: {path}")
+    return document
+
+
+def audit_due(state: Mapping[str, object], *, now: datetime | None = None) -> bool:
+    value = state.get("last_full_audit")
+    if not isinstance(value, str):
+        return True
+    try:
+        last = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    current = now or datetime.now(timezone.utc)
+    return (current - last).total_seconds() >= SOURCE_AUDIT_SECONDS
+
+
+def known_source_versions(state: Mapping[str, object]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    sources = state.get("sources")
+    if not isinstance(sources, dict):
+        return result
+    for file_id, entry in sources.items():
+        if not isinstance(file_id, str) or not isinstance(entry, dict):
+            continue
+        source_version = entry.get("source_version")
+        if isinstance(source_version, str):
+            result[file_id] = source_version
+    return result
+
+
+def checkpoint_source(
+    route: ProjectRoute,
+    state: dict[str, object],
+    file_id: str,
+    source_version: str,
+    status_value: str,
+    source_digest: str | None,
+) -> None:
+    sources = state.setdefault("sources", {})
+    if not isinstance(sources, dict):
+        raise SyncError("source-state entries changed type")
+    entry: dict[str, object] = {
+        "source_version": source_version,
+        "status": status_value,
+        "processed_at": utc_now(),
+    }
+    if source_digest is not None:
+        entry["source_digest"] = source_digest
+    sources[file_id] = entry
+    state["updated_at"] = utc_now()
+    atomic_json(source_state_path(route), state)
+
+
+def authenticated_sources(
+    config: Path,
+    root: str,
+    *,
+    unchanged_versions: Mapping[str, str] | None = None,
+    skipped: list[dict[str, object]] | None = None,
+) -> list[tuple[str, bytes, str, str]]:
     if not config.is_file():
         raise SyncError(f"rclone config does not exist: {config}")
     mode = config.stat().st_mode & 0o777
@@ -492,6 +712,18 @@ def authenticated_sources(config: Path, root: str) -> list[tuple[str, bytes, str
         if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{20,}", file_id):
             raise SyncError(f"Drive item is missing a stable file ID: {path}")
         mime_type = item.get("MimeType")
+        modified = item.get("ModTime")
+        source_label = f"rclone:{path}@{modified or 'unknown'}"
+        if unchanged_versions is not None and unchanged_versions.get(file_id) == source_label:
+            if skipped is not None:
+                skipped.append(
+                    {
+                        "status": "unchanged_source_skipped",
+                        "file_id": file_id,
+                        "source": source_label,
+                    }
+                )
+            continue
         is_docx = mime_type == DOCX_MIME_TYPE or path.casefold().endswith(".docx")
         if is_docx and service_account_path is not None:
             if service_account_token is None:
@@ -507,8 +739,6 @@ def authenticated_sources(config: Path, root: str) -> list[tuple[str, bytes, str
         if not (is_docx and service_account_path is not None):
             payload = drive_text_payload(payload, path, mime_type)
         source_url = f"https://docs.google.com/document/d/{file_id}"
-        modified = item.get("ModTime")
-        source_label = f"rclone:{path}@{modified or 'unknown'}"
         sources.append((file_id, payload, source_url, source_label))
     return sources
 
@@ -596,6 +826,158 @@ def extract_effect_records(
             continue
         records.append((request_id, raw, request, None))
     return records
+
+
+def extract_memory_submit_records(
+    document: str,
+) -> list[tuple[str, bytes, dict[str, object] | None, str | None]]:
+    """Recover independently framed memory source submissions from an outbox."""
+    records: list[tuple[str, bytes, dict[str, object] | None, str | None]] = []
+    starts = list(MEMORY_SUBMIT_BEGIN.finditer(document))
+    for index, start in enumerate(starts):
+        submission_id = start.group(1)
+        body_start = start.end()
+        if body_start < len(document) and document[body_start] == "\n":
+            body_start += 1
+        end_marker = f"<<<CN-PI-MEMORY-SUBMIT-END id={submission_id}>>>"
+        end = document.find(end_marker, body_start)
+        next_start = starts[index + 1].start() if index + 1 < len(starts) else len(document)
+        if end < 0 or end >= next_start:
+            raw = document[body_start:next_start].strip().encode("utf-8")
+            records.append(
+                (submission_id, raw, None, "unterminated or nested memory submission frame")
+            )
+            continue
+        trailing = document[end + len(end_marker):]
+        if trailing and not trailing.startswith("\n"):
+            raw = document[body_start:end].strip().encode("utf-8")
+            records.append(
+                (submission_id, raw, None, "memory submission end marker is not line-delimited")
+            )
+            continue
+        raw = document[body_start:end].strip().encode("utf-8")
+        try:
+            request = strict_json_object(raw)
+        except SyncError as error:
+            records.append((submission_id, raw, None, str(error)))
+            continue
+        records.append((submission_id, raw, request, None))
+    return records
+
+
+def validate_memory_submission(
+    marker_id: str, request: Mapping[str, object], route: ProjectRoute
+) -> dict[str, str]:
+    allowed = {"schema", "id", "route", "file_id", "date", "content_sha256"}
+    unknown = set(request) - allowed
+    if unknown:
+        raise SyncError(f"unknown memory submission field: {sorted(unknown)[0]}")
+    if request.get("schema") != "cn-pi.memory-submit.v0":
+        raise SyncError("unsupported memory submission schema")
+    if request.get("id") != marker_id:
+        raise SyncError("memory submission ID does not match its frame")
+    if request.get("route") != route.project:
+        raise SyncError("memory submission route does not match its outbox")
+    file_id = request.get("file_id")
+    if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{20,}", file_id):
+        raise SyncError("memory submission has an invalid Drive file ID")
+    date_value = request.get("date")
+    if not isinstance(date_value, str):
+        raise SyncError("memory submission has no date")
+    try:
+        snapshot_date = date.fromisoformat(date_value)
+    except ValueError as error:
+        raise SyncError("memory submission has an invalid date") from error
+    if snapshot_date >= datetime.now(timezone.utc).date():
+        raise SyncError("memory submission date is not a closed UTC day")
+    digest = request.get("content_sha256")
+    if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise SyncError("memory submission has an invalid content SHA-256")
+    return {
+        "id": marker_id,
+        "route": route.project,
+        "file_id": file_id,
+        "date": date_value,
+        "content_sha256": digest,
+    }
+
+
+def drive_root_id(config: Path, root: str) -> str:
+    result = rclone(config, ["lsjson", root, "--stat"])
+    try:
+        item = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise SyncError("rclone route stat returned invalid JSON") from error
+    file_id = item.get("ID") if isinstance(item, dict) else None
+    if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{20,}", file_id):
+        raise SyncError("Drive route folder has no stable ID")
+    return file_id
+
+
+def drive_file_metadata(file_id: str, access_token: str) -> dict[str, object]:
+    fields = "id,name,mimeType,parents,trashed,modifiedTime"
+    url = (
+        f"https://www.googleapis.com/drive/v3/files/{file_id}?"
+        + urlencode({"fields": fields, "supportsAllDrives": "true"})
+    )
+    request = Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "User-Agent": "cn-pi-drive-ingress/0.5",
+        },
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            item = json.load(response)
+    except HTTPError as error:
+        raise SyncError(f"Drive metadata lookup failed for {file_id}: HTTP {error.code}") from error
+    except (URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise SyncError(f"Drive metadata lookup failed for {file_id}") from error
+    if not isinstance(item, dict) or item.get("id") != file_id:
+        raise SyncError(f"Drive metadata lookup returned the wrong item for {file_id}")
+    return item
+
+
+def memory_submission_result(
+    route: ProjectRoute,
+    submission_id: str,
+    request_digest: str,
+    status_value: str,
+    *,
+    request: Mapping[str, str] | None = None,
+    result: Mapping[str, object] | None = None,
+    error: Mapping[str, object] | None = None,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "schema": "cn-pi.memory-submit-result.v0",
+        "id": submission_id,
+        "route": route.project,
+        "repo": route.expected_repo,
+        "request_digest": request_digest,
+        "status": status_value,
+    }
+    if request is not None:
+        payload["file_id"] = request.get("file_id")
+        payload["date"] = request.get("date")
+    if result is not None:
+        payload["result"] = dict(result)
+    if error is not None:
+        payload["error"] = dict(error)
+    return payload
+
+
+def memory_submission_receipt(record_id: str, result: Mapping[str, object]) -> bytes:
+    submission_id = str(result["id"])
+    payload = json.dumps(result, sort_keys=True, separators=(",", ":"))
+    return (
+        f"\n<<<CNOS-DRIVE-INBOX-BEGIN id={record_id}>>>\n"
+        "kind: cn-pi-memory-submit-result\n"
+        f"<<<CN-PI-MEMORY-SUBMIT-RESULT-BEGIN id={submission_id}>>>\n"
+        f"{payload}\n"
+        f"<<<CN-PI-MEMORY-SUBMIT-RESULT-END id={submission_id}>>>\n"
+        f"<<<CNOS-DRIVE-INBOX-END id={record_id}>>>\n"
+    ).encode("utf-8")
 
 
 def simple_query(value: object) -> bool:
@@ -1151,6 +1533,198 @@ def sync_effect_requests(
     return {
         "status": "updated" if any(value == "created" for value in statuses.values()) else "no_change",
         "requests_seen": results,
+        "receipt_statuses": statuses,
+    }
+
+
+def prepare_memory_submissions(
+    route: ProjectRoute,
+    args: argparse.Namespace,
+    sources: list[tuple[str, bytes, str, str]],
+) -> tuple[list[tuple[str, bytes, str, str]], list[dict[str, object]]]:
+    records: list[tuple[str, bytes, dict[str, object] | None, str | None]] = []
+    for _file_id, payload, _source_url, source_label in sources:
+        if not effect_source_label(source_label):
+            continue
+        document = normalize_document(payload)
+        validate_effect_document(document, route)
+        records.extend(extract_memory_submit_records(document))
+    if not records:
+        return sources, []
+
+    config = Path(args.rclone_config)
+    credentials = rclone_service_account_path(config, route.drive_root)
+    if credentials is None:
+        raise SyncError("service-account credentials are required for memory submissions")
+    token = service_account_access_token(credentials)
+    expected_parent = drive_root_id(config, route.drive_root)
+    by_file = {item[0]: item for item in sources}
+    prepared: list[dict[str, object]] = []
+    seen_ids: dict[str, str] = {}
+    for submission_id, raw, request, parse_error in records:
+        validated: dict[str, str] | None = None
+        request_digest = hashlib.sha256(raw).hexdigest()
+        prior = seen_ids.get(submission_id)
+        if prior is not None and prior != request_digest:
+            result = memory_submission_result(
+                route,
+                submission_id,
+                request_digest,
+                "rejected",
+                error={"code": "id_collision"},
+            )
+            prepared.append({"result": result, "record_id": f"memory-submit-{route.project}-{submission_id}"})
+            continue
+        seen_ids[submission_id] = request_digest
+        if parse_error is not None or request is None:
+            result = memory_submission_result(
+                route,
+                submission_id,
+                request_digest,
+                "rejected",
+                error={"code": "invalid_request", "message": parse_error or "missing request"},
+            )
+            prepared.append({"result": result, "record_id": f"memory-submit-{route.project}-{submission_id}"})
+            continue
+        try:
+            validated = validate_memory_submission(submission_id, request, route)
+            metadata = drive_file_metadata(validated["file_id"], token)
+            parents = metadata.get("parents")
+            if not isinstance(parents, list) or expected_parent not in parents:
+                raise SyncError(
+                    "memory source has wrong parent: "
+                    f"expected {expected_parent}, observed {parents if isinstance(parents, list) else []}"
+                )
+            if metadata.get("trashed") is True:
+                raise SyncError("memory source is trashed")
+            if metadata.get("mimeType") != "application/vnd.google-apps.document":
+                raise SyncError("memory source is not a native Google document")
+            file_id = validated["file_id"]
+            source = by_file.get(file_id)
+            if source is None:
+                payload = fetch_authenticated_text_export(file_id, token)
+                name = str(metadata.get("name", file_id))
+                modified = str(metadata.get("modifiedTime", "unknown"))
+                source = (
+                    file_id,
+                    payload,
+                    f"https://docs.google.com/document/d/{file_id}",
+                    f"rclone-submit:{name}@{modified}",
+                )
+                sources.append(source)
+                by_file[file_id] = source
+            payload = source[1]
+            observed_digest = hashlib.sha256(payload).hexdigest()
+            if observed_digest != validated["content_sha256"]:
+                raise SyncError(
+                    "memory source digest mismatch: "
+                    f"expected {validated['content_sha256']}, observed {observed_digest}"
+                )
+        except SyncError as error:
+            result = memory_submission_result(
+                route,
+                submission_id,
+                request_digest,
+                "rejected",
+                request=validated,
+                error={"code": "source_rejected", "message": str(error)},
+            )
+            prepared.append({"result": result, "record_id": f"memory-submit-{route.project}-{submission_id}"})
+            continue
+        prepared.append(
+            {
+                "record_id": f"memory-submit-{route.project}-{submission_id}",
+                "request_digest": request_digest,
+                "request": validated,
+                "file_id": validated["file_id"],
+            }
+        )
+    return sources, prepared
+
+
+def finish_memory_submissions(
+    route: ProjectRoute,
+    args: argparse.Namespace,
+    submissions: list[dict[str, object]],
+    document_results: list[dict[str, object]],
+) -> dict[str, object]:
+    if not submissions:
+        return {"status": "no_change", "submissions_seen": []}
+    by_file = {
+        str(result["file_id"]): result
+        for result in document_results
+        if isinstance(result.get("file_id"), str)
+    }
+    results: list[dict[str, object]] = []
+    records: dict[str, bytes] = {}
+    for submission in submissions:
+        existing = submission.get("result")
+        if isinstance(existing, dict):
+            result = existing
+        else:
+            request = submission.get("request")
+            if not isinstance(request, dict):
+                raise SyncError("prepared memory submission lost its request")
+            file_result = by_file.get(str(submission.get("file_id")))
+            if file_result is None:
+                result = memory_submission_result(
+                    route,
+                    str(request["id"]),
+                    str(submission["request_digest"]),
+                    "failed",
+                    request=request,
+                    error={"code": "no_terminal_source_result"},
+                )
+            elif file_result.get("status") in {
+                "updated",
+                "initialized",
+                "no_change",
+                "would_update",
+                "would_initialize",
+            } and file_result.get("snapshot") == f"posts/{str(request['date']).replace('-', '')}.md":
+                result = memory_submission_result(
+                    route,
+                    str(request["id"]),
+                    str(submission["request_digest"]),
+                    "would_project" if args.dry_run else "projected",
+                    request=request,
+                    result={
+                        "snapshot": file_result.get("snapshot"),
+                        "target_ref": route.memory_ref,
+                        "head": file_result.get("head") or file_result.get("commit"),
+                        "source_status": file_result.get("status"),
+                    },
+                )
+            else:
+                result = memory_submission_result(
+                    route,
+                    str(request["id"]),
+                    str(submission["request_digest"]),
+                    "rejected",
+                    request=request,
+                    error={
+                        "code": "invalid_memory_source",
+                        "source_status": file_result.get("status"),
+                    },
+                )
+        results.append(result)
+        record_id = str(submission["record_id"])
+        if not args.dry_run:
+            records[record_id] = memory_submission_receipt(record_id, result)
+
+    if args.dry_run:
+        return {"status": "would_process", "submissions_seen": results}
+    credentials = rclone_service_account_path(Path(args.rclone_config), route.drive_root)
+    if credentials is None:
+        raise SyncError("service-account credentials are required for memory receipts")
+    token = service_account_access_token(
+        credentials,
+        "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents",
+    )
+    statuses = append_google_docs_inbox(args.inbox_doc_id, token, records)
+    return {
+        "status": "updated" if any(value == "created" for value in statuses.values()) else "no_change",
+        "submissions_seen": results,
         "receipt_statuses": statuses,
     }
 
@@ -2029,6 +2603,80 @@ def append_google_docs_inbox(
     return statuses
 
 
+def health_receipt_record(record_id: str, incident: Mapping[str, object]) -> bytes:
+    payload = json.dumps(incident, sort_keys=True, separators=(",", ":"))
+    return (
+        f"\n<<<CNOS-DRIVE-INBOX-BEGIN id={record_id}>>>\n"
+        "kind: cn-pi-bridge-health\n"
+        f"<<<CN-PI-BRIDGE-HEALTH-BEGIN id={record_id}>>>\n"
+        f"{payload}\n"
+        f"<<<CN-PI-BRIDGE-HEALTH-END id={record_id}>>>\n"
+        f"<<<CNOS-DRIVE-INBOX-END id={record_id}>>>\n"
+    ).encode("utf-8")
+
+
+def pending_health_incidents() -> list[tuple[Path, dict[str, object]]]:
+    if not HEALTH_STATE_DIR.exists():
+        return []
+    directory_stat = HEALTH_STATE_DIR.lstat()
+    if not stat.S_ISDIR(directory_stat.st_mode) or stat.S_ISLNK(directory_stat.st_mode):
+        raise SyncError(f"invalid health-state directory: {HEALTH_STATE_DIR}")
+    pending: list[tuple[Path, dict[str, object]]] = []
+    for path in sorted(HEALTH_STATE_DIR.glob("bridge-health-*.json")):
+        file_stat = path.lstat()
+        if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_size > 256 * 1024:
+            raise SyncError(f"invalid bridge-health record: {path}")
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise SyncError(f"cannot read bridge-health record: {path}") from error
+        if (
+            not isinstance(document, dict)
+            or document.get("schema") != "cn-pi.bridge-health.v0"
+            or document.get("id") != path.stem
+        ):
+            raise SyncError(f"invalid bridge-health payload: {path}")
+        if document.get("delivered") is not True:
+            pending.append((path, document))
+        if len(pending) > MAX_HEALTH_RECORDS:
+            raise SyncError("too many pending bridge-health records")
+    return pending
+
+
+def sync_health_inbox(route: ProjectRoute, args: argparse.Namespace) -> dict[str, object]:
+    pending = pending_health_incidents()
+    if not pending:
+        return {"status": "no_change", "incidents": []}
+    records = {
+        str(document["id"]): health_receipt_record(str(document["id"]), document)
+        for _path, document in pending
+    }
+    if args.dry_run:
+        return {
+            "status": "would_update",
+            "incidents": list(records),
+        }
+    credentials = rclone_service_account_path(Path(args.rclone_config), route.drive_root)
+    if credentials is None:
+        raise SyncError("service-account credentials are required for health receipts")
+    token = service_account_access_token(
+        credentials,
+        "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents",
+    )
+    statuses = append_google_docs_inbox(args.inbox_doc_id, token, records)
+    for path, document in pending:
+        status_value = statuses[str(document["id"])]
+        if status_value in {"created", "exists"}:
+            document["delivered"] = True
+            document["delivered_at"] = utc_now()
+            atomic_json(path, document)
+    return {
+        "status": "updated" if any(value == "created" for value in statuses.values()) else "no_change",
+        "incidents": list(records),
+        "receipt_statuses": statuses,
+    }
+
+
 def sync_git_inbox(route: ProjectRoute, args: argparse.Namespace) -> dict[str, object]:
     config = Path(args.rclone_config)
     if rclone_service_account_path(config, route.drive_root) is None:
@@ -2585,6 +3233,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--remote", default=os.getenv("CN_PI_INGRESS_REMOTE", DEFAULT_REMOTE))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--discover", action="store_true", help="list matched Drive sources without Git writes")
+    parser.add_argument(
+        "--full-audit",
+        action="store_true",
+        help="re-export every source even when its Drive version is checkpointed",
+    )
+    parser.add_argument(
+        "--verbose-results",
+        action="store_true",
+        help="emit complete result payloads instead of the bounded service summary",
+    )
     return parser.parse_args()
 
 
@@ -2593,12 +3251,39 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
     repo = route.repo.resolve()
     validate_repo(repo, args.remote, route.expected_repo)
     validate_ref(repo, route.target_ref)
+    incremental = not args.dry_run and not args.discover and source_mode != "public"
+    state = load_source_state(route) if incremental else {
+        "version": 1,
+        "sources": {},
+        "last_full_audit": None,
+    }
+    force_audit = bool(getattr(args, "full_audit", False))
+    audit_active = isinstance(state.get("audit_started_at"), str)
+    if incremental and (force_audit or (audit_due(state) and not audit_active)):
+        # Reset only the optimization index. Git and the incident ledger remain
+        # canonical. Per-file checkpoints rebuild this map, so an interrupted
+        # audit resumes with completed revisions skipped and missing revisions
+        # still visible.
+        state["sources"] = {}
+        state["audit_started_at"] = utc_now()
+        state["updated_at"] = utc_now()
+        atomic_json(source_state_path(route), state)
+        audit_active = True
+    full_audit = force_audit or audit_active or (not incremental and audit_due(state))
+    skipped: list[dict[str, object]] = []
     if source_mode == "public":
         if route.project != "cmp":
             raise SyncError("public fallback is available only for the CMP pilot")
         sources = [fetch_public_source(args.doc_id)]
     else:
-        sources = authenticated_sources(Path(args.rclone_config), route.drive_root)
+        sources = authenticated_sources(
+            Path(args.rclone_config),
+            route.drive_root,
+            unchanged_versions=(
+                None if not incremental else known_source_versions(state)
+            ),
+            skipped=skipped,
+        )
 
     if args.discover:
         return {
@@ -2611,11 +3296,18 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
             ],
         }
 
+    sources, memory_submissions = prepare_memory_submissions(route, args, sources)
     effects = sync_effect_requests(route, args, sources)
 
-    results: list[dict[str, object]] = []
+    results: list[dict[str, object]] = list(skipped)
     saw_dialogue = False
     for file_id, payload, source_url, source_label in sources:
+        update_run(
+            "drive_source",
+            route=route.project,
+            file_id=file_id,
+            source=source_label,
+        )
         document = normalize_document(payload)
         scan_source(payload)
         declared_ref = re.search(
@@ -2625,11 +3317,21 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
         if route.memory_ref is not None:
             allowed_refs.add(route.memory_ref)
         if declared_ref is None or declared_ref.group(1) not in allowed_refs:
-            results.append({
+            ignored = {
                 "status": "ignored_retired_staging_ref",
                 "file_id": file_id,
                 "source": source_label,
-            })
+            }
+            results.append(ignored)
+            if incremental:
+                checkpoint_source(
+                    route,
+                    state,
+                    file_id,
+                    source_label,
+                    str(ignored["status"]),
+                    f"sha256:{hashlib.sha256(payload).hexdigest()}",
+                )
             continue
         extraction = extract_dialogue_events(document, route, file_id)
         events = extraction.events
@@ -2655,7 +3357,17 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
                     ignored_result["incidents"] = invalid_incidents
                 if invalid_ledger_error:
                     ignored_result["incident_ledger_error"] = invalid_ledger_error
+                ignored_result["file_id"] = file_id
                 results.append(ignored_result)
+                if incremental:
+                    checkpoint_source(
+                        route,
+                        state,
+                        file_id,
+                        source_label,
+                        str(ignored_result["status"]),
+                        f"sha256:{hashlib.sha256(payload).hexdigest()}",
+                    )
             else:
                 destination, memory_payload = memory_snapshot
                 memory_result = project_memory_snapshot(
@@ -2669,7 +3381,17 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
                     dry_run=args.dry_run,
                 )
                 memory_result["source"] = source_label
+                memory_result["file_id"] = file_id
                 results.append(memory_result)
+                if incremental:
+                    checkpoint_source(
+                        route,
+                        state,
+                        file_id,
+                        source_label,
+                        str(memory_result["status"]),
+                        str(memory_result.get("source_digest")),
+                    )
             continue
         validate_dialogue_document(document, route)
         result = project(
@@ -2684,6 +3406,7 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
             dry_run=args.dry_run,
         )
         result["source"] = source_label
+        result["file_id"] = file_id
         if invalid_incidents:
             result["incidents"] = [
                 *invalid_incidents,
@@ -2693,6 +3416,15 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
         if invalid_ledger_error:
             result["incident_ledger_error"] = invalid_ledger_error
         results.append(result)
+        if incremental:
+            checkpoint_source(
+                route,
+                state,
+                file_id,
+                source_label,
+                str(result["status"]),
+                str(result.get("source_digest")),
+            )
 
     if not saw_dialogue and sources:
         initialization = project(
@@ -2711,13 +3443,104 @@ def sync_project_route(route: ProjectRoute, args: argparse.Namespace,
             initialization["source"] = f"route:{route.drive_root}"
             results.append(initialization)
 
+    submission_results = finish_memory_submissions(
+        route, args, memory_submissions, results
+    )
+    if incremental and audit_active:
+        state["last_full_audit"] = utc_now()
+        state.pop("audit_started_at", None)
+        state["updated_at"] = utc_now()
+        atomic_json(source_state_path(route), state)
+
     return {
         "project": route.project,
         "repo": route.expected_repo,
         "target_ref": route.target_ref,
         "documents": results,
         "effects": effects,
+        "memory_submissions": submission_results,
+        "source_scan": {
+            "full_audit": full_audit,
+            "fetched": len(sources),
+            "unchanged_skipped": len(skipped),
+        },
     }
+
+
+def lock_paths(
+    args: argparse.Namespace, routes: list[ProjectRoute]
+) -> list[Path]:
+    paths: list[Path] = []
+    if args.direction in {"both", "drive-to-git"}:
+        paths.extend(
+            LOCK_DIR / f"cn-pi-drive-ingress-{route.project}.lock"
+            for route in routes
+        )
+    if args.direction in {"both", "git-to-drive"}:
+        paths.append(LOCK_DIR / "cn-pi-drive-inbox.lock")
+    return sorted(set(paths), key=str)
+
+
+def bounded_result(project_results: list[dict[str, object]], status_value: str,
+                   health: Mapping[str, object] | None) -> dict[str, object]:
+    projects: list[dict[str, object]] = []
+    for route_result in project_results:
+        summary: dict[str, object] = {
+            "project": route_result["project"],
+            "repo": route_result["repo"],
+        }
+        drive = route_result.get("drive_to_git")
+        if isinstance(drive, dict):
+            if drive.get("status") == "error":
+                summary["drive_to_git"] = drive
+            else:
+                documents = drive.get("documents", [])
+                effects = drive.get("effects", {})
+                submissions = drive.get("memory_submissions", {})
+                summary["drive_to_git"] = {
+                    "status": "ok",
+                    "source_scan": drive.get("source_scan"),
+                    "documents": [
+                        {
+                            key: item.get(key)
+                            for key in ("file_id", "status", "snapshot", "commit", "head")
+                            if item.get(key) is not None
+                        }
+                        for item in documents
+                        if isinstance(item, dict)
+                    ],
+                    "effect_requests": [
+                        {
+                            "id": item.get("id"),
+                            "status": item.get("status"),
+                            "method": item.get("method"),
+                            "path": item.get("path"),
+                        }
+                        for item in effects.get("requests_seen", [])
+                        if isinstance(item, dict)
+                    ] if isinstance(effects, dict) else [],
+                    "memory_submissions": [
+                        {"id": item.get("id"), "status": item.get("status")}
+                        for item in submissions.get("submissions_seen", [])
+                        if isinstance(item, dict)
+                    ] if isinstance(submissions, dict) else [],
+                }
+        inbox = route_result.get("git_to_drive")
+        if isinstance(inbox, dict):
+            summary["git_to_drive"] = (
+                inbox
+                if inbox.get("status") == "error"
+                else {
+                    "status": inbox.get("status"),
+                    "events_delivered": inbox.get("events_delivered", []),
+                    "records_created": inbox.get("records_created", 0),
+                }
+            )
+        projects.append(summary)
+    result: dict[str, object] = {"status": status_value, "projects": projects}
+    if health is not None:
+        result["health"] = health
+    return result
 
 
 def main() -> int:
@@ -2727,14 +3550,22 @@ def main() -> int:
         if args.project == "all"
         else [PROJECT_ROUTES[args.project]]
     )
-    lock_fd = os.open(LOCK_PATH, os.O_CREAT | os.O_RDWR, 0o600)
+    routes.sort(key=lambda route: (route.project != "home", route.project))
+    lock_fds: list[int] = []
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        print(json.dumps({"status": "busy", "message": "another sync is active"}))
-        return 0
+        for path in lock_paths(args, routes):
+            lock_fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                os.close(lock_fd)
+                emit_progress("busy", lock=str(path), project=args.project, direction=args.direction)
+                return 75
+            lock_fds.append(lock_fd)
 
-    try:
+        begin_run(args)
+        signal.signal(signal.SIGTERM, interrupted_run)
+        signal.signal(signal.SIGINT, interrupted_run)
         source_mode = args.source_mode
         if source_mode == "auto":
             probe_route = routes[0]
@@ -2756,14 +3587,42 @@ def main() -> int:
                 "authenticated service-account credentials are required for Git-to-Drive sync"
             )
 
-        project_results: list[dict[str, object]] = []
+        by_project: dict[str, dict[str, object]] = {
+            route.project: {"project": route.project, "repo": route.expected_repo}
+            for route in routes
+        }
         failures = False
-        for route in routes:
-            route_result: dict[str, object] = {
-                "project": route.project,
-                "repo": route.expected_repo,
-            }
-            if drive_to_git:
+        health_result: dict[str, object] | None = None
+
+        if git_to_drive and not args.discover:
+            update_run("health_inbox")
+            try:
+                health_result = sync_health_inbox(PROJECT_ROUTES["home"], args)
+            except SyncError as error:
+                failures = True
+                health_result = {"status": "error", "message": str(error)}
+                record_health_incident("health_delivery_failed", str(error))
+
+        if git_to_drive and not args.discover:
+            for route in routes:
+                route_result = by_project[route.project]
+                update_run("git_to_drive", route=route.project)
+                try:
+                    route_result["git_to_drive"] = sync_git_inbox(route, args)
+                except SyncError as error:
+                    failures = True
+                    route_result["git_to_drive"] = {
+                        "status": "error",
+                        "message": str(error),
+                    }
+                    record_health_incident(
+                        "route_failed", str(error), route=route.project, direction="git-to-drive"
+                    )
+
+        if drive_to_git:
+            for route in routes:
+                route_result = by_project[route.project]
+                update_run("drive_to_git", route=route.project)
                 try:
                     route_result["drive_to_git"] = sync_project_route(
                         route, args, source_mode
@@ -2774,24 +3633,28 @@ def main() -> int:
                         "status": "error",
                         "message": str(error),
                     }
-            if git_to_drive and not args.discover:
-                try:
-                    route_result["git_to_drive"] = sync_git_inbox(route, args)
-                except SyncError as error:
-                    failures = True
-                    route_result["git_to_drive"] = {
-                        "status": "error",
-                        "message": str(error),
-                    }
-            project_results.append(route_result)
+                    record_health_incident(
+                        "route_failed", str(error), route=route.project, direction="drive-to-git"
+                    )
+
+        project_results = [by_project[route.project] for route in routes]
         status = "partial" if failures else "ok"
-        print(json.dumps({"status": status, "projects": project_results}, sort_keys=True))
+        finish_run(status, failures=failures)
+        output = (
+            {"status": status, "projects": project_results, "health": health_result}
+            if args.verbose_results
+            else bounded_result(project_results, status, health_result)
+        )
+        print(json.dumps(output, sort_keys=True))
         return 1 if failures else 0
     except SyncError as error:
+        incident_id = record_health_incident("run_failed", str(error))
+        finish_run("error", incident_id=incident_id)
         print(json.dumps({"status": "error", "message": str(error)}, sort_keys=True), file=sys.stderr)
         return 1
     finally:
-        os.close(lock_fd)
+        for lock_fd in reversed(lock_fds):
+            os.close(lock_fd)
 
 
 if __name__ == "__main__":

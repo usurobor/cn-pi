@@ -1,0 +1,13 @@
+[Unit]
+Description=Poll immutable Git dialogue and bridge health for Pi
+
+[Timer]
+OnBootSec=10s
+OnUnitInactiveSec=30s
+AccuracySec=5s
+RandomizedDelaySec=5s
+Persistent=true
+Unit=cn-pi-drive-inbox.service
+
+[Install]
+WantedBy=timers.target

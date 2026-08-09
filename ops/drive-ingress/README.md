@@ -44,6 +44,28 @@ canonical r1, or a document containing dialogue events into memory. Published da
 snapshots are immutable. This deliberately excludes the current mixed
 dialogue/memory staging doc instead of copying a transcript into memory.
 
+Drive discovery is incremental. The host checkpoints each terminal source
+result under `/var/lib/cn-pi-drive-ingress/source-state/` by stable Drive file
+ID and Drive version, so ordinary polls export only new or changed sources. A
+complete audit is forced every 24 hours and may also be requested with
+`--full-audit`. The checkpoint advances after each source rather than after the
+batch, so a terminated worker resumes at the first unfinished source.
+
+For no-silent-drop submission, Pi may explicitly name a memory source in its
+route's existing `Pi — Outbox — ...` document:
+
+```text
+<<<CN-PI-MEMORY-SUBMIT-BEGIN id=pi-cnos-memory-20260808-01>>>
+{"schema":"cn-pi.memory-submit.v0","id":"pi-cnos-memory-20260808-01","route":"cnos","file_id":"<Drive file ID>","date":"2026-08-08","content_sha256":"<64 lowercase hex>"}
+<<<CN-PI-MEMORY-SUBMIT-END id=pi-cnos-memory-20260808-01>>>
+```
+
+The adapter validates the exact parent folder ID, closed date, source digest,
+and memory envelope, then returns one immutable
+`cn-pi.memory-submit-result.v0` receipt. Wrong-parent, missing, malformed, and
+digest-mismatched sources are rejected explicitly rather than disappearing
+from folder polling. A corrected retry uses a new stable submission ID.
+
 The bridge never writes Sigma-owned refs, imports canonical r1, promotes project
 authority, executes source text, checks out operational refs, or stores
 credentials in this repository.
@@ -127,6 +149,14 @@ reader-owned cursor under `/var/lib/cn-pi-drive-ingress/inbox-cursors/`. A crash
 after append but before cursor persistence is idempotent: the exact record is
 recognized on retry. Drive never becomes canonical and cannot mutate Git.
 
+Git-to-Drive delivery runs independently from Drive-to-Git materialization, so
+a slow export route cannot delay dialogue or health receipts. Interrupted,
+timed-out, and route-failed runs persist bounded `cn-pi.bridge-health.v0`
+incidents under `/var/lib/cn-pi-drive-ingress/health/`; the independent inbox
+worker delivers them on its next successful pass. Per-run progress and the
+active route/file are flushed to journald and mirrored under `run-state/`
+before blocking network operations.
+
 The Google Cloud project owning the service account must have the Google Docs
 API enabled. The service account requests only `drive.readonly` plus
 `documents`; Drive write authority is not used for inbox delivery.
@@ -137,7 +167,8 @@ API enabled. The service account requests only `drive.readonly` plus
 - `test_drive_ingress.py` — parser, routing, canonicalization, mutation, and Git
   projection tests.
 - `cn-pi-drive-ingress-check` — operator verification and initial-sync helper.
-- `systemd/` — hardened one-shot service and one-minute timer.
+- `systemd/` — a manual all-route service, independent per-route Drive workers,
+  and a higher-priority Git inbox worker.
 
 ## Host state
 
@@ -148,6 +179,9 @@ Credentials and mutable state remain outside Git:
 /root/.config/rclone/drive-sa.json
 /var/lib/cn-pi-drive-ingress/
 /var/lib/cn-pi-drive-ingress/effects.sqlite3
+/var/lib/cn-pi-drive-ingress/source-state/
+/var/lib/cn-pi-drive-ingress/run-state/
+/var/lib/cn-pi-drive-ingress/health/
 ```
 
 Drive export tokens use the read-only Drive scope. Inbox append tokens combine
@@ -161,13 +195,18 @@ python3 -m py_compile cn-pi-drive-ingress test_drive_ingress.py
 ./cn-pi-drive-ingress --project all --source-mode rclone --discover
 ./cn-pi-drive-ingress --project all --source-mode rclone --dry-run
 ./cn-pi-drive-ingress --project tsc --source-mode rclone --direction git-to-drive --dry-run
+./cn-pi-drive-ingress --project cmp --source-mode rclone --direction drive-to-git --full-audit --dry-run
 ```
 
 ## Deployment
 
 Install the command and unit files from this directory; `/usr/local` contains
-installed artifacts only and is not canonical source. Stop the prior timer
-before replacing units, verify a dry run, then enable the new timer.
+installed artifacts only and is not canonical source. Stop and remove the
+prior monolithic timer before replacing units, verify one route and the inbox,
+then enable `cn-pi-drive-ingress@{home,cmp,tsc,cnos}.timer` plus
+`cn-pi-drive-inbox.timer`. The manual all-route service retains a 300-second
+ceiling for operator audits; ordinary route workers have independent
+180-second ceilings.
 
 ## Retirement condition
 
